@@ -18,6 +18,7 @@ import {
   getPicUrl as getOneDrivePicUrl,
   getLyricInfo as getOneDriveLyricInfo,
 } from '@/core/oneDrive/music'
+import { webDAVLog } from '@/core/webdavMusic/logger'
 
 export const getMusicUrl = async ({
   musicInfo,
@@ -32,11 +33,19 @@ export const getMusicUrl = async ({
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
   allowToggleSource?: boolean
 }): Promise<string> => {
+  webDAVLog.info('index.ts: getMusicUrl called', {
+    isDownload: 'progress' in musicInfo,
+    source: 'source' in musicInfo ? musicInfo.source : 'N/A',
+    musicId: 'id' in musicInfo ? musicInfo.id : 'N/A',
+  })
   if ('progress' in musicInfo) {
     return getDownloadMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
   } else if (musicInfo.source == 'local') {
     if ('oneDrive' in musicInfo.meta) {
       return getOneDriveMusicUrl({ musicInfo: musicInfo as LX.OneDrive.MusicInfo, isRefresh })
+    }
+    if ('webdav' in musicInfo.meta && (musicInfo.meta as any).webdav) {
+      webDAVLog.info('index.ts: Detected WebDAV music', { source: musicInfo.source, meta: JSON.stringify(musicInfo.meta) })
     }
     return getLocalMusicUrl({ musicInfo, isRefresh, onToggleSource, allowToggleSource })
   } else {

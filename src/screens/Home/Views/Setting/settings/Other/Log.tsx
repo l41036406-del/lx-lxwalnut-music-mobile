@@ -10,6 +10,8 @@ import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/Confirm
 import CheckBoxItem from '../../components/CheckBoxItem'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
+import settingState from '@/store/setting/state'
+import { updateSetting } from '@/core/common'
 
 export default memo(() => {
   const t = useI18n()
@@ -18,6 +20,7 @@ export default memo(() => {
   const isUnmountedRef = useRef(true)
   const [isEnableSyncErrorLog, setIsEnableSyncErrorLog] = useState(global.lx.isEnableSyncLog)
   const [isEnableUserApiLog, setIsEnableUserApiLog] = useState(global.lx.isEnableUserApiLog)
+  const [isEnableWebDAVLog, setIsEnableWebDAVLog] = useState(settingState.setting['common.isEnableWebDAVLog'])
 
   const getErrorLog = () => {
     void getLogs().then((log) => {
@@ -51,6 +54,11 @@ export default memo(() => {
     global.lx.isEnableUserApiLog = enable
   }
 
+  const handleSetEnableWebDAVLog = (enable: boolean) => {
+    setIsEnableWebDAVLog(enable)
+    updateSetting({ 'common.isEnableWebDAVLog': enable })
+  }
+
   useEffect(() => {
     isUnmountedRef.current = false
     return () => {
@@ -71,6 +79,11 @@ export default memo(() => {
             check={isEnableUserApiLog}
             label={t('setting_other_log_user_api_log')}
             onChange={handleSetEnableUserApiLog}
+          />
+          <CheckBoxItem
+            check={isEnableWebDAVLog}
+            label={t('setting_other_log_webdav_log')}
+            onChange={handleSetEnableWebDAVLog}
           />
         </View>
         <View style={styles.btn}>

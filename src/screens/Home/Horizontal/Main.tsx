@@ -7,10 +7,11 @@ import Setting from '../Views/Setting'
 import commonState, { type InitState as CommonState } from '@/store/common/state'
 import DailyRec from '../Views/DailyRec'
 import MyPlaylist from '../Views/MyPlaylist'
-import SubscribedAlbums from "@/screens/Home/Views/SubscribedAlbums";
-import FollowedArtists from "@/screens/Home/Views/FollowedArtists";
+import SubscribedAlbums from "@/screens/Home/Views/SubscribedAlbums"
+import FollowedArtists from "@/screens/Home/Views/FollowedArtists"
 import PlayHistory from '../Views/PlayHistory'
 import OneDrive from '../Views/OneDrive'
+import WebDAV from '../Views/WebDAV'
 
 const Main = () => {
   const [id, setId] = useState(commonState.navActiveId)
@@ -45,6 +46,8 @@ const Main = () => {
         return <SubscribedAlbums />
       case 'nav_onedrive':
         return <OneDrive />
+      case 'nav_webdav':
+        return <WebDAV />
       case 'nav_love':
         return <Mylist />
       case 'nav_setting':

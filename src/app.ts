@@ -8,6 +8,8 @@ import { exitApp } from './utils/nativeModules/utils'
 import { windowSizeTools } from './utils/windowSizeTools'
 import { listenLaunchEvent } from './navigation/regLaunchedEvent'
 import { tipDialog } from './utils/tools'
+import settingState from '@/store/setting/state'
+import { initWebDAVLog } from '@/core/webdavMusic/logger'
 
 // --- START: CONSOLE LOG PATCH (v2) ---
 if (__DEV__) {
@@ -22,7 +24,7 @@ if (__DEV__) {
    * @param {'log' | 'warn' | 'error'} type
    * @param {any[]} args
    */
-  const remoteLog = (type, ...args) => {
+  const remoteLog = (type: 'log' | 'warn' | 'error', ...args: unknown[]) => {
     try {
       // 创建一个包含所有参数的结构化对象
       const payload = {
@@ -96,10 +98,13 @@ void Promise.all([getFontSize(), windowSizeTools.init()])
     const handleInit = async () => {
       if (isInited) return
       void initLog()
+      void initWebDAVLog()
       const { default: init } = await import('@/core/init')
       try {
         handlePushedHomeScreen = await init()
-        toast(getTimeGreeting(), 'long')
+        if (settingState.setting['common.isShowStartupGreeting']) {
+          toast(getTimeGreeting(), 'long')
+        }
       } catch (err: any) {
         void tipDialog({
           title: '初始化失败 (Init Failed)',
