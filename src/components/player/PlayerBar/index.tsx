@@ -16,6 +16,10 @@ import PlayerPlaylist, { PlayerPlaylistType } from '@/components/player/PlayerPl
 import MiniProgressBar from "@/components/player/PlayerBar/components/MiniProgressBar.tsx"
 import playerState from '@/store/player/state'
 import { LIST_IDS } from '@/config/constant'
+import ImageBackground from '@/components/common/ImageBackground'
+import { useBgPic } from '@/store/common/hook'
+import { defaultHeaders } from '@/components/common/Image'
+import { useWindowSize } from '@/utils/hooks'
 
 export default memo(({ componentId, isHome = false }: { isHome?: boolean }) => {
   const { keyboardShown } = useKeyboard()
@@ -24,6 +28,12 @@ export default memo(({ componentId, isHome = false }: { isHome?: boolean }) => {
   const longPressedRef = useRef(false)
   const playlistRef = useRef<PlayerPlaylistType>(null)
   const drawerLayoutPosition = useSettingValue('common.drawerLayoutPosition')
+  const dynamicPic = useBgPic()
+  const customBgPicPath = useSettingValue('theme.customBgPicPath')
+  const pic = customBgPicPath || dynamicPic
+  const picOpacity = useSettingValue('theme.picOpacity')
+  const blur = useSettingValue('theme.blur')
+  const windowSize = useWindowSize()
 
   const handleLongPress = useCallback(() => {
     longPressedRef.current = true
@@ -88,27 +98,69 @@ export default memo(({ componentId, isHome = false }: { isHome?: boolean }) => {
   ).current
 
   const playerComponent = useMemo(
-    () => (
-      <View style={{ ...styles.container, backgroundColor: theme['c-content-background'] }}
-            {...panResponder.panHandlers}>
-        <MiniProgressBar />
+    () => {
+      const containerStyle = {
+        ...styles.container,
+        backgroundColor: pic ? 'transparent' : theme['c-content-background'],
+      }
 
-        <TouchableOpacity style={styles.left} onPress={handleNavigate} onLongPress={handleLongPress} activeOpacity={0.8}>
-          <Pic isHome={isHome} />
-          <View style={styles.center}>
-            <Title isHome={isHome} />
-            <PlayInfo isHome={isHome} />
-          </View>
-        </TouchableOpacity>
-        <View style={styles.right}>
-          <ControlBtn />
-          <TouchableOpacity style={styles.menuBtn} onPress={handleShowPlaylist}>
-            <Icon name="menu" color={theme['c-button-font']} size={22} />
+      const content = (
+        <View style={containerStyle} {...panResponder.panHandlers}>
+          <MiniProgressBar />
+
+          <TouchableOpacity style={styles.left} onPress={handleNavigate} onLongPress={handleLongPress} activeOpacity={0.8}>
+            <Pic isHome={isHome} />
+            <View style={styles.center}>
+              <Title isHome={isHome} />
+              <PlayInfo isHome={isHome} />
+            </View>
           </TouchableOpacity>
+          <View style={styles.right}>
+            <ControlBtn />
+            <TouchableOpacity style={styles.menuBtn} onPress={handleShowPlaylist}>
+              <Icon name="menu" color={theme['c-button-font']} size={22} />
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    ),
-    [theme, isHome, handleShowPlaylist, panResponder.panHandlers, drawerLayoutPosition],
+      )
+
+      return (
+        <View style={{ overflow: 'hidden' }}>
+          <ImageBackground
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: windowSize.width,
+              height: 58,
+              backgroundColor: theme['c-content-background'],
+            }}
+            source={pic ? { uri: pic, headers: defaultHeaders } : theme['bg-image']}
+            resizeMode="cover"
+            blurRadius={pic ? blur : undefined}
+          >
+            {pic ? (
+              <View
+                style={{
+                  flex: 1,
+                  backgroundColor: theme['c-content-background'],
+                  opacity: picOpacity / 100,
+                }}
+              ></View>
+            ) : null}
+          </ImageBackground>
+          <View
+            style={{
+              height: 58,
+              backgroundColor: pic ? undefined : theme['c-main-background'],
+            }}
+          >
+            {content}
+          </View>
+        </View>
+      )
+    },
+    [theme, isHome, handleShowPlaylist, panResponder.panHandlers, drawerLayoutPosition, pic, blur, picOpacity, windowSize.width],
   )
 
   return (
