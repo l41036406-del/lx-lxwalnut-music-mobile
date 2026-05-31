@@ -11,6 +11,7 @@ import {
 
 import themeState from '@/store/theme/state'
 import playerState from '@/store/player/state'
+import settingState from '@/store/setting/state'
 import { NAV_SHEAR_NATIVE_IDS } from '@/config/constant'
 import { getStatusBarStyle } from './utils'
 import { windowSizeTools } from '@/utils/windowSizeTools'
@@ -74,9 +75,9 @@ export async function pushHomeScreen() {
                   backgroundColor: 'transparent',
                 },
                 navigationBar: {
-                  // visible: false,
-                  backgroundColor: theme['c-content-background'],
-                },
+          visible: !settingState.setting['common.hideNavigationBar'],
+          backgroundColor: theme['c-content-background'],
+        },
                 layout: {
                   componentBackgroundColor: theme['c-content-background'],
                 },
@@ -141,7 +142,7 @@ export function pushPlayDetailScreen(componentId: string, skipAnimation = false)
             backgroundColor: 'transparent',
           },
           navigationBar: {
-            // visible: false,
+            visible: !settingState.setting['common.hideNavigationBar'],
             backgroundColor: theme['c-content-background'],
           },
           layout: {
@@ -230,7 +231,7 @@ export function pushSonglistDetailScreen(componentId: string, info: ListInfoItem
             backgroundColor: 'transparent',
           },
           navigationBar: {
-            // visible: false,
+            visible: !settingState.setting['common.hideNavigationBar'],
             backgroundColor: theme['c-content-background'],
           },
           layout: {
@@ -363,7 +364,7 @@ export function pushCommentScreen(componentId: string) {
             backgroundColor: 'transparent',
           },
           navigationBar: {
-            // visible: false,
+            visible: !settingState.setting['common.hideNavigationBar'],
             backgroundColor: theme['c-content-background'],
           },
           layout: {

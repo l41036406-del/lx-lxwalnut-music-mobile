@@ -82,6 +82,7 @@ declare global {
       'common.alwaysKeepStatusbarHeight': boolean
 
       'common.isShowStartupGreeting': boolean
+      'common.hideNavigationBar': boolean
       'common.isEnableWebDAVLog': boolean
 
       'common.navStatus': Partial<Record<NAV_ID_Type, boolean>>;

@@ -18,6 +18,7 @@ const defaultSetting: LX.AppSetting = {
   'common.yt_cookie': '',
   'common.alwaysKeepStatusbarHeight': false,
   'common.isShowStartupGreeting': true,
+  'common.hideNavigationBar': false,
   'common.isEnableWebDAVLog': true,
 
   'common.navStatus': {

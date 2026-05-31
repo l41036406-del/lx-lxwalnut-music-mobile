@@ -398,6 +398,8 @@
   "setting_lyric_desktop_view_width": "Percentage of Window Width",
   "setting_other": "Extras",
   "setting_other_is_show_startup_greeting": "Show startup greeting",
+  "setting_other_hide_navigation_bar": "Hide navigation bar",
+  "setting_other_hide_navigation_bar_tip": "Hide the Android system bottom navigation bar, effective after restarting the app",
   "setting_other_cache": "Cache Management (including the cache of songs, lyrics, error logs, etc., it is not recommended to clean up if there is no problem related to song playback)",
   "setting_other_cache_clear_btn": "Clear Cache",
   "setting_other_cache_clear_success_tip": "Cache cleanup complete",
