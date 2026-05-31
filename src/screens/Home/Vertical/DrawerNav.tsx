@@ -6,19 +6,17 @@ import { useTheme } from '@/store/theme/hook'
 import { Icon } from '@/components/common/Icon'
 import { SvgIcon } from '@/components/common/SvgIcon'
 import { confirmDialog, createStyle, exitApp as backHome } from '@/utils/tools'
-import { NAV_MENUS } from '@/config/constant'
+import { NAV_MENUS, LIST_IDS } from '@/config/constant'
 import type { InitState } from '@/store/common/state'
-// import { navigations } from '@/navigation'
-// import commonState from '@/store/common/state'
 import { exitApp, setNavActiveId } from '@/core/common'
 import Text from '@/components/common/Text'
 import { useSettingValue } from '@/store/setting/hook'
-import React, { useState, useRef, useCallback } from 'react';
-import { Animated, Easing } from 'react-native';
-import { useMyList } from '@/store/list/hook';
-import { setActiveList } from '@/core/list';
-import { navigations } from "@/navigation";
-import commonState from '@/store/common/state';
+import React, { useState, useRef, useCallback } from 'react'
+import { Animated, Easing } from 'react-native'
+import { useMyList } from '@/store/list/hook'
+import { setActiveList, updateUserListPosition } from '@/core/list'
+import { navigations } from "@/navigation"
+import commonState from '@/store/common/state'
 
 const CollapsibleMyListItem = () => {
   const t = useI18n();
@@ -26,7 +24,7 @@ const CollapsibleMyListItem = () => {
   const allList = useMyList();
   const [isExpanded, setExpanded] = useState(false);
   const animation = useRef(new Animated.Value(0)).current;
-  const contentHeight = useRef(0); // 用于存储子列表的实际高度
+  const contentHeight = useRef(0);
 
   const toggleCollapse = () => {
     const toValue = isExpanded ? 0 : 1;
@@ -34,7 +32,7 @@ const CollapsibleMyListItem = () => {
       toValue,
       duration: 300,
       easing: Easing.inOut(Easing.ease),
-      useNativeDriver: false, // 高度动画必须禁用原生驱动
+      useNativeDriver: false,
     }).start();
     setExpanded(!isExpanded);
   };
@@ -45,7 +43,25 @@ const CollapsibleMyListItem = () => {
     global.app_event.changeMenuVisible(false);
   }, []);
 
-  // 动画插值
+  const handleMoveUp = useCallback((listId: string) => {
+    const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
+    const currentIndex = userLists.findIndex(l => l.id === listId);
+    if (currentIndex <= 0) return;
+    
+    const prevList = userLists[currentIndex - 1];
+    if (!prevList) return;
+
+    updateUserListPosition(currentIndex - 1, [listId]);
+  }, [allList]);
+
+  const handleMoveDown = useCallback((listId: string) => {
+    const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
+    const currentIndex = userLists.findIndex(l => l.id === listId);
+    if (currentIndex < 0 || currentIndex >= userLists.length - 1) return;
+
+    updateUserListPosition(currentIndex + 1, [listId]);
+  }, [allList]);
+
   const animatedHeight = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, contentHeight.current],
@@ -56,44 +72,65 @@ const CollapsibleMyListItem = () => {
     outputRange: [0, 0, 1],
   });
 
-  const arrowRotation = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '90deg'],
-  });
-
   return (
     <View>
-      {/* 主菜单项 */}
       <TouchableOpacity style={styles.menuItem} onPress={toggleCollapse}>
         <View style={styles.iconContent}>
           <Icon name="love" size={20} color={theme['c-font-label']} />
         </View>
         <Text style={styles.text}>{t('nav_love')}</Text>
-        {/*<Animated.View style={{ transform: [{ rotate: arrowRotation }] }}>*/}
-        {/*  <Icon name="chevron-right" size={16} color={theme['c-font-label']} />*/}
-        {/*</Animated.View>*/}
       </TouchableOpacity>
 
-      {/* 可折叠的子列表 */}
       <Animated.View style={{ height: animatedHeight, opacity: animatedOpacity, overflow: 'hidden' }}>
         <View
           onLayout={(event) => {
-            // 测量内容实际高度，用于动画
             contentHeight.current = event.nativeEvent.layout.height;
           }}
-          style={{ position: 'absolute', width: '100%' }} // 使用绝对定位来测量，避免影响布局
+          style={{ position: 'absolute', width: '100%' }}
         >
-          {allList.map(list => (
-            <TouchableOpacity
-              key={list.id}
-              style={styles.subMenuItem}
-              onPress={() => handleSelect(list.id)}
-            >
-              <Text size={14} color={theme['c-font-label']} numberOfLines={1}>
-                {list.name}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {allList.map((list) => {
+            const isFixed = list.id === LIST_IDS.DEFAULT || list.id === LIST_IDS.LOVE;
+            const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
+            const userListIndex = userLists.findIndex(l => l.id === list.id);
+            const isFirst = userListIndex === 0;
+            const isLast = userListIndex === userLists.length - 1;
+
+            return (
+              <View key={list.id} style={styles.subMenuItemContainer}>
+                <TouchableOpacity
+                  style={styles.subMenuItem}
+                  onPress={() => handleSelect(list.id)}
+                >
+                  <Text size={14} color={theme['c-font-label']} numberOfLines={1}>
+                    {list.name}
+                  </Text>
+                </TouchableOpacity>
+
+                {!isFixed && (
+                  <View style={styles.subMenuControls}>
+                    <TouchableOpacity
+                      style={[styles.moveBtn, isFirst && styles.moveBtnDisabled]}
+                      onPress={() => handleMoveUp(list.id)}
+                      disabled={isFirst}
+                    >
+                      <Text size={16} color={isFirst ? theme['c-font-label'] : theme['c-font']} style={{ fontWeight: 'bold' }}>
+                        ↑
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.moveBtn, isLast && styles.moveBtnDisabled]}
+                      onPress={() => handleMoveDown(list.id)}
+                      disabled={isLast}
+                    >
+                      <Text size={16} color={isLast ? theme['c-font-label'] : theme['c-font']} style={{ fontWeight: 'bold' }}>
+                        ↓
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+            );
+          })}
         </View>
       </Animated.View>
     </View>
@@ -102,9 +139,6 @@ const CollapsibleMyListItem = () => {
 const styles = createStyle({
   container: {
     flex: 1,
-    // alignItems: 'center',
-    // justifyContent: 'center',
-    // padding: 10,
   },
   header: {
     paddingTop: 40,
@@ -122,8 +156,23 @@ const styles = createStyle({
   },
   subMenuItem: {
     paddingVertical: 12,
-    paddingLeft: 55, // 缩进，使其在主菜单项的下方
-    paddingRight: 25,
+    paddingLeft: 55,
+    paddingRight: 10,
+    flex: 1,
+  },
+  subMenuItemContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  subMenuControls: {
+    flexDirection: 'row',
+    paddingRight: 10,
+  },
+  moveBtn: {
+    padding: 6,
+  },
+  moveBtnDisabled: {
+    opacity: 0.3,
   },
   collapsibleMenuItemText: {
     flex: 1,
@@ -140,7 +189,6 @@ const styles = createStyle({
     paddingLeft: 25,
     paddingRight: 25,
     alignItems: 'center',
-    // backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
   iconContent: {
     width: 24,
@@ -148,7 +196,6 @@ const styles = createStyle({
   },
   text: {
     paddingLeft: 20,
-    // fontWeight: '500',
   },
   footer: {
     paddingVertical: 5,
@@ -230,10 +277,10 @@ const MenuItem = ({
 
 export default memo(() => {
   const theme = useTheme()
-  // console.log('render drawer nav')
   const showBackBtn = useSettingValue('common.showBackBtn')
   const showExitBtn = useSettingValue('common.showExitBtn')
   const navStatus = useSettingValue('common.navStatus');
+  const navOrder = useSettingValue('common.navOrder');
   const isShowMyListSubMenu = useSettingValue('list.isShowMyListSubMenu');
 
   const handlePress = (id: IdType) => {
@@ -264,10 +311,15 @@ export default memo(() => {
     setNavActiveId('nav_play_history');
   };
   const filteredNavMenus = useMemo(() => {
-    return NAV_MENUS.filter(
+    if (!navOrder) return NAV_MENUS.filter(
       menu => menu.id !== 'nav_play_history' && (menu.id === 'nav_search' || menu.id === 'nav_setting' || (navStatus[menu.id] ?? true))
     );
-  }, [navStatus]);
+
+    return navOrder
+      .filter(id => id !== 'nav_play_history')
+      .map(id => NAV_MENUS.find(menu => menu.id === id))
+      .filter((menu): menu is typeof NAV_MENUS[number] => menu !== undefined && (menu.id === 'nav_search' || menu.id === 'nav_setting' || (navStatus[menu.id] ?? true)));
+  }, [navStatus, navOrder]);
 
   return (
     <View style={{ ...styles.container, backgroundColor: theme['c-content-background'] }}>

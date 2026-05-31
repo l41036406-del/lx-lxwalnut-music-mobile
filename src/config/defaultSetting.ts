@@ -33,6 +33,21 @@ const defaultSetting: LX.AppSetting = {
     nav_webdav: true,
   },
 
+  'common.navOrder': [
+    'nav_search',
+    'nav_play_history',
+    'nav_songlist',
+    'nav_top',
+    'nav_love',
+    'nav_daily_rec',
+    'nav_followed_artists',
+    'nav_subscribed_albums',
+    'nav_my_playlist',
+    'nav_onedrive',
+    'nav_webdav',
+    'nav_setting',
+  ],
+
   'player.startupAutoPlay': false,
   'player.startupPushPlayDetailScreen': false,
   'player.togglePlayMethod': 'listLoop',

@@ -127,6 +127,7 @@ export default memo(() => {
   const showBackBtn = useSettingValue('common.showBackBtn')
   const showExitBtn = useSettingValue('common.showExitBtn')
   const navStatus = useSettingValue('common.navStatus');
+  const navOrder = useSettingValue('common.navOrder');
 
   const handlePress = (id: IdType) => {
     switch (id) {
@@ -149,10 +150,15 @@ export default memo(() => {
   }
 
   const filteredNavMenus = useMemo(() => {
-    return NAV_MENUS.filter(
+    if (!navOrder) return NAV_MENUS.filter(
       menu => menu.id !== 'nav_play_history' && (menu.id === 'nav_search' || menu.id === 'nav_setting' || (navStatus[menu.id] ?? true))
     );
-  }, [navStatus]);
+
+    return navOrder
+      .filter(id => id !== 'nav_play_history')
+      .map(id => NAV_MENUS.find(menu => menu.id === id))
+      .filter((menu): menu is typeof NAV_MENUS[number] => menu !== undefined && (menu.id === 'nav_search' || menu.id === 'nav_setting' || (navStatus[menu.id] ?? true)));
+  }, [navStatus, navOrder]);
   return (
     <View style={{ ...styles.container, borderRightColor: theme['c-border-background'] }}>
       <Header />
