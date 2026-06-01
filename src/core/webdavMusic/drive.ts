@@ -115,6 +115,7 @@ const toMusicInfo = (item: FileStat, path: string): LX.WebDAV.MusicInfo => {
       webdav: true,
       fileName: item.basename,
       filePath: path,
+      remotePath: path, // 保存原始的 WebDAV 路径
       ext,
       size: item.size,
       lastModifiedTime: modifiedTime,
@@ -218,22 +219,35 @@ export const scanWebDAVSongs = async (
 }
 
 export const getWebDAVDownloadUrl = (musicInfo: LX.WebDAV.MusicInfo) => {
-  webDAVLog.info('getWebDAVDownloadUrl called', { musicId: musicInfo.id, fileName: musicInfo.meta.fileName, filePath: musicInfo.meta.filePath })
+  webDAVLog.info('getWebDAVDownloadUrl called', { musicId: musicInfo.id, fileName: musicInfo.meta.fileName, filePath: musicInfo.meta.filePath, remotePath: musicInfo.meta.remotePath, songId: musicInfo.meta.songId })
   const settings = settingState.setting
   const url = settings['sync.webdav.url']
-  let filePath = musicInfo.meta.filePath
-  if (!filePath.startsWith('/')) {
-    filePath = '/' + filePath
-    webDAVLog.info('getWebDAVDownloadUrl normalized filePath', { original: musicInfo.meta.filePath, normalized: filePath })
+  
+  // 优先使用 remotePath，其次是 songId，最后是 filePath
+  let remoteFilePath = musicInfo.meta.remotePath || musicInfo.meta.songId || musicInfo.meta.filePath
+  
+  if (!remoteFilePath.startsWith('/')) {
+    remoteFilePath = '/' + remoteFilePath
+    webDAVLog.info('getWebDAVDownloadUrl normalized remoteFilePath', { original: musicInfo.meta.remotePath || musicInfo.meta.songId || musicInfo.meta.filePath, normalized: remoteFilePath })
   }
+  
+  // 检查路径是否是本地路径（包含 /storage/emulated/ 或 /sdcard/）
+  if (remoteFilePath.includes('/storage/emulated/') || remoteFilePath.includes('/sdcard/') || remoteFilePath.includes('/storage/self/')) {
+    webDAVLog.warn('getWebDAVDownloadUrl: detected local path in remoteFilePath, using songId instead', { remoteFilePath, songId: musicInfo.meta.songId })
+    remoteFilePath = musicInfo.meta.songId || musicInfo.meta.filePath
+    if (!remoteFilePath.startsWith('/')) {
+      remoteFilePath = '/' + remoteFilePath
+    }
+  }
+  
   if (!url) {
     webDAVLog.error('getWebDAVDownloadUrl: WebDAV 未配置')
     throw new Error('WebDAV 未配置')
   }
   const baseUrl = url.endsWith('/') ? url.slice(0, -1) : url
-  const encodedFilePath = encodeURIComponent(filePath.substring(1))
+  const encodedFilePath = encodeURIComponent(remoteFilePath.substring(1))
   const downloadUrl = `${baseUrl}/${encodedFilePath}`
-  webDAVLog.info('getWebDAVDownloadUrl result', { downloadUrl, encodedFilePath })
+  webDAVLog.info('getWebDAVDownloadUrl result', { downloadUrl, encodedFilePath, remoteFilePath })
   return downloadUrl
 }
 

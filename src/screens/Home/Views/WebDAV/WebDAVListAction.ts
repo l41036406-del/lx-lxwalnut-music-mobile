@@ -8,21 +8,70 @@ import { updateListMusics } from '@/core/list'
 import { webDAVLog } from '@/core/webdavMusic/logger'
 import { readPic, readMetadata } from '@/utils/localMediaMetadata'
 
+const getDefaultDownloadDir = () => {
+  const userPath = settingState.setting['download.path']
+  const defaultPath = '/storage/emulated/0/Music/LX-N Music'
+  
+  // 如果用户设置了路径且不为空，使用用户路径
+  if (userPath && typeof userPath === 'string' && userPath.trim()) {
+    const resolvedPath = userPath.trim()
+    webDAVLog.info('getDefaultDownloadDir: using user configured path', { path: resolvedPath })
+    return resolvedPath
+  }
+  
+  // 否则使用默认路径
+  webDAVLog.info('getDefaultDownloadDir: using default path', { path: defaultPath })
+  return defaultPath
+}
+
 export const handleWebDAVDownload = async (musicInfo: LX.WebDAV.MusicInfo): Promise<string | null> => {
   // 先请求存储权限
   const hasPermission = await requestStoragePermission()
+  webDAVLog.info('handleWebDAVDownload: storage permission check', { hasPermission })
   if (!hasPermission) {
-    toast('请授予存储权限后重试', 'long')
+    if (hasPermission === null) {
+      toast('您已拒绝存储权限，请在系统设置中开启', 'long')
+    } else {
+      toast('请授予存储权限后重试', 'long')
+    }
     return null
   }
 
   const downloadUrl = getWebDAVDownloadUrl(musicInfo)
-  const downloadDir = settingState.setting['download.path'] || '/storage/emulated/0/Music/LX-N Music'
+  const downloadDir = getDefaultDownloadDir()
   const fileName = musicInfo.meta.fileName
   const filePath = `${downloadDir}/${fileName}`
 
+  webDAVLog.info('handleWebDAVDownload: starting download', { 
+    fileName, 
+    downloadDir, 
+    filePath,
+    downloadUrl: downloadUrl?.substring(0, 100) + '...' 
+  })
+
   try {
     await mkdir(downloadDir)
+    webDAVLog.info('handleWebDAVDownload: download directory created/verified', { downloadDir })
+    
+    // 检查文件是否存在
+    const fileExists = await existsFile(filePath)
+    webDAVLog.info('handleWebDAVDownload: file existence check', { filePath, fileExists })
+    
+    // 如果配置中有 filePath 但文件不存在，清除旧的 filePath 以便重新下载
+    if (musicInfo.meta.filePath && !fileExists) {
+      webDAVLog.info('handleWebDAVDownload: file was deleted, clearing old filePath', { oldPath: musicInfo.meta.filePath })
+      await updateWebDAVMusicMeta(musicInfo.id, { filePath: undefined })
+    }
+    
+    // 如果文件已存在，显示提示并返回
+    if (fileExists) {
+      webDAVLog.info('handleWebDAVDownload: file already exists', { filePath })
+      toast(`文件已存在：${fileName}`)
+      return null
+    }
+    
+    // 文件不存在，开始下载
+    toast(`正在下载：${fileName}`)
     
     const username = settingState.setting['sync.webdav.username']
     const password = settingState.setting['sync.webdav.password']
@@ -34,8 +83,17 @@ export const handleWebDAVDownload = async (musicInfo: LX.WebDAV.MusicInfo): Prom
     }
 
     webDAVLog.info('handleWebDAVDownload: downloading file', { downloadUrl, filePath })
-    await downloadFile(downloadUrl, filePath, { headers }).promise
-    webDAVLog.info('handleWebDAVDownload: download completed')
+    
+    const downloadResult = await downloadFile(downloadUrl, filePath, { headers }).promise
+    webDAVLog.info('handleWebDAVDownload: download result', { downloadResult })
+    
+    // 检查下载是否成功
+    const fileExistsAfterDownload = await existsFile(filePath)
+    if (!fileExistsAfterDownload) {
+      throw new Error(`下载失败：文件未保存到 ${filePath}。请检查存储权限或下载路径是否正确。`)
+    }
+    
+    webDAVLog.info('handleWebDAVDownload: download completed successfully')
     
     // 读取文件元数据（包括专辑名称等信息）
     const fileMetadata = await readMetadata(filePath).catch(() => null)
@@ -205,7 +263,7 @@ export const handleWebDAVBatchDownload = async (
     return []
   }
 
-  const downloadDir = settingState.setting['download.path'] || '/storage/emulated/0/Music/LX-N Music'
+  const downloadDir = getDefaultDownloadDir()
   const downloadedPaths: string[] = []
   
   webDAVLog.info('handleWebDAVBatchDownload: starting batch download', { songCount: songs.length })

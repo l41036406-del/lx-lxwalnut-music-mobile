@@ -26,6 +26,7 @@ import {
 import { LIST_IDS } from '@/config/constant'
 import { addListMusics, removeListMusics } from '@/core/list'
 import { addDislikeInfo } from '@/core/dislikeList'
+import { webDAVLog } from '@/core/webdavMusic/logger'
 
 // import { checkMusicFileAvailable } from '@renderer/utils/music'
 
@@ -113,9 +114,51 @@ const getMusicPlayUrl = async (
   setStatusText(global.i18n.t('player__getting_url'))
   addLoadTimeout()
 
+  const currentMusicInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
+  const isWebDAVMusic = 'webdav' in currentMusicInfo.meta && (currentMusicInfo.meta as any).webdav === true
+  
+  // 如果是 WebDAV 音乐且本地文件不存在，尝试下载
+  if (isWebDAVMusic) {
+    // 使用配置中的下载路径，或从 musicInfo.meta.filePath 中获取已保存的路径
+    const configuredDownloadDir = settingState.setting['download.path'] || '/storage/emulated/0/Music/LX-N Music'
+    const fileName = currentMusicInfo.meta.fileName
+    
+    // 优先使用配置中已保存的文件路径（如果存在）
+    const existingFilePath = currentMusicInfo.meta.filePath
+    let filePathToCheck = existingFilePath || `${configuredDownloadDir}/${fileName}`
+    
+    // 检查文件是否存在
+    const { existsFile } = await import('@/utils/fs')
+    let fileExists = await existsFile(filePathToCheck)
+    
+    webDAVLog?.info('getMusicPlayUrl: checking file existence', { 
+      musicId: currentMusicInfo.id, 
+      filePathToCheck, 
+      fileExists,
+      configuredDownloadDir,
+      fileName,
+      existingFilePath 
+    })
+    
+    // 如果配置的路径中不存在，检查配置的下载目录
+    if (!fileExists && existingFilePath) {
+      const alternativePath = `${configuredDownloadDir}/${fileName}`
+      webDAVLog?.info('getMusicPlayUrl: trying alternative path', { alternativePath })
+      filePathToCheck = alternativePath
+      fileExists = await existsFile(filePathToCheck)
+      webDAVLog?.info('getMusicPlayUrl: alternative path check result', { filePathToCheck, fileExists })
+    }
+    
+    if (!fileExists) {
+      setStatusText('正在下载歌曲...')
+      webDAVLog?.info('getMusicPlayUrl: WebDAV file not found, starting download', { musicId: currentMusicInfo.id, expectedPath: filePathToCheck })
+    } else {
+      webDAVLog?.info('getMusicPlayUrl: WebDAV file exists locally', { musicId: currentMusicInfo.id, filePath: filePathToCheck })
+    }
+  }
+
   // const type = getPlayType(settingState.setting['player.isPlayHighQuality'], musicInfo)
-  let toggleMusicInfo = ('progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo).meta
-    .toggleMusicInfo
+  let toggleMusicInfo = currentMusicInfo.meta.toggleMusicInfo
 
   return (
     toggleMusicInfo

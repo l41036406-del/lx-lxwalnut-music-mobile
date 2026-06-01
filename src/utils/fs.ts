@@ -58,7 +58,12 @@ export const gzipString = async (data: string, encoding?: Encoding) =>
 export const unGzipString = async (data: string, encoding?: Encoding) =>
   FileSystem.unGzipString(data, encoding)
 
-export const existsFile = async (path: string) => FileSystem.exists(path)
+export const existsFile = async (path: string) => {
+  // 使用 RNFS.exists 而不是 FileSystem.exists，因为下载使用的是 RNFS.downloadFile
+  const result = await RNFS.exists(path)
+  console.log('existsFile', { path, result })
+  return result
+}
 
 export const rename = async (path: string, name: string) => FileSystem.rename(path, name)
 

@@ -136,7 +136,8 @@ const downloadWebDAVMusic = async (musicInfo: LX.WebDAV.MusicInfo): Promise<stri
   const downloadUrl = getWebDAVDownloadUrl(musicInfo)
   const downloadDir = settingState.setting['download.path'] || '/storage/emulated/0/Music/LX-N Music'
   const fileName = musicInfo.meta.fileName
-  const filePath = `${downloadDir}/${fileName}`
+  
+  let filePath = `${downloadDir}/${fileName}`
 
   if (downloadPromises.has(filePath)) {
     webDAVLog?.info('downloadWebDAVMusic: waiting for existing download', { filePath })
@@ -197,6 +198,17 @@ const downloadWebDAVMusic = async (musicInfo: LX.WebDAV.MusicInfo): Promise<stri
 
       // 提取并保存内嵌封面
       await readEmbeddedCoverAndSave(musicInfo, filePath, updateWebDAVMusicMeta)
+
+      // 更新播放器状态中的音乐信息
+      if (playerState.playMusicInfo.musicInfo?.id === musicInfo.id) {
+        webDAVLog?.info('downloadWebDAVMusic: updating player state with new filePath', { filePath })
+        const playerAction = await import('@/store/player/action')
+        const updatedMusicInfo = { ...playerState.playMusicInfo.musicInfo }
+        if (updatedMusicInfo && updatedMusicInfo.meta) {
+          updatedMusicInfo.meta.filePath = filePath
+        }
+        playerAction.default.setPlayMusicInfo(playerState.playMusicInfo.listId, updatedMusicInfo, playerState.playMusicInfo.isTempPlay)
+      }
 
       return filePath
     } catch (error) {

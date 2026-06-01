@@ -24,6 +24,7 @@ declare namespace LX {
       meta: LX.Music.MusicInfoMeta_local & {
         webdav: true
         filePath: string
+        remotePath?: string // WebDAV 服务器上的原始路径
         fileName: string
         ext: string
         size?: number

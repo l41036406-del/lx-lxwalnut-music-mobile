@@ -401,7 +401,7 @@ export default memo(() => {
       return
     }
     void confirmDialog({
-      title: '批量下载',
+      title: '下载到本地',
       message: `确定要下载当前列表中的 ${filteredSongs.length} 首歌曲吗？下载后的歌曲将添加到下载列表中，并自动读取音乐标签。`,
       confirmButtonText: '开始下载',
     }).then((confirmed) => {
@@ -716,7 +716,7 @@ export default memo(() => {
           disabled={!hasConfig || loading || !!batchLoadingText || filteredSongs.length === 0}
           onPress={handleBatchDownload}
         >
-          <Text color={theme['c-primary-font']}>批量下载</Text>
+          <Text color={theme['c-primary-font']}>下载到本地</Text>
         </Button>
       </View>
       <FlatList

@@ -80,8 +80,13 @@ export const TEMP_FILE_PATH = temporaryDirectoryPath + '/tempFile'
 //   // return windowSize
 // }
 
-export const checkStoragePermissions = async () =>
-  PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE)
+export const checkStoragePermissions = async () => {
+  // 检查所有必要的存储权限
+  const writeGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE)
+  const readGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE)
+  console.log('checkStoragePermissions', { writeGranted, readGranted })
+  return writeGranted && readGranted
+}
 
 export const requestStoragePermission = async () => {
   const isGranted = await checkStoragePermissions()
