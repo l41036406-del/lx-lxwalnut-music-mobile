@@ -14,6 +14,7 @@ import Text from '@/components/common/Text'
 import Button from '@/components/common/Button'
 import Image from '@/components/common/Image'
 import { Icon } from '@/components/common/Icon'
+import { SvgIcon } from '@/components/common/SvgIcon'
 import { useTheme } from '@/store/theme/hook'
 import { confirmDialog, createStyle, toast } from '@/utils/tools'
 import { LIST_IDS, LIST_ITEM_HEIGHT } from '@/config/constant'
@@ -26,6 +27,7 @@ import playerState from '@/store/player/state'
 import {
   getWebDAVConfig,
   listWebDAVFolders,
+  saveWebDAVFilterPath,
   saveWebDAVSelectedFolder,
   scanWebDAVSongs,
   updateWebDAVMusicMeta,
@@ -44,7 +46,7 @@ import {
 } from './WebDAVListAction'
 import { readMetadata, readPic } from '@/utils/localMediaMetadata'
 
-type ActiveTab = 'config' | 'list'
+type ActiveTab = 'config' | 'list' | 'folders'
 const ITEM_HEIGHT = scaleSizeH(LIST_ITEM_HEIGHT)
 
 const formatTime = (time?: number) => {
@@ -160,6 +162,7 @@ export default memo(() => {
   const [selectedFolder, setSelectedFolder] = useState<LX.WebDAV.DriveFolder | null>(null)
   const [songs, setSongs] = useState<LX.WebDAV.MusicInfo[]>([])
   const [scannedAt, setScannedAt] = useState<number | undefined>()
+  const [filterPath, setFilterPath] = useState<string | null>(null)
   const [folderLoading, setFolderLoading] = useState(false)
   const [scanText, setScanText] = useState('')
   const [searchVisible, setSearchVisible] = useState(false)
@@ -180,9 +183,19 @@ export default memo(() => {
   }, [])
 
   const filteredSongs = useMemo(() => {
+    let list = songs
+    if (filterPath) {
+      list = list.filter(song => {
+        const path = song.meta.remotePath
+        if (!path) return false
+        const lastSlashIndex = path.lastIndexOf('/')
+        const folderPath = path.substring(0, lastSlashIndex) || '/'
+        return folderPath === filterPath
+      })
+    }
     const text = searchText.trim().toLowerCase()
-    if (!text) return songs
-    return songs.filter((item) => {
+    if (!text) return list
+    return list.filter((item) => {
       return [
         item.name,
         item.singer,
@@ -190,7 +203,27 @@ export default memo(() => {
         item.meta.filePath,
       ].some(value => (value ?? '').toLowerCase().includes(text))
     })
-  }, [searchText, songs])
+  }, [searchText, songs, filterPath])
+
+  const songFolders = useMemo(() => {
+    const foldersMap = new Map<string, { name: string, path: string, count: number }>()
+    songs.forEach(song => {
+      const path = song.meta.remotePath
+      if (!path) return
+      const lastSlashIndex = path.lastIndexOf('/')
+      if (lastSlashIndex === -1) return
+      const folderPath = path.substring(0, lastSlashIndex) || '/'
+      const folderName = folderPath === '/' ? '根目录' : (folderPath.split('/').pop() || '未知目录')
+      
+      const existing = foldersMap.get(folderPath)
+      if (existing) {
+        existing.count++
+      } else {
+        foldersMap.set(folderPath, { name: folderName, path: folderPath, count: 1 })
+      }
+    })
+    return Array.from(foldersMap.values()).sort((a, b) => a.path.localeCompare(b.path))
+  }, [songs])
 
   const syncSongsCover = useCallback(async (songList: LX.WebDAV.MusicInfo[]) => {
     const updatedSongs = await Promise.all(
@@ -224,10 +257,16 @@ export default memo(() => {
       const songs = config.songs ?? []
       setSongs(songs)
       setScannedAt(config.scannedAt)
+      setFilterPath(config.filterPath ?? null)
       // 加载完成后立即同步封面
       void syncSongsCover(songs)
     })
   }, [syncSongsCover])
+
+  const handleSetFilterPath = useCallback((path: string | null) => {
+    setFilterPath(path)
+    void saveWebDAVFilterPath(path)
+  }, [])
 
   const handleRefresh = useCallback(() => {
     setLoading(true)
@@ -679,6 +718,53 @@ export default memo(() => {
     </ScrollView>
   )
 
+  const renderFolders = () => (
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <TouchableOpacity
+        style={{ ...styles.folderItem, borderBottomColor: theme['c-border-background'] }}
+        onPress={() => {
+          handleSetFilterPath(null)
+          setActiveTab('list')
+        }}
+      >
+        <View style={styles.folderItemInfo}>
+          <SvgIcon name="music-list" size={18} color={theme['c-primary-font']} style={{ marginRight: 10 }} />
+          <View style={{ flex: 1 }}>
+            <Text>全部歌曲</Text>
+          </View>
+          <Text size={12} color={theme['c-font-label']}>{songs.length} 首</Text>
+        </View>
+      </TouchableOpacity>
+      {songFolders.length ? (
+        songFolders.map(folder => (
+          <TouchableOpacity
+            key={folder.path}
+            style={{ ...styles.folderItem, borderBottomColor: theme['c-border-background'] }}
+            onPress={() => {
+              handleSetFilterPath(folder.path)
+              setActiveTab('list')
+            }}
+          >
+            <View style={styles.folderItemInfo}>
+              <SvgIcon name="folder" size={18} color={theme['c-primary-font']} style={{ marginRight: 10 }} />
+              <View style={{ flex: 1 }}>
+                <Text numberOfLines={1}>{folder.name}</Text>
+                <Text size={11} color={theme['c-font-label']} numberOfLines={1}>
+                  {folder.path}
+                </Text>
+              </View>
+              <Text size={12} color={theme['c-font-label']}>{folder.count} 首</Text>
+            </View>
+          </TouchableOpacity>
+        ))
+      ) : (
+        <View style={styles.empty}>
+          <Text color={theme['c-font-label']}>还没有扫描到包含音乐的文件夹</Text>
+        </View>
+      )}
+    </ScrollView>
+  )
+
   const renderList = () => (
     <View style={styles.listPage}>
       <View style={{ ...styles.listHeader, borderBottomColor: theme['c-border-background'] }}>
@@ -701,12 +787,21 @@ export default memo(() => {
               }}
             />
           ) : (
-            <>
-              <Text numberOfLines={1}>已选择：{getFolderName(selectedFolder)}</Text>
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text numberOfLines={1} style={{ flex: 1 }}>
+                  {filterPath ? `文件夹：${filterPath.split('/').pop() || '根目录'}` : `已选择：${getFolderName(selectedFolder)}`}
+                </Text>
+                {filterPath ? (
+                  <TouchableOpacity onPress={() => handleSetFilterPath(null)} style={{ marginLeft: 8 }}>
+                    <Icon name="close" size={12} color={theme['c-primary-font']} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
               <Text size={11} color={theme['c-font-label']} numberOfLines={1}>
                 {scanText || headerText}
               </Text>
-            </>
+            </View>
           )}
         </View>
         <TouchableOpacity style={styles.headerIconButton} onPress={handleToggleSearch}>
@@ -780,6 +875,21 @@ export default memo(() => {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.tab}
+          onPress={() => setActiveTab('folders')}
+        >
+          <Text
+            style={{
+              ...styles.tabText,
+              borderBottomColor:
+                activeTab === 'folders' ? theme['c-primary-font-active'] : 'transparent',
+            }}
+            color={activeTab === 'folders' ? theme['c-primary-font'] : theme['c-font']}
+          >
+            文件列表
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.tab}
           onPress={() => setActiveTab('config')}
         >
           <Text
@@ -794,7 +904,7 @@ export default memo(() => {
           </Text>
         </TouchableOpacity>
       </View>
-      {activeTab === 'config' ? renderConfig() : renderList()}
+      {activeTab === 'config' ? renderConfig() : activeTab === 'folders' ? renderFolders() : renderList()}
       <WebDAVListMenu
         ref={webDAVListMenuRef}
         onPlay={(info) => handlePlay(info.musicInfo)}
@@ -865,6 +975,10 @@ const styles = createStyle({
   folderItem: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     paddingVertical: 9,
+  },
+  folderItemInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   listPage: {
     flex: 1,

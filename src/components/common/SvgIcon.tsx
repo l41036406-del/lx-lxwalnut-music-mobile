@@ -1,4 +1,5 @@
 import { memo } from 'react'
+import { View, type StyleProp, type ViewStyle } from 'react-native'
 import Svg, { Path, Rect, Line, Circle } from 'react-native-svg'
 import { scaleSizeW } from '@/utils/pixelRatio'
 
@@ -7,6 +8,7 @@ interface SvgIconProps {
   size?: number
   rawSize?: number
   color?: string
+  style?: StyleProp<ViewStyle>
 }
 
 /**
@@ -110,25 +112,62 @@ const WebDAVIcon = ({ size, color }: { size: number; color: string }) => (
   </Svg>
 )
 
-export const SvgIcon = memo(({ name, size = 15, rawSize, color = '#000' }: SvgIconProps) => {
+const MusicListIcon = ({ size, color }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 1024 1024" fill="none">
+    <Path
+      d="M128 256h768v64H128z m0 192h768v64H128z m0 192h448v64H128z m0 192h448v64H128z"
+      fill={color}
+    />
+    <Path
+      d="M704 608v192l160-96z"
+      fill={color}
+    />
+  </Svg>
+)
+
+const FolderIcon = ({ size, color }: { size: number; color: string }) => (
+  <Svg width={size} height={size} viewBox="0 0 1024 1024" fill="none">
+    <Path
+      d="M800.6144 915.2512H227.8912a164.1984 164.1984 0 0 1-163.84-163.84V272.128a164.1984 164.1984 0 0 1 163.84-163.84H363.52a169.4208 169.4208 0 0 1 101.2224 33.536l76.3904 57.4464a107.52 107.52 0 0 0 64.2048 21.4528h195.2768a164.1984 164.1984 0 0 1 163.84 163.84v366.4384a164.1984 164.1984 0 0 1-163.84 164.2496zM227.8912 169.5232a102.7072 102.7072 0 0 0-102.4 102.4v479.0784a102.7072 102.7072 0 0 0 102.4 102.4h572.7232a102.7072 102.7072 0 0 0 102.4-102.4V384.768a102.7072 102.7072 0 0 0-102.4-102.4h-195.2768a169.3184 169.3184 0 0 1-101.12-33.792L427.8272 190.9248A107.52 107.52 0 0 0 363.52 169.5232z"
+      fill={color}
+    />
+    <Path
+      d="M763.6992 474.2656h-172.032a35.84 35.84 0 0 1 0-71.68h172.032a35.84 35.84 0 0 1 0 71.68z"
+      fill={color}
+    />
+  </Svg>
+)
+
+export const SvgIcon = memo(({ name, size = 15, rawSize, color = '#000', style }: SvgIconProps) => {
   const finalSize = rawSize ?? scaleSizeW(size)
 
-  switch (name) {
-    case 'calendar':
-      return <CalendarIcon size={finalSize} color={color} />
-    case 'artist':
-      return <ArtistIcon size={finalSize} color={color} />
-    case 'album-disc':
-      return <AlbumDiscIcon size={finalSize} color={color} />
-    case 'onedrive':
-      return <OneDriveIcon size={finalSize} color={color} />
-    case 'heartbeat':
-      return <HeartbeatIcon size={finalSize} color={color} />
-    case 'webdav':
-      return <WebDAVIcon size={finalSize} color={color} />
-    default:
-      return null
+  const renderIcon = () => {
+    switch (name) {
+      case 'calendar':
+        return <CalendarIcon size={finalSize} color={color} />
+      case 'artist':
+        return <ArtistIcon size={finalSize} color={color} />
+      case 'album-disc':
+        return <AlbumDiscIcon size={finalSize} color={color} />
+      case 'onedrive':
+        return <OneDriveIcon size={finalSize} color={color} />
+      case 'heartbeat':
+        return <HeartbeatIcon size={finalSize} color={color} />
+      case 'webdav':
+        return <WebDAVIcon size={finalSize} color={color} />
+      case 'folder':
+        return <FolderIcon size={finalSize} color={color} />
+      case 'music-list':
+        return <MusicListIcon size={finalSize} color={color} />
+      default:
+        return null
+    }
   }
+
+  const icon = renderIcon()
+  if (!icon) return null
+
+  return style ? <View style={style}>{icon}</View> : icon
 })
 
 export {}

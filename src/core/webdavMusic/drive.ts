@@ -55,8 +55,16 @@ export const getWebDAVConfig = async (): Promise<LX.WebDAV.Config> => {
   const config = (await getData<LX.WebDAV.Config>(CONFIG_KEY)) ?? {
     selectedFolder: null,
     songs: [],
+    filterPath: null,
   }
   config.songs = (config.songs ?? []).map(normalizeWebDAVMusicInfo)
+  return config
+}
+
+export const saveWebDAVFilterPath = async (filterPath: string | null) => {
+  const config = await getWebDAVConfig()
+  config.filterPath = filterPath
+  await saveWebDAVConfig(config)
   return config
 }
 
@@ -155,12 +163,17 @@ const scanFolder = async (
   for (const item of contents) {
     const path = normalizePath(folder?.path, item.basename)
     if (item.type === 'directory') {
-      result.push(
-        ...(await scanFolder(
-          { id: item.filename, name: item.basename, parentId: folder?.id, path },
-          onProgress
-        ))
-      )
+      try {
+        result.push(
+          ...(await scanFolder(
+            { id: item.filename, name: item.basename, parentId: folder?.id, path },
+            onProgress
+          ))
+        )
+      } catch (error: any) {
+        webDAVLog.error('scanFolder recursive error', { path, error, status: error.status })
+        // Skip folders that return 403 or other errors
+      }
       onProgress?.(result.length, path)
       continue
     }

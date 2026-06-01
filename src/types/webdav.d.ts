@@ -18,6 +18,7 @@ declare namespace LX {
       selectedFolder?: DriveFolder | null
       songs: MusicInfo[]
       scannedAt?: number
+      filterPath?: string | null
     }
 
     interface MusicInfo extends LX.Music.MusicInfoLocal {
