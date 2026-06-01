@@ -25,6 +25,7 @@ export default memo(({ componentId, isHome = false }: { isHome?: boolean }) => {
   const playlistRef = useRef<PlayerPlaylistType>(null)
   const drawerLayoutPosition = useSettingValue('common.drawerLayoutPosition')
   const picOpacity = useSettingValue('theme.picOpacity')
+  const isSwipeToShowPlaylist = useSettingValue('player.isSwipeToShowPlaylist')
 
   const handleLongPress = useCallback(() => {
     longPressedRef.current = true
@@ -61,7 +62,7 @@ export default memo(({ componentId, isHome = false }: { isHome?: boolean }) => {
             gestureAction.current = 'drawer'
             return true
           }
-        } else if (Math.abs(dy) > Math.abs(dx) * 1.5) { // 垂直滑动为主
+        } else if (isSwipeToShowPlaylist && Math.abs(dy) > Math.abs(dx) * 1.5) { // 垂直滑动为主（仅在启用时）
           if (dy < -10) {
             gestureAction.current = 'playlist'
             return true

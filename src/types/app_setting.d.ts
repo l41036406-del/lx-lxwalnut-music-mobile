@@ -154,6 +154,11 @@ declare global {
       'player.isSavePlayTime': boolean
 
       /**
+       * 是否启用上滑播放栏显示播放列表
+       */
+      'player.isSwipeToShowPlaylist': boolean
+
+      /**
        * 音量大小
        */
       'player.volume': number

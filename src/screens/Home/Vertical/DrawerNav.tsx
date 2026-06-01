@@ -312,13 +312,13 @@ export default memo(() => {
   };
   const filteredNavMenus = useMemo(() => {
     if (!navOrder) return NAV_MENUS.filter(
-      menu => menu.id !== 'nav_play_history' && (menu.id === 'nav_search' || menu.id === 'nav_setting' || (navStatus[menu.id] ?? true))
+      menu => menu.id !== 'nav_play_history' && (menu.id === 'nav_setting' || (navStatus[menu.id] ?? true))
     );
 
     return navOrder
       .filter(id => id !== 'nav_play_history')
       .map(id => NAV_MENUS.find(menu => menu.id === id))
-      .filter((menu): menu is typeof NAV_MENUS[number] => menu !== undefined && (menu.id === 'nav_search' || menu.id === 'nav_setting' || (navStatus[menu.id] ?? true)));
+      .filter((menu): menu is typeof NAV_MENUS[number] => menu !== undefined && (menu.id === 'nav_setting' || (navStatus[menu.id] ?? true)));
   }, [navStatus, navOrder]);
 
   return (
