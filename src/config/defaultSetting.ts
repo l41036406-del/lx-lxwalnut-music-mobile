@@ -99,7 +99,7 @@ const defaultSetting: LX.AppSetting = {
   'list.isShowInterval': true,
   'list.isSaveScrollLocation': true,
   'list.addMusicLocationType': 'top',
-  'list.isShowMyListSubMenu': true,
+  'list.isShowMyListSubMenu': false,
   'list.isAutoSaveDailyRec': true,
   'list.isShowCover': true,
 

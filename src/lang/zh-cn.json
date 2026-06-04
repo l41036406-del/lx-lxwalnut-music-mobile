@@ -310,6 +310,7 @@
   "setting_basic_source_user_api_btn": "自定义源管理",
   "setting_basic_wy_cookie": "网易云音乐 Cookie",
   "setting_basic_wy_cookie_placeholder": "在此处粘贴你的 Cookie",
+  "setting_basic_show_my_list_sub_menu": "点击我的列表优先展开子菜单",
   "setting_basic_sourcename": "歌曲来源名称",
   "setting_basic_sourcename_alias": "别名",
   "setting_basic_sourcename_real": "原名",
@@ -621,5 +622,5 @@
   "album_detail": "专辑详情",
   "nav_my_playlist": "我的歌单",
   "exit_app_tip_double_press": "再按一次退出应用",
-  "setting_basic_nav_menu": "侧边栏[菜单&横向滚动]排序设置"
+  "setting_basic_nav_menu": "侧边栏[菜单&横向滚动]排序及显示设置"
 }

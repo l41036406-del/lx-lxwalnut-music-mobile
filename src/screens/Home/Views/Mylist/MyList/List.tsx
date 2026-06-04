@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react'
+import { memo, useEffect, useRef, useCallback } from 'react'
 import {
   View,
   TouchableOpacity,
@@ -13,9 +13,9 @@ import { Icon } from '@/components/common/Icon'
 import { useTheme } from '@/store/theme/hook'
 import { useActiveListId, useListFetching, useMyList } from '@/store/list/hook'
 import { createStyle } from '@/utils/tools'
-import { LIST_SCROLL_POSITION_KEY } from '@/config/constant'
+import { LIST_SCROLL_POSITION_KEY, LIST_IDS } from '@/config/constant'
 import { getListPosition, saveListPosition } from '@/utils/data'
-import { setActiveList } from '@/core/list'
+import { setActiveList, updateUserListPosition } from '@/core/list'
 import Text from '@/components/common/Text'
 import { type Position } from './ListMenu'
 import { scaleSizeH } from '@/utils/pixelRatio'
@@ -32,6 +32,11 @@ const ListItem = memo(
     activeId,
     onPress,
     onShowMenu,
+    onMoveUp,
+    onMoveDown,
+    isFirst,
+    isLast,
+    isFixed,
   }: {
     onPress: (item: LX.List.MyListInfo) => void
     index: number
@@ -42,6 +47,11 @@ const ListItem = memo(
       index: number,
       position: { x: number; y: number; w: number; h: number }
     ) => void
+    onMoveUp: (listId: string) => void
+    onMoveDown: (listId: string) => void
+    isFirst: boolean
+    isLast: boolean
+    isFixed: boolean
   }) => {
     const theme = useTheme()
     const moreButtonRef = useRef<TouchableOpacity>(null)
@@ -67,6 +77,14 @@ const ListItem = memo(
       onPress(item)
     }
 
+    const handleMoveUp = () => {
+      onMoveUp(item.id)
+    }
+
+    const handleMoveDown = () => {
+      onMoveDown(item.id)
+    }
+
     return (
       <View style={{ ...styles.listItem, height: ITEM_HEIGHT }}>
         {active ? (
@@ -88,6 +106,34 @@ const ListItem = memo(
             {item.name}
           </Text>
         </TouchableOpacity>
+        {!isFixed && (
+          <View style={styles.subMenuControls}>
+            <TouchableOpacity
+              style={[styles.moveBtn, isFirst && styles.moveBtnDisabled]}
+              onPress={handleMoveUp}
+              disabled={isFirst}
+            >
+              <Icon
+                name="chevron-right"
+                size={12}
+                color={isFirst ? theme['c-font-label'] : theme['c-font']}
+                style={{ transform: [{ rotate: '-90deg' }] }}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.moveBtn, isLast && styles.moveBtnDisabled]}
+              onPress={handleMoveDown}
+              disabled={isLast}
+            >
+              <Icon
+                name="chevron-right"
+                size={12}
+                color={isLast ? theme['c-font-label'] : theme['c-font']}
+                style={{ transform: [{ rotate: '90deg' }] }}
+              />
+            </TouchableOpacity>
+          </View>
+        )}
         <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.listMoreBtn}>
           <Icon name="dots-vertical" color={theme['c-350']} size={12} />
         </TouchableOpacity>
@@ -100,7 +146,9 @@ const ListItem = memo(
       prevProps.index === nextProps.index &&
       prevProps.item.name == nextProps.item.name &&
       prevProps.activeId != nextProps.item.id &&
-      nextProps.activeId != nextProps.item.id
+      nextProps.activeId != nextProps.item.id &&
+      prevProps.isFirst === nextProps.isFirst &&
+      prevProps.isLast === nextProps.isLast
     )
   }
 )
@@ -122,6 +170,25 @@ export default ({
     })
   }
 
+  const handleMoveUp = useCallback((listId: string) => {
+    const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
+    const currentIndex = userLists.findIndex(l => l.id === listId);
+    if (currentIndex <= 0) return;
+    
+    const prevList = userLists[currentIndex - 1];
+    if (!prevList) return;
+
+    updateUserListPosition(currentIndex - 1, [listId]);
+  }, [allList]);
+
+  const handleMoveDown = useCallback((listId: string) => {
+    const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
+    const currentIndex = userLists.findIndex(l => l.id === listId);
+    if (currentIndex < 0 || currentIndex >= userLists.length - 1) return;
+
+    updateUserListPosition(currentIndex + 1, [listId]);
+  }, [allList]);
+
   const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
     void saveListPosition(LIST_SCROLL_POSITION_KEY, nativeEvent.contentOffset.y)
   }
@@ -136,16 +203,30 @@ export default ({
     })
   }, [])
 
-  const renderItem: FlatListType['renderItem'] = ({ item, index }) => (
-    <ListItem
-      key={item.id}
-      item={item}
-      index={index}
-      activeId={activeListId}
-      onPress={handleToggleList}
-      onShowMenu={showMenu}
-    />
-  )
+  const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
+
+  const renderItem: FlatListType['renderItem'] = ({ item, index }) => {
+    const isFixed = item.id === LIST_IDS.DEFAULT || item.id === LIST_IDS.LOVE;
+    const userListIndex = userLists.findIndex(l => l.id === item.id);
+    const isFirst = userListIndex === 0;
+    const isLast = userListIndex === userLists.length - 1;
+
+    return (
+      <ListItem
+        key={item.id}
+        item={item}
+        index={index}
+        activeId={activeListId}
+        onPress={handleToggleList}
+        onShowMenu={showMenu}
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        isFirst={isFirst}
+        isLast={isLast}
+        isFixed={isFixed}
+      />
+    )
+  }
   const getkey: FlatListType['keyExtractor'] = (item) => item.id
   const getItemLayout: FlatListType['getItemLayout'] = (data, index) => {
     return { length: ITEM_HEIGHT, offset: ITEM_HEIGHT * index, index }
@@ -206,6 +287,16 @@ const styles = createStyle({
     flexShrink: 1,
     paddingLeft: 5,
     // backgroundColor: 'rgba(0,0,0,0.1)',
+  },
+  subMenuControls: {
+    flexDirection: 'row',
+    paddingRight: 5,
+  },
+  moveBtn: {
+    padding: 6,
+  },
+  moveBtnDisabled: {
+    opacity: 0.3,
   },
   // listNameText: {
   //   // height: 46,

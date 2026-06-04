@@ -7,6 +7,7 @@ import { useI18n } from '@/lang';
 import { updateSetting } from '@/core/common';
 import { NAV_MENUS, NAV_ID_Type } from '@/config/constant';
 import { useTheme } from '@/store/theme/hook';
+import { Icon } from '@/components/common/Icon';
 
 const CANNOT_CLOSE_ITEMS: NAV_ID_Type[] = ['nav_setting'];
 
@@ -41,22 +42,28 @@ const MenuItem = memo(({
         <Text style={[styles.menuName, { color: theme['c-font'] }]}>{item.name}</Text>
         <View style={styles.controls}>
           <Pressable
-            style={styles.moveBtn}
+            style={[styles.moveBtn, index === 0 && styles.moveBtnDisabled]}
             onPress={() => onMoveUp(index)}
             disabled={index === 0}
           >
-            <Text style={[styles.moveBtnText, { color: index === 0 ? theme['c-font-label'] : theme['c-font'] }]}>
-              ↑
-            </Text>
+            <Icon
+              name="chevron-right"
+              size={16}
+              color={index === 0 ? theme['c-font-label'] : theme['c-font']}
+              style={{ transform: [{ rotate: '-90deg' }] }}
+            />
           </Pressable>
           <Pressable
-            style={styles.moveBtn}
+            style={[styles.moveBtn, isLast && styles.moveBtnDisabled]}
             onPress={() => onMoveDown(index)}
             disabled={isLast}
           >
-            <Text style={[styles.moveBtnText, { color: isLast ? theme['c-font-label'] : theme['c-font'] }]}>
-              ↓
-            </Text>
+            <Icon
+              name="chevron-right"
+              size={16}
+              color={isLast ? theme['c-font-label'] : theme['c-font']}
+              style={{ transform: [{ rotate: '90deg' }] }}
+            />
           </Pressable>
           <CheckBox
             check={isChecked}
@@ -136,11 +143,6 @@ export default memo(() => {
   return (
     <SubTitle title={t('setting_basic_nav_menu')}>
       <View style={styles.container}>
-        <View style={styles.tipContainer}>
-          <Text style={[styles.tipText, { color: theme['c-font-label'] }]}>
-            点击「↑↓」调整顺序，☐控制显示/隐藏
-          </Text>
-        </View>
         <View style={{ 
           overflow: 'hidden', borderRadius: 8, 
           backgroundColor: 'transparent',
@@ -212,8 +214,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  moveBtnText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+  moveBtnDisabled: {
+    opacity: 0.3,
   },
 });

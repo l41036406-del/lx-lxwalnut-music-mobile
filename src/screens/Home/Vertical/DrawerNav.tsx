@@ -43,25 +43,6 @@ const CollapsibleMyListItem = () => {
     global.app_event.changeMenuVisible(false);
   }, []);
 
-  const handleMoveUp = useCallback((listId: string) => {
-    const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
-    const currentIndex = userLists.findIndex(l => l.id === listId);
-    if (currentIndex <= 0) return;
-    
-    const prevList = userLists[currentIndex - 1];
-    if (!prevList) return;
-
-    updateUserListPosition(currentIndex - 1, [listId]);
-  }, [allList]);
-
-  const handleMoveDown = useCallback((listId: string) => {
-    const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
-    const currentIndex = userLists.findIndex(l => l.id === listId);
-    if (currentIndex < 0 || currentIndex >= userLists.length - 1) return;
-
-    updateUserListPosition(currentIndex + 1, [listId]);
-  }, [allList]);
-
   const animatedHeight = animation.interpolate({
     inputRange: [0, 1],
     outputRange: [0, contentHeight.current],
@@ -88,49 +69,17 @@ const CollapsibleMyListItem = () => {
           }}
           style={{ position: 'absolute', width: '100%' }}
         >
-          {allList.map((list) => {
-            const isFixed = list.id === LIST_IDS.DEFAULT || list.id === LIST_IDS.LOVE;
-            const userLists = allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE);
-            const userListIndex = userLists.findIndex(l => l.id === list.id);
-            const isFirst = userListIndex === 0;
-            const isLast = userListIndex === userLists.length - 1;
-
-            return (
-              <View key={list.id} style={styles.subMenuItemContainer}>
-                <TouchableOpacity
-                  style={styles.subMenuItem}
-                  onPress={() => handleSelect(list.id)}
-                >
-                  <Text size={14} color={theme['c-font-label']} numberOfLines={1}>
-                    {list.name}
-                  </Text>
-                </TouchableOpacity>
-
-                {!isFixed && (
-                  <View style={styles.subMenuControls}>
-                    <TouchableOpacity
-                      style={[styles.moveBtn, isFirst && styles.moveBtnDisabled]}
-                      onPress={() => handleMoveUp(list.id)}
-                      disabled={isFirst}
-                    >
-                      <Text size={16} color={isFirst ? theme['c-font-label'] : theme['c-font']} style={{ fontWeight: 'bold' }}>
-                        ↑
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.moveBtn, isLast && styles.moveBtnDisabled]}
-                      onPress={() => handleMoveDown(list.id)}
-                      disabled={isLast}
-                    >
-                      <Text size={16} color={isLast ? theme['c-font-label'] : theme['c-font']} style={{ fontWeight: 'bold' }}>
-                        ↓
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            );
-          })}
+          {allList.map((list) => (
+            <TouchableOpacity
+              key={list.id}
+              style={styles.subMenuItem}
+              onPress={() => handleSelect(list.id)}
+            >
+              <Text size={14} color={theme['c-font-label']} numberOfLines={1}>
+                {list.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </Animated.View>
     </View>
@@ -159,20 +108,6 @@ const styles = createStyle({
     paddingLeft: 55,
     paddingRight: 10,
     flex: 1,
-  },
-  subMenuItemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  subMenuControls: {
-    flexDirection: 'row',
-    paddingRight: 10,
-  },
-  moveBtn: {
-    padding: 6,
-  },
-  moveBtnDisabled: {
-    opacity: 0.3,
   },
   collapsibleMenuItemText: {
     flex: 1,
