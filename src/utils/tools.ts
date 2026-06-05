@@ -172,7 +172,7 @@ export const openUrl = async (url: string): Promise<void> =>
   Linking.canOpenURL(url).then(async () => Linking.openURL(url))
 
 export const assertApiSupport = (source: LX.Source): boolean => {
-  return source == 'local' || global.lx.qualityList[source] != null
+  return source == 'local' || source == 'bilibili' || global.lx.qualityList[source] != null
 }
 
 // const handleRemoveDataMultiple = async keys => {

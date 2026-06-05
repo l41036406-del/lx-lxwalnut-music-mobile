@@ -381,7 +381,7 @@ const bilibili = {
   getLyric(songInfo) {
     log.info('[Bilibili] getLyric 被调用 - songInfo.name: ' + (songInfo?.name || '未知'))
     const requestObj = new Object()
-    requestObj.promise = Promise.resolve({ lyric: null })
+    requestObj.promise = Promise.resolve({ lyric: '[00:00.00] 哔哩哔哩 (゜-゜)つロ 干杯~' })
     return requestObj
   },
 

@@ -66,11 +66,11 @@ export const usePageVisible = (
 }
 
 export const useAssertApiSupport = (source: LX.Source) => {
-  const [value, update] = useState(global.lx.qualityList[source] != null || source == 'local')
+  const [value, update] = useState(global.lx.qualityList[source] != null || source == 'local' || source == 'bilibili')
 
   useEffect(() => {
     const handleUpdate = () => {
-      update(global.lx.qualityList[source] != null || source == 'local')
+      update(global.lx.qualityList[source] != null || source == 'local' || source == 'bilibili')
     }
 
     global.state_event.on('apiSourceUpdated', handleUpdate)

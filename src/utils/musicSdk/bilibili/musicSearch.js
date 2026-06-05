@@ -114,22 +114,19 @@ function formatMedia(result) {
 }
 
 const musicSearchModule = {
-  limit: 30, // 调整搜索结果数量，避免请求过多导致问题
+  limit: 30,
   total: 0,
   page: 0,
   allPage: 1,
 
-  handleResult(searchResults, page, limit) {
-    log.info('[Bilibili Search] handleResult - 原始结果数量: ' + searchResults.length + ', page: ' + page + ', limit: ' + limit)
+  handleResult(searchResults, page, limit, total = 0, numPages = 0) {
+    log.info('[Bilibili Search] handleResult - 原始结果数量: ' + searchResults.length + ', page: ' + page + ', limit: ' + limit + ', total: ' + total + ', numPages: ' + numPages)
     
-    // 尝试按热度排序（如果有播放/浏览数据）
     let sortedResults = [...searchResults]
     try {
-      // 优先按播放量排序
       sortedResults.sort((a, b) => {
         const aPlay = a.play || a.view || 0
         const bPlay = b.play || b.view || 0
-        // 从高到低排序
         return Number(bPlay) - Number(aPlay)
       })
       log.info('[Bilibili Search] handleResult - 已按热度排序')
@@ -137,10 +134,8 @@ const musicSearchModule = {
       log.info('[Bilibili Search] handleResult - 排序失败，保持原始顺序: ' + e)
     }
     
-    this.total = sortedResults.length
-    // 如果当前页返回的数据量少于请求的limit，说明这是最后一页
-    const actualPageSize = sortedResults.length
-    this.allPage = actualPageSize < limit ? page : Math.ceil(this.total / limit)
+    this.total = total || sortedResults.length
+    this.allPage = numPages || Math.ceil(this.total / limit)
     this.page = page
 
     const startIndex = (page - 1) * limit
@@ -288,7 +283,7 @@ const musicSearchModule = {
       
       let list
       try {
-        list = this.handleResult(searchResults, page, limit)
+        list = this.handleResult(searchResults, page, limit, data.data.numResults, data.data.numPages)
         log.info('[Bilibili Search] handleResult 完成，list数量: ' + list.length)
       } catch (handleErr) {
         log.error('[Bilibili Search] handleResult 失败: ' + (handleErr?.message || handleErr))
