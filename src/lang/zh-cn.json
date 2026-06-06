@@ -308,6 +308,7 @@
   "setting_basic_source_test": "测试接口（几乎软件的所有功能都可用）",
   "setting_basic_source_title": "选择自定义源",
   "setting_basic_source_user_api_btn": "自定义源管理",
+  "setting_basic_source_user_api_reorder_tip": "长按拖拽调整顺序",
   "setting_basic_wy_cookie": "网易云音乐 Cookie",
   "setting_basic_wy_cookie_placeholder": "在此处粘贴你的 Cookie",
   "setting_basic_show_my_list_sub_menu": "点击我的列表优先展开子菜单",

@@ -373,7 +373,7 @@ export default memo(() => {
           <View style={{
             overflow: 'hidden',
             borderRadius: 8,
-            backgroundColor: 'transparent',
+            backgroundColor: 'rgba(255, 255, 255, 0.5)',
           }}>
             <View style={styles.menuList}>
               {menuList.map((item, idx) => {
