@@ -54,6 +54,11 @@ export default async () => {
   const setting = await initSetting()
   bootLog('Setting inited.')
   
+  global.lx.isEnableLog = setting['common.isEnableLog'] ?? true
+  global.lx.isEnableSyncLog = setting['common.isEnableSyncLog'] ?? false
+  global.lx.isEnableUserApiLog = setting['common.isEnableUserApiLog'] ?? false
+  bootLog('Log state restored.')
+  
   searchLog.init()
   bootLog('Search Log inited.')
   playerLog.init()

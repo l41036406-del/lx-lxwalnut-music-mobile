@@ -20,9 +20,9 @@ export default memo(() => {
   const [logText, setLogText] = useState('')
   const isUnmountedRef = useRef(true)
   
-  const [isEnableLog, setIsEnableLog] = useState(global.lx.isEnableLog)
-  const [isEnableSyncErrorLog, setIsEnableSyncErrorLog] = useState(global.lx.isEnableSyncLog)
-  const [isEnableUserApiLog, setIsEnableUserApiLog] = useState(global.lx.isEnableUserApiLog)
+  const [isEnableLog, setIsEnableLog] = useState(settingState.setting['common.isEnableLog'])
+  const [isEnableSyncErrorLog, setIsEnableSyncErrorLog] = useState(settingState.setting['common.isEnableSyncLog'])
+  const [isEnableUserApiLog, setIsEnableUserApiLog] = useState(settingState.setting['common.isEnableUserApiLog'])
   const [isEnableWebDAVLog, setIsEnableWebDAVLog] = useState(settingState.setting['common.isEnableWebDAVLog'])
   const [isEnableSearchLog, setIsEnableSearchLog] = useState(settingState.setting['common.isEnableSearchLog'])
   const [isEnablePlayerLog, setIsEnablePlayerLog] = useState(settingState.setting['common.isEnablePlayerLog'])
@@ -68,16 +68,19 @@ export default memo(() => {
   const handleSetEnableLog = (enable: boolean) => {
     setIsEnableLog(enable)
     global.lx.isEnableLog = enable
+    updateSetting({ 'common.isEnableLog': enable })
   }
 
   const handleSetEnableSyncErrorLog = (enable: boolean) => {
     setIsEnableSyncErrorLog(enable)
     global.lx.isEnableSyncLog = enable
+    updateSetting({ 'common.isEnableSyncLog': enable })
   }
 
   const handleSetEnableUserApiLog = (enable: boolean) => {
     setIsEnableUserApiLog(enable)
     global.lx.isEnableUserApiLog = enable
+    updateSetting({ 'common.isEnableUserApiLog': enable })
   }
 
   const handleSetEnableWebDAVLog = (enable: boolean) => {

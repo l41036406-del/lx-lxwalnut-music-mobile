@@ -83,6 +83,9 @@ declare global {
 
       'common.isShowStartupGreeting': boolean
       'common.hideNavigationBar': boolean
+      'common.isEnableLog': boolean
+      'common.isEnableSyncLog': boolean
+      'common.isEnableUserApiLog': boolean
       'common.isEnableWebDAVLog': boolean
 
       'common.navStatus': Partial<Record<NAV_ID_Type, boolean>>;

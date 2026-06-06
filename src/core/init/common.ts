@@ -93,8 +93,22 @@ export default async (setting: LX.AppSetting) => {
     } else {
     }
   };
+
+  const handleLogSettingUpdate = (keys: Array<keyof LX.AppSetting>, setting: Partial<LX.AppSetting>) => {
+    if (keys.includes('common.isEnableLog')) {
+      global.lx.isEnableLog = setting['common.isEnableLog']!
+    }
+    if (keys.includes('common.isEnableSyncLog')) {
+      global.lx.isEnableSyncLog = setting['common.isEnableSyncLog']!
+    }
+    if (keys.includes('common.isEnableUserApiLog')) {
+      global.lx.isEnableUserApiLog = setting['common.isEnableUserApiLog']!
+    }
+  };
+
   handlePicUpdate()
   global.state_event.on('playerMusicInfoChanged', handlePicUpdate)
   global.state_event.on('configUpdated', handleConfigUpdate)
   global.state_event.on('configUpdated', handleWyCookieUpdate);
+  global.state_event.on('configUpdated', handleLogSettingUpdate);
 }
