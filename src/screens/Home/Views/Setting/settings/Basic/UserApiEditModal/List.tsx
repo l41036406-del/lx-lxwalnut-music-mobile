@@ -105,7 +105,7 @@ const ListItem = memo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
-        onStartShouldSetPanResponderCapture: () => false,
+        onStartShouldSetPanResponderCapture: () => true,
         onMoveShouldSetPanResponder: (_e: GestureResponderEvent, gs: PanResponderGestureState) => {
           if (!isActivatedRef.current) return false
           return Math.abs(gs.dy) > 1 || Math.abs(gs.dx) > 1
@@ -192,9 +192,8 @@ const ListItem = memo(
           shadowRadius: 4,
         },
       ]}
-      {...panResponder.panHandlers}
     >
-      <View style={styles.dragHandle}>
+      <View style={styles.dragHandle} {...panResponder.panHandlers}>
         <Icon name="menu" color={theme['c-font-label']} size={16} />
       </View>
       <View style={styles.listItemLeft}>
@@ -222,7 +221,7 @@ const ListItem = memo(
           onChange={changeAllowShowUpdateAlert}
           size={0.86}
         />
-        {isDragging && index === 0 ? (
+        {isDragSource ? (
           <Text size={11} color={theme['c-font-label']} style={styles.dragHint}>
             {dragHandleHint}
           </Text>
@@ -452,7 +451,7 @@ export default ({ onExport }: UserApiEditModalProps) => {
       keyboardShouldPersistTaps={'always'}
       scrollEnabled={draggingIndex == null}
     >
-      <View onStartShouldSetResponder={() => true}>
+      <View>
         {userApiList.length ? (
           userApiList.map((item, index) => {
             const anim = animsRef.current[index] ?? createAnim()
