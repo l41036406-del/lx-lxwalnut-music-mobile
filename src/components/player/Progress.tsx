@@ -62,23 +62,22 @@ const PreassBar = memo(
     const panResponder = useRef(
       PanResponder.create({
         onStartShouldSetPanResponderCapture: (evt, gestureState) => true,
-        onMoveShouldSetPanResponderCapture: (evt, gestureState) => {
-          const { dx, dy } = gestureState
-          return Math.abs(dx) > Math.abs(dy) * 0.5 || Math.abs(dx) > 3
-        },
+        onMoveShouldSetPanResponderCapture: (evt, gestureState) => true,
 
+        // onMoveShouldSetPanResponder: () => true,
         onPanResponderMove: (evt, gestureState) => {
           onDrag(gestureState.dx)
         },
         onPanResponderGrant: (evt, gestureState) => {
+          // console.log(evt.nativeEvent.locationX, gestureState)
           onDragStart(gestureState.dx, evt.nativeEvent.locationX)
         },
         onPanResponderRelease: () => {
           onDragEnd()
         },
-        onPanResponderTerminate: () => {
-          onDragEnd()
-        },
+        // onPanResponderTerminate: (evt, gestureState) => {
+        //   onDragEnd()
+        // },
       })
     ).current
 
