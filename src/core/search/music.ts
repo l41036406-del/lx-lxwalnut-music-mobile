@@ -5,10 +5,6 @@ import { searchLog } from '@/utils/searchLog'
 
 const log = searchLog
 
-log.info('[Search Music] 模块初始化')
-log.info('[Search Music] musicSdk sources: ' + Object.keys(musicSdk).join(', '))
-log.info('[Search Music] searchMusicState.sources: ' + searchMusicState.sources.join(', '))
-
 export const setSource: (typeof searchMusicActions)['setSource'] = (source) => {
   searchMusicActions.setSource(source)
 }

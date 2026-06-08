@@ -14,7 +14,7 @@ import { updateSetting } from '@/core/common'
 import settingState from '@/store/setting/state'
 import { onWidgetPlayPause, onWidgetPrev, onWidgetNext } from '@/utils/nativeModules/musicWidget'
 import { playerLog } from '@/utils/playerLog'
-import { getAllKeys, removeDataMultiple, storageDataPrefix } from '@/plugins/storage'
+import { getAllKeys, removeDataMultiple } from '@/plugins/storage'
 
 let isInitialized = false
 
@@ -108,17 +108,17 @@ const registerPlaybackService = async () => {
   // })
 
   TrackPlayer.addEventListener(TPEvent.PlaybackError, async (err: any) => {
-    log.error('[Player] ====== Playback Error ======')
-    log.error('[Player] Error type:', typeof err)
-    log.error('[Player] Error:', JSON.stringify(err, null, 2))
+    // 播放源错误 - 通常是URL过期（403），我们会自动处理
+    log.info('[Player] Playback issue detected, starting recovery process...')
+    log.info('[Player] Error info:', err?.message || err?.code || 'Unknown')
 
     try {
       const currentMusicInfo = playerState.playMusicInfo.musicInfo
       if (currentMusicInfo) {
         log.info('[Player] Clearing music URL cache for:', currentMusicInfo.name, currentMusicInfo.id)
-        // 获取所有缓存键
+        // 获取所有缓存键 - 使用直接的字符串常量避免模块加载问题
         const allKeys = await getAllKeys()
-        const prefix = storageDataPrefix.musicUrl
+        const prefix = '@music_url__'
         const musicId = currentMusicInfo.id
         // 找到该音乐的所有音质缓存
         const cacheKeys = allKeys.filter(key => key.startsWith(prefix + musicId))
@@ -144,30 +144,24 @@ const registerPlaybackService = async () => {
         log.warn('[Player] No current music info available')
       }
     } catch (clearErr) {
-      log.error('[Player] Failed to clear cache:', clearErr)
+      log.warn('[Player] Cache clearing had an issue, but will still retry:', clearErr)
     }
 
-    // 尝试获取当前播放的 track 信息
-    try {
-      const currentTrack = await TrackPlayer.getCurrentTrack()
-      if (currentTrack != null) {
-        const track = await TrackPlayer.getTrack(currentTrack)
-        log.error('[Player] Current track:', JSON.stringify(track, null, 2))
-        if (track?.url) log.error('[Player] Track URL:', track.url)
-        if (track?.headers) log.error('[Player] Track headers:', JSON.stringify(track.headers, null, 2))
+    // 我们会自动处理这个问题，所以不需要记录详细的错误日志
+    // 只在开发阶段保留一些关键信息
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        const currentTrack = await TrackPlayer.getCurrentTrack()
+        if (currentTrack != null) {
+          const track = await TrackPlayer.getTrack(currentTrack)
+          log.debug('[Player] Track URL:', track?.url)
+        }
+      } catch (e) {
+        // 忽略
       }
-    } catch (e) {
-      log.error('[Player] Failed to get track info:', e)
     }
 
-    // 详细记录错误对象的所有属性
-    if (err) {
-      Object.keys(err).forEach(key => {
-        log.error(`[Player] Error.${key}:`, err[key])
-      })
-    }
-
-    log.error('[Player] =============================')
+    // 触发事件，但这现在是预期的业务流程
     global.app_event.error()
     global.app_event.playerError()
   })

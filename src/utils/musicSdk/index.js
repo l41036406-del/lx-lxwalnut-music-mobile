@@ -7,11 +7,6 @@ import bilibili from './bilibili'
 import git from './git'
 // import yt from './yt'
 import { supportQuality } from './api-source'
-import { log } from '@/utils/log'
-
-log.info('[MusicSdk] 模块初始化')
-log.info('[MusicSdk] bilibili: ' + (bilibili ? '存在' : '不存在'))
-log.info('[MusicSdk] bilibili.musicSearch: ' + (bilibili?.musicSearch ? '存在' : '不存在'))
 
 const sources = {
   sources: [
@@ -58,19 +53,10 @@ const sources = {
   // yt,
 }
 
-log.info('[MusicSdk] sources对象创建完成')
-log.info('[MusicSdk] sources.bilibili: ' + (sources.bilibili ? '存在' : '不存在'))
-log.info('[MusicSdk] sources.bilibili.musicSearch: ' + (sources.bilibili?.musicSearch ? '存在' : '不存在'))
-
 const musicSdk = {
   ...sources,
   supportQuality,
 }
-
-log.info('[MusicSdk] musicSdk对象创建完成')
-log.info('[MusicSdk] musicSdk.bilibili: ' + (musicSdk.bilibili ? '存在' : '不存在'))
-log.info('[MusicSdk] musicSdk.bilibili.musicSearch: ' + (musicSdk.bilibili?.musicSearch ? '存在' : '不存在'))
-log.info('[MusicSdk] musicSdk keys: ' + Object.keys(musicSdk).join(', '))
 
 export default musicSdk
 

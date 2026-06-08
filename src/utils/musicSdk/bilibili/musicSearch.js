@@ -185,9 +185,13 @@ const musicSearchModule = {
             lrc: null,
             img: item.pic,
             otherSource: null,
-            types: [{ type: '128k', size: 'UNKNOWN' }],
-            _types: { '128k': { size: 'UNKNOWN' } },
+            types: [{ type: '192k', size: 'UNKNOWN' }],
+            _types: { '192k': { size: 'UNKNOWN' } },
             typeUrl: {},
+            meta: {
+              qualitys: [{ type: '192k', size: 'UNKNOWN' }],
+              _qualitys: { '192k': { size: 'UNKNOWN' } },
+            },
             _bilibiliData: {
               bvid: item.bvid,
               aid: item.aid,
@@ -210,9 +214,13 @@ const musicSearchModule = {
           lrc: null,
           img: item.pic,
           otherSource: null,
-          types: [{ type: '128k', size: 'UNKNOWN' }],
-          _types: { '128k': { size: 'UNKNOWN' } },
+          types: [{ type: '192k', size: 'UNKNOWN' }],
+          _types: { '192k': { size: 'UNKNOWN' } },
           typeUrl: {},
+          meta: {
+            qualitys: [{ type: '192k', size: 'UNKNOWN' }],
+            _qualitys: { '192k': { size: 'UNKNOWN' } },
+          },
           _bilibiliData: {
             bvid: item.bvid,
             aid: item.aid,

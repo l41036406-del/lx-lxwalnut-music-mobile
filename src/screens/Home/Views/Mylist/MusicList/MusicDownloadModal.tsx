@@ -67,6 +67,15 @@ export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
       if (!visible || !playQualityList.length) return
 
       const applyLastQuality = async() => {
+        // 对于 bilibili 源，默认选择 192k
+        if (selectedInfo.current.source === 'bilibili') {
+          const quality192k = playQualityList.find(q => q.id === '192k')
+          if (quality192k) {
+            setSelectedQuality('192k')
+            return
+          }
+        }
+        
         const lastQuality = await getLastSelectQuality()
         const qualityExists = playQualityList.some(q => q.id === lastQuality)
         if (qualityExists) {
@@ -83,6 +92,7 @@ export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
       const map = new Map()
 
       map.set('128k', global.i18n.t('128k'))
+      map.set('192k', '192k')
       map.set('320k', global.i18n.t('320k'))
       map.set('flac', global.i18n.t('flac'))
       map.set('hires', global.i18n.t('hires'))
@@ -144,9 +154,9 @@ export default forwardRef<MusicDownloadModalType, MusicDownloadModalProps>(
       alertRef.current?.setVisible(false)
       // handleDownload(selectedInfo.current, selectedQuality)
       addDownloadTask(selectedInfo.current, selectedQuality);
-      // 下载后重置回默认值，以便下次打开时重新加载
+      // 下载后重置回默认值，以便下次打开时重新加载，bilibili 源默认重置为 192k
       setTimeout(() => {
-        setSelectedQuality('128k')
+        setSelectedQuality(selectedInfo.current.source === 'bilibili' ? '192k' : '128k');
       }, 300)
     }
 

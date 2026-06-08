@@ -26,6 +26,9 @@ const useQualityTag = (musicInfo: LX.Music.MusicInfoOnline) => {
   } else if (musicInfo.meta._qualitys['320k']) {
     info.type = 'hq'
     info.text = t('quality_high_quality')
+  } else if (musicInfo.meta._qualitys['192k']) {
+    info.type = 'hq'
+    info.text = '192k'
   }
   return info
 }

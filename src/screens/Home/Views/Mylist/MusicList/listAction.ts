@@ -24,7 +24,8 @@ import { requestStoragePermission } from '@/utils/tools'
 import { getMusicUrl, getLyricInfo, getPicUrl } from '@/core/music/online'
 import { writeMetadata, writePic, writeLyric } from '@/utils/localMediaMetadata'
 import { downloadFile, writeFile } from '@/utils/fs'
-import { clearMusicUrl, getAllKeys } from '@/utils/data'
+import { clearMusicUrl } from '@/utils/data'
+import { getAllKeys, removeDataMultiple } from '@/plugins/storage'
 import { storageDataPrefix } from '@/config/constant'
 import {MusicMetadata} from "react-native-local-media-metadata";
 export const handlePlay = (listId: SelectInfo['listId'], index: SelectInfo['index']) => {
@@ -384,17 +385,17 @@ export const handleClearMusicCache = async (musicInfo: LX.Music.MusicInfo) => {
   log.info(`[清除缓存] 开始清除歌曲缓存 - 歌曲名: ${musicName}, ID: ${musicId}`)
   
   try {
-    const allKeys = await getAllKeys()
     const prefix = storageDataPrefix.musicUrl
-    const cacheKeys = allKeys.filter(key => key.startsWith(prefix + musicId))
+    const allKeys = await getAllKeys()
+    const cacheKeys = allKeys.filter(key => key.startsWith(`${prefix}${musicId}_`))
     
     log.info(`[清除缓存] 待清除的缓存键: ${JSON.stringify(cacheKeys)}`)
     
     if (cacheKeys.length > 0) {
-      await clearMusicUrl(cacheKeys)
+      await removeDataMultiple(cacheKeys)
       log.info(`[清除缓存] URL缓存清除成功 - 歌曲名: ${musicName}, ID: ${musicId}`)
     } else {
-      log.info(`[清除缓存] 没有找到该音乐的 URL 缓存`)
+      log.info(`[清除缓存] 未找到该歌曲的缓存 - 歌曲名: ${musicName}, ID: ${musicId}`)
     }
     
     const isCurrentPlaying = playerState.playMusicInfo.musicInfo?.id === musicId
