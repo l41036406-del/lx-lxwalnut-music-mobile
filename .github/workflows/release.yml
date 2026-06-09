@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: read
     outputs:
       package_version: ${{ steps.package_version.outputs.package_version }}
       release_tag: ${{ steps.release_target.outputs.release_tag }}
