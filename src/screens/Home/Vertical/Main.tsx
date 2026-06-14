@@ -14,6 +14,7 @@ import PagerView, {
 import { setNavActiveId } from '@/core/common'
 import settingState from '@/store/setting/state'
 import DailyRec from '../Views/DailyRec'
+import TXDailyRec from '../Views/DailyRec/TXDailyRec'
 import MyPlaylist from '../Views/MyPlaylist'
 import FollowedArtists from '../Views/FollowedArtists'
 import SubscribedAlbums from '../Views/SubscribedAlbums';
@@ -23,6 +24,7 @@ import PlayHistory from '../Views/PlayHistory'
 import { useTheme } from '@/store/theme/hook'
 import OneDrive from '../Views/OneDrive'
 import WebDAV from '../Views/WebDAV'
+import TXPlaylist from '../Views/TxPlaylist'
 
 const hideKeys = ['list.isShowAlbumName', 'list.isShowInterval', 'theme.fontShadow'] as Readonly<
   Array<keyof LX.AppSetting>
@@ -169,6 +171,42 @@ const DailyRecPage = () => {
     const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
       currentId = id
       if (id == 'nav_daily_rec') {
+        requestAnimationFrame(() => {
+          setVisible(true)
+        })
+      }
+    }
+    const handleHide = () => {
+      if (currentId != 'nav_setting') return
+      setVisible(false)
+    }
+    const handleConfigUpdated = (keys: Array<keyof LX.AppSetting>) => {
+      if (keys.some((k) => hideKeys.includes(k))) handleHide()
+    }
+    global.state_event.on('navActiveIdUpdated', handleNavIdUpdate)
+    global.state_event.on('themeUpdated', handleHide)
+    global.state_event.on('languageChanged', handleHide)
+    global.state_event.on('configUpdated', handleConfigUpdated)
+
+    return () => {
+      global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
+      global.state_event.off('themeUpdated', handleHide)
+      global.state_event.off('languageChanged', handleHide)
+      global.state_event.on('configUpdated', handleConfigUpdated)
+    }
+  }, [])
+
+  return visible ? component : null
+}
+
+const TXDailyRecPage = () => {
+  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_tx_daily_rec')
+  const component = useMemo(() => <TXDailyRec />, [])
+  useEffect(() => {
+    let currentId: CommonState['navActiveId'] = commonState.navActiveId
+    const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
+      currentId = id
+      if (id == 'nav_tx_daily_rec') {
         requestAnimationFrame(() => {
           setVisible(true)
         })
@@ -412,6 +450,42 @@ const WebDAVPage = () => {
   return visible ? component : null
 }
 
+const TXPlaylistPage = () => {
+  const [visible, setVisible] = useState(commonState.navActiveId == 'nav_tx_playlist')
+  const component = useMemo(() => <TXPlaylist />, [])
+  useEffect(() => {
+    let currentId: CommonState['navActiveId'] = commonState.navActiveId
+    const handleNavIdUpdate = (id: CommonState['navActiveId']) => {
+      currentId = id
+      if (id == 'nav_tx_playlist') {
+        requestAnimationFrame(() => {
+          setVisible(true)
+        })
+      }
+    }
+    const handleHide = () => {
+      if (currentId != 'nav_setting') return
+      setVisible(false)
+    }
+    const handleConfigUpdated = (keys: Array<keyof LX.AppSetting>) => {
+      if (keys.some((k) => hideKeys.includes(k))) handleHide()
+    }
+    global.state_event.on('navActiveIdUpdated', handleNavIdUpdate)
+    global.state_event.on('themeUpdated', handleHide)
+    global.state_event.on('languageChanged', handleHide)
+    global.state_event.on('configUpdated', handleConfigUpdated)
+
+    return () => {
+      global.state_event.off('navActiveIdUpdated', handleNavIdUpdate)
+      global.state_event.off('themeUpdated', handleHide)
+      global.state_event.off('languageChanged', handleHide)
+      global.state_event.off('configUpdated', handleConfigUpdated)
+    }
+  }, [])
+
+  return visible ? component : null
+}
+
 const SettingPage = () => {
   const [visible, setVisible] = useState(commonState.navActiveId == 'nav_setting')
   const component = useMemo(() => <Setting />, [])
@@ -556,11 +630,13 @@ const Main = () => {
       nav_top: <LeaderboardPage />,
       nav_love: <MylistPage />,
       nav_daily_rec: <DailyRecPage />,
+      nav_tx_daily_rec: <TXDailyRecPage />,
       nav_followed_artists: <FollowedArtistsPage />,
       nav_subscribed_albums: <SubscribedAlbumsPage />,
       nav_my_playlist: <MyPlaylistPage />,
       nav_onedrive: <OneDrivePage />,
       nav_webdav: <WebDAVPage />,
+      nav_tx_playlist: <TXPlaylistPage />,
       nav_setting: <SettingPage />,
     };
 

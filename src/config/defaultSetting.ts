@@ -15,6 +15,7 @@ const defaultSetting: LX.AppSetting = {
   'common.useSystemFileSelector': true,
   'common.wy_cookie': '',
   'common.wy_serpapi_key': '',
+  'common.tx_cookie': '',
   'common.yt_cookie': '',
   'common.alwaysKeepStatusbarHeight': false,
   'common.isShowStartupGreeting': true,
@@ -37,6 +38,7 @@ const defaultSetting: LX.AppSetting = {
     nav_subscribed_albums: true,
     nav_onedrive: true,
     nav_webdav: true,
+    nav_tx_daily_rec: true,
   },
 
   'common.navOrder': [
@@ -46,6 +48,7 @@ const defaultSetting: LX.AppSetting = {
     'nav_top',
     'nav_love',
     'nav_daily_rec',
+    'nav_tx_daily_rec',
     'nav_followed_artists',
     'nav_subscribed_albums',
     'nav_my_playlist',

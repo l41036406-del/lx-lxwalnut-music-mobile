@@ -74,6 +74,10 @@ declare global {
        */
       'common.wy_cookie': string
       'common.wy_serpapi_key': string
+      /**
+       * QQ音乐 Cookie
+       */
+      'common.tx_cookie': string
       'common.yt_cookie': string
 
       /**

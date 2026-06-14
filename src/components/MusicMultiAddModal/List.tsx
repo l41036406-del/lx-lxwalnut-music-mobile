@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { ScrollView, TouchableOpacity, View } from 'react-native'
 import Text from '@/components/common/Text'
 import { useMyList } from '@/store/list/hook'
@@ -10,6 +10,7 @@ import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
 import { scaleSizeW } from '@/utils/pixelRatio'
 import { useWySubscribedPlaylists, useWyUid } from '@/store/user/hook'
+import txApi from '@/utils/musicSdk/tx/user'
 
 const styles = createStyle({
   list: {
@@ -24,7 +25,7 @@ const styles = createStyle({
 const MIN_WIDTH = scaleSizeW(140)
 const PADDING = styles.list.paddingLeft + styles.list.paddingRight
 
-const EditListItem = ({ itemWidth, playlistType }: { itemWidth: number, playlistType: 'local' | 'online' }) => {
+const EditListItem = ({ itemWidth, playlistType }: { itemWidth: number, playlistType: 'local' | 'wy' | 'tx' }) => {
   const [isEdit, setEdit] = useState(false)
   const theme = useTheme()
   const t = useI18n()
@@ -70,22 +71,48 @@ export default ({
                 }: {
   listId: string
   onPress: (listInfo: LX.List.MyListInfo) => void
-  playlistType: 'local' | 'online'
+  playlistType: 'local' | 'wy' | 'tx'
 }) => {
   const windowSize = useWindowSize()
+  const [txPlaylists, setTxPlaylists] = useState<any[]>([])
+  const isLoaded = useRef(false)
+  
   const localLists = useMyList()
   const onlinePlaylists = useWySubscribedPlaylists()
   const uid = useWyUid()
 
+  useEffect(() => {
+    if (playlistType === 'tx' && !isLoaded.current) {
+      isLoaded.current = true
+      txApi.getUserPlaylists().then(playlists => {
+        const formattedPlaylists = playlists.map(p => ({
+          id: `tx__${p.id}`,
+          name: p.name,
+          cover: p.cover,
+          songCount: p.songCount,
+          creator: { nickname: 'QQ音乐' },
+        }))
+        setTxPlaylists(formattedPlaylists)
+      }).catch(() => {
+        setTxPlaylists([])
+      })
+    }
+    if (playlistType !== 'tx') {
+      isLoaded.current = false
+    }
+  }, [playlistType])
+
   const allList = useMemo(() => {
     let sourceList
-    if (playlistType === 'online') {
+    if (playlistType === 'wy') {
       sourceList = onlinePlaylists.filter(p => String(p.userId) === String(uid))
+    } else if (playlistType === 'tx') {
+      sourceList = txPlaylists
     } else {
       sourceList = localLists
     }
     return sourceList.filter((l) => l.id != listId)
-  }, [playlistType, localLists, onlinePlaylists, uid, listId])
+  }, [playlistType, localLists, onlinePlaylists, uid, listId, txPlaylists])
 
   const itemWidth = useMemo(() => {
     let w = Math.floor(windowSize.width * 0.9 - PADDING)

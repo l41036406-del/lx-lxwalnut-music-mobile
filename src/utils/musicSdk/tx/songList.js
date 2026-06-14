@@ -2,6 +2,10 @@ import { httpFetch } from '../../request'
 import { decodeName, formatPlayTime, dateFormat, formatPlayCount } from '../../index'
 import { formatSingerName } from '../utils'
 import { getBatchMusicQualityInfo } from './quality_detail'
+import { zzcSign } from './utils/crypto'
+import dailyRec from './dailyRec'
+import { log } from '@/utils/log'
+import settingState from '@/store/setting/state'
 
 export default {
   _requestObj_tags: null,
@@ -206,35 +210,207 @@ export default {
     }
     return id
   },
-  // 获取歌曲列表内的音乐
-  async getListDetail(id, tryNum = 0) {
-    if (tryNum > 2) return Promise.reject(new Error('try max num'))
+  // 获取歌曲列表内的音乐 - 使用新的签名API（支持官方歌单）
+  async getListDetailNew(id, tryNum = 0) {
+    log.info(`[TX SongList] getListDetailNew 开始`, { id, tryNum })
+    
+    if (tryNum > 2) {
+      log.error(`[TX SongList] getListDetailNew 重试次数超限`, { id, tryNum })
+      return Promise.reject(new Error('try max num'))
+    }
 
     id = await this.getListId(id)
 
-    const requestObj_listDetail = httpFetch(this.getListDetailUrl(id), {
+    const payload = {
+      comm: { ct: 24, cv: 1800 },
+      req_0: {
+        module: 'music.srfDissInfo.DissInfo',
+        method: 'CgiGetDiss',
+        param: {
+          disstid: parseInt(id),
+          dirid: 0,
+          tag: true,
+          song_begin: 0,
+          song_num: 100,
+          userinfo: true,
+          orderlist: true,
+          onlysonglist: false,
+        },
+      },
+    }
+
+    log.info(`[TX SongList] getListDetailNew 构建payload完成`, { disstid: payload.req_0.param.disstid })
+
+    // 使用 musicu.fcg 不需要签名
+    const url = `https://u.y.qq.com/cgi-bin/musicu.fcg?loginUin=0&hostUin=0&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=wk_v15.json&needNewCode=0&data=${encodeURIComponent(JSON.stringify(payload))}`
+
+    log.info(`[TX SongList] getListDetailNew URL:`, url.substring(0, 200))
+
+    // 获取Cookie
+    const cookie = settingState.setting['common.tx_cookie']
+    log.info(`[TX SongList] getListDetailNew Cookie状态:`, cookie ? `已设置 (长度:${cookie.length})` : '未设置')
+
+    const requestObj_listDetail = httpFetch(url, {
       headers: {
-        Origin: 'https://y.qq.com',
-        Referer: `https://y.qq.com/n/yqq/playsquare/${id}.html`,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://y.qq.com/',
+        'Cookie': cookie || '',
       },
     })
-    const { body } = await requestObj_listDetail.promise
 
-    if (body.code !== this.successCode) return this.getListDetail(id, ++tryNum)
-    const cdlist = body.cdlist[0]
+    const { body, statusCode } = await requestObj_listDetail.promise
+    log.info(`[TX SongList] getListDetailNew 响应`, { statusCode, bodyCode: body?.code, req0Code: body?.req_0?.code })
+
+    if (!body || !body.req_0) {
+      log.error(`[TX SongList] getListDetailNew 响应体无效`, { body: JSON.stringify(body)?.substring(0, 200) })
+      return this.getListDetailNew(id, ++tryNum)
+    }
+
+    const retCode = body.req_0.data?.retCode
+    log.info(`[TX SongList] getListDetailNew retCode`, { retCode })
+    
+    // retCode 为 undefined 或 0 表示成功，否则失败
+    if (retCode !== undefined && retCode !== 0 && tryNum < 2) {
+      log.warn(`[TX SongList] getListDetailNew retCode非0，重试`, { retCode, tryNum })
+      return this.getListDetailNew(id, ++tryNum)
+    }
+
+    const data = body.req_0.data
+    if (!data || !data.songlist) {
+      log.error(`[TX SongList] getListDetailNew 没有歌曲列表`, { dataKeys: data ? Object.keys(data) : [] })
+      return Promise.reject(new Error('获取歌单详情失败'))
+    }
+
+    log.info(`[TX SongList] getListDetailNew 成功`, { songCount: data.songlist.length, dissname: data.dissinfo?.dissname })
     return {
-      list: await this.filterListDetail(cdlist.songlist),
+      list: await this.filterListDetailNew(data.songlist),
       page: 1,
-      limit: cdlist.songlist.length + 1,
-      total: cdlist.songlist.length,
+      limit: data.songlist.length + 1,
+      total: data.songlist.length,
       source: 'tx',
       info: {
-        name: cdlist.dissname,
-        img: cdlist.logo,
-        desc: decodeName(cdlist.desc).replace(/<br>/g, '\n'),
-        author: cdlist.nickname,
-        play_count: formatPlayCount(cdlist.visitnum),
+        name: data.dissinfo?.dissname || '',
+        img: data.dissinfo?.logo || '',
+        desc: data.dissinfo?.desc ? decodeName(data.dissinfo.desc).replace(/<br>/g, '\n') : '',
+        author: data.dissinfo?.nickname || '',
+        play_count: data.dissinfo?.visitnum ? formatPlayCount(data.dissinfo.visitnum) : '',
       },
+    }
+  },
+
+  async filterListDetailNew(rawList) {
+    const qualityInfoRequest = getBatchMusicQualityInfo(rawList)
+    let qualityInfoMap = {}
+
+    try {
+      qualityInfoMap = await qualityInfoRequest.promise
+    } catch (error) {
+      console.error('Failed to fetch quality info:', error)
+    }
+
+    return rawList.map((item) => {
+      const { types = [], _types = {} } = qualityInfoMap[item.id] || {}
+
+      return {
+        singer: formatSingerName(item.singer, 'name'),
+        name: item.name,
+        albumName: item.album.name,
+        albumId: item.album.mid,
+        source: 'tx',
+        interval: formatPlayTime(item.interval),
+        songId: item.id,
+        albumMid: item.album.mid,
+        strMediaMid: item.file?.media_mid || '',
+        songmid: item.mid,
+        img:
+          item.album.name === '' || item.album.name === '空'
+            ? item.singer?.length
+              ? `https://y.gtimg.cn/music/photo_new/T001R500x500M000${item.singer[0].mid}.jpg`
+              : ''
+            : `https://y.gtimg.cn/music/photo_new/T002R500x500M000${item.album.mid}.jpg`,
+        lrc: null,
+        otherSource: null,
+        types,
+        _types,
+        typeUrl: {},
+      }
+    })
+  },
+
+  // 获取歌曲列表内的音乐
+  async getListDetail(id, tryNum = 0) {
+    log.info(`[TX SongList] getListDetail 开始`, { id, tryNum })
+    
+    if (tryNum > 2) {
+      log.error(`[TX SongList] getListDetail 重试次数超限`, { id, tryNum })
+      return Promise.reject(new Error('try max num'))
+    }
+
+    id = await this.getListId(id)
+    log.info(`[TX SongList] getListDetail 获取到真实ID`, { id })
+
+    // 特殊处理：猜你喜欢（id: 99）
+    if (id === '99') {
+      log.info(`[TX SongList] getListDetail 检测到猜你喜欢，使用特殊接口`)
+      try {
+        // 直接调用原始API获取tracks
+        const cookie = settingState.setting['common.tx_cookie']
+        const payload = {
+          comm: { cv: 1602, ct: 20 },
+          req_0: {
+            module: 'music.radioProxy.MbTrackRadioSvr',
+            method: 'get_radio_track',
+            param: { id: 99, num: 5, from: 0, scene: 0, song_ids: [] },
+          },
+        }
+        const url = `https://u.y.qq.com/cgi-bin/musicu.fcg?loginUin=0&hostUin=0&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=wk_v15.json&needNewCode=0&data=${encodeURIComponent(JSON.stringify(payload))}`
+        
+        const { body } = await httpFetch(url, {
+          headers: {
+            'Cookie': cookie || '',
+          },
+        }).promise
+        
+        const tracks = body?.req_0?.data?.tracks || []
+        log.info(`[TX SongList] getListDetail 猜你喜欢获取到tracks`, { count: tracks.length })
+        
+        if (tracks.length === 0) {
+          throw new Error('猜你喜欢返回歌曲列表为空')
+        }
+        
+        // 使用与 filterListDetailNew 相同的格式
+        const list = await this.filterListDetailNew(tracks)
+        log.info(`[TX SongList] getListDetail 猜你喜欢格式化完成`, { songCount: list.length })
+        
+        return {
+          list,
+          page: 1,
+          limit: list.length + 1,
+          total: list.length,
+          source: 'tx',
+          info: {
+            name: '猜你喜欢',
+            img: 'https://y.gtimg.cn/mediastyle/y/img/cover_qzone_130.jpg',
+            desc: '根据你的喜好推荐的歌曲',
+            author: '',
+            play_count: '',
+          },
+        }
+      } catch (error) {
+        log.error(`[TX SongList] getListDetail 猜你喜欢获取失败`, { error: error.message })
+        throw error
+      }
+    }
+
+    // 使用 musicu.fcg 接口
+    log.info(`[TX SongList] getListDetail 使用 musicu.fcg 接口`)
+    try {
+      const result = await this.getListDetailNew(id)
+      log.info(`[TX SongList] getListDetail 获取成功`, { songCount: result.list.length })
+      return result
+    } catch (error) {
+      log.error(`[TX SongList] getListDetail 获取失败`, { error: error.message })
+      return this.getListDetail(id, ++tryNum)
     }
   },
   async filterListDetail(rawList) {

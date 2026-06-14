@@ -192,7 +192,14 @@ export default memo(() => {
   const subContainerOpacity = useSettingValue('theme.subContainerOpacity');
 
   const [localOrder, setLocalOrder] = useState<NAV_ID_Type[]>(() => {
-    return navOrder || NAV_MENUS.map(m => m.id);
+    const order = navOrder || NAV_MENUS.map(m => m.id);
+    // 确保新增的菜单项能够显示
+    const allMenuIds = NAV_MENUS.map(m => m.id);
+    const missingIds = allMenuIds.filter(id => !order.includes(id));
+    if (missingIds.length > 0) {
+      return [...order, ...missingIds];
+    }
+    return order;
   });
 
   const heightsRef = useRef<number[]>([]);
@@ -206,12 +213,13 @@ export default memo(() => {
     const filtered = localOrder.filter(id => id !== 'nav_play_history');
     return filtered.map((id, idx) => {
       const menuItem = NAV_MENUS.find(m => m.id === id);
+      if (!menuItem) return null;
       return {
         id,
         name: t(id),
         index: idx,
       };
-    });
+    }).filter((item): item is { id: NAV_ID_Type; name: string; index: number } => item !== null);
   }, [localOrder, t]);
 
   if (animsRef.current.length !== menuList.length) {

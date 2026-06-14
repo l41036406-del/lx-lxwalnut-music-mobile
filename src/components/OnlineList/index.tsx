@@ -25,6 +25,7 @@ import MusicDownloadModal, {
 } from '@/screens/Home/Views/Mylist/MusicList/MusicDownloadModal'
 import {createStyle, toast} from '@/utils/tools'
 import wyApi from '@/utils/musicSdk/wy/user'
+import txUserApi from '@/utils/musicSdk/tx/user'
 import {batchDownload} from "@/core/download.ts"
 import {getMvUrl} from "@/utils/musicSdk/wy/mv.js"
 import {useI18n} from "@/lang"
@@ -179,27 +180,43 @@ export default forwardRef<OnlineListType, OnlineListProps>(
 
     const handleRemoveMusic = useCallback((info: SelectInfo) => {
       if (!listId) return
-      const playlistId = listId.replace('wy__', '')
-      const sourcePlaylist = subscribedPlaylists.find(p => String(p.id) === playlistId)
+      
       const musicInfos = info.selectedList.length ? info.selectedList : [info.musicInfo]
-      const songIds = musicInfos.map(m => m.meta.songId)
-      wyApi.manipulatePlaylistTracks('del', playlistId, songIds).then(() => {
-        if (sourcePlaylist.name === sourcePlaylist.creator.nickname + '喜欢的音乐') {
-          songIds.forEach(removeWyLikedSong)
-        }
-        toast(t('list_edit_action_tip_remove_success'))
-        // const currentList = listRef.current?.getList() ?? []
-        // const idsToRemove = new Set(musicInfos.map(m => m.id))
-        // const newList = currentList.filter(m => !idsToRemove.has(m.id))
-        // listRef.current?.setList(newList, false, false)
-        updateWySubscribedPlaylistTrackCount(playlistId, -songIds.length)
-        clearListDetailCache('wy', playlistId)
-        global.app_event.playlist_updated({ source: 'wy', listId: playlistId })
-        hancelExitSelect()
-      }).catch(err => {
-        toast('移除失败: ' + err.message)
-      })
-    }, [listId, hancelExitSelect, t])
+      
+      // 判断来源
+      if (listId.startsWith('wy__')) {
+        // 网易云音乐
+        const playlistId = listId.replace('wy__', '')
+        const sourcePlaylist = subscribedPlaylists.find(p => String(p.id) === playlistId)
+        const songIds = musicInfos.map(m => m.meta.songId)
+        wyApi.manipulatePlaylistTracks('del', playlistId, songIds).then(() => {
+          if (sourcePlaylist?.name === sourcePlaylist?.creator?.nickname + '喜欢的音乐') {
+            songIds.forEach(removeWyLikedSong)
+          }
+          toast(t('list_edit_action_tip_remove_success'))
+          updateWySubscribedPlaylistTrackCount(playlistId, -songIds.length)
+          clearListDetailCache('wy', playlistId)
+          global.app_event.playlist_updated({ source: 'wy', listId: playlistId })
+          hancelExitSelect()
+        }).catch(err => {
+          toast('移除失败: ' + err.message)
+        })
+      } else if (listId.startsWith('tx__')) {
+        // QQ音乐
+        const playlistId = listId.replace('tx__', '')
+        const songMids = musicInfos.map(m => m.meta.songId || m.id)
+        txUserApi.removeSongFromPlaylist(playlistId, songMids).then(() => {
+          toast(t('list_edit_action_tip_remove_success'))
+          clearListDetailCache('tx', playlistId)
+          global.app_event.playlist_updated({ source: 'tx', listId: playlistId })
+          hancelExitSelect()
+        }).catch(err => {
+          toast('移除失败: ' + err.message)
+        })
+      } else {
+        toast('不支持的操作')
+      }
+    }, [listId, hancelExitSelect, t, subscribedPlaylists])
 
     return (
       <View style={styles.container}>

@@ -114,11 +114,13 @@ export const NAV_MENUS = [
   { id: 'nav_top', icon: 'leaderboard' },
   { id: 'nav_love', icon: 'love' },
   { id: 'nav_daily_rec', icon: 'svg:calendar' },
+  { id: 'nav_tx_daily_rec', icon: 'svg:calendar' },
   { id: 'nav_followed_artists', icon: 'svg:artist' },
   { id: 'nav_subscribed_albums', icon: 'svg:album-disc' },
   { id: 'nav_my_playlist', icon: 'album' },
   { id: 'nav_onedrive', icon: 'svg:onedrive' },
   { id: 'nav_webdav', icon: 'svg:webdav' },
+  { id: 'nav_tx_playlist', icon: 'album' },
   // { id: 'download', icon: 'download-2' },
   { id: 'nav_setting', icon: 'setting' },
 ] as const

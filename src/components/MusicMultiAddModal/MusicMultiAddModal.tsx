@@ -10,10 +10,12 @@ import { useTheme } from '@/store/theme/hook'
 import Button from '@/components/common/Button'
 import { getPlaylistType, savePlaylistType } from '@/utils/data'
 import wyApi from '@/utils/musicSdk/wy/user'
+import txApi from '@/utils/musicSdk/tx/user'
 import {addWyLikedSong, removeWyLikedSong, updateWySubscribedPlaylistTrackCount} from '@/store/user/action'
 import { clearListDetailCache } from '@/core/songlist'
 import {Text, View} from "react-native";
 import {useWySubscribedPlaylists} from "@/store/user/hook.ts";
+import { log } from '@/utils/log'
 
 export interface SelectInfo {
   selectedList: LX.Music.MusicInfo[]
@@ -39,7 +41,7 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
   const t = useI18n()
   const dialogRef = useRef<DialogType>(null)
   const [selectInfo, setSelectInfo] = useState<SelectInfo>(initSelectInfo)
-  const [playlistType, setPlaylistType] = useState<'local' | 'online'>('local')
+  const [playlistType, setPlaylistType] = useState<'local' | 'wy' | 'tx'>('local')
   const theme = useTheme()
   const subscribedPlaylists = useWySubscribedPlaylists()
 
@@ -47,7 +49,7 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
     getPlaylistType().then(setPlaylistType);
   }, []);
 
-  const handlePlaylistTypeChange = (type: 'local' | 'online') => {
+  const handlePlaylistTypeChange = (type: 'local' | 'wy' | 'tx') => {
     setPlaylistType(type);
     void savePlaylistType(type);
   };
@@ -71,14 +73,63 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
   const handleSelect = (listInfo: LX.List.MyListInfo) => {
     dialogRef.current?.setVisible(false)
     const { selectedList, listId: fromListId, isMove } = selectInfo
-    if (playlistType === 'online') {
-      if (!selectedList.length) return
+    
+    log.info('[MusicMultiAddModal] handleSelect 开始', {
+      playlistType,
+      toListId: listInfo.id,
+      toListName: listInfo.name,
+      fromListId,
+      isMove,
+      selectedCount: selectedList.length,
+      selectedSongs: selectedList.map(m => ({
+        name: m.name,
+        source: m.source,
+        songId: m.meta?.songId,
+      })),
+    })
+    
+    // 网易云歌单
+    if (playlistType === 'wy') {
+      if (!selectedList.length) {
+        log.error('[MusicMultiAddModal] 网易歌单添加失败: selectedList 为空')
+        return
+      }
+      
+      // 检查 songId 格式 - 网易云音乐需要纯数字 ID
+      const invalidSongs = selectedList.filter(m => {
+        const songId = m.meta.songId;
+        return !songId || typeof songId !== 'string' || !/^\d+$/.test(songId);
+      });
+      
+      if (invalidSongs.length > 0) {
+        log.error('[MusicMultiAddModal] 网易歌单添加失败: 部分歌曲 ID 格式不正确', {
+          invalidCount: invalidSongs.length,
+          invalidSongs: invalidSongs.map(m => ({
+            name: m.name,
+            source: m.source,
+            songId: m.meta?.songId,
+          })),
+          expected: '纯数字ID',
+        })
+        toast(`${invalidSongs.length}首歌曲不支持添加到网易云歌单（ID格式不兼容）`)
+        return;
+      }
+      
       const toListId = String(listInfo.id)
+      // 检查目标歌单 ID 格式
+      if (toListId.startsWith('tx__')) {
+        log.error('[MusicMultiAddModal] 网易歌单添加失败: 目标歌单 ID 格式错误', {
+          toListId,
+          expected: '网易云歌单ID（纯数字）',
+        })
+        toast('目标歌单 ID 格式错误，请选择网易云歌单')
+        return
+      }
+      
       const songIds = selectedList.map(m => m.meta.songId).reverse()
       const sourcePlaylist = subscribedPlaylists.find(p => `wy__${p.id}` === fromListId)
 
       if (isMove) {
-        // 1. 先将歌曲添加到目标歌单
         wyApi.manipulatePlaylistTracks('add', toListId, songIds).then(() => {
           if (listInfo.name === listInfo.creator.nickname + '喜欢的音乐') {
             for (const songId of songIds) {
@@ -88,24 +139,28 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
           const sourcePlaylistId = fromListId.replace('wy__', '')
           clearListDetailCache('wy', toListId)
           global.app_event.playlist_updated({ source: 'wy', listId: toListId })
-          // 2. 从源歌单删除歌曲
           return wyApi.manipulatePlaylistTracks('del', sourcePlaylistId, songIds)
         }).then(() => {
-          if (sourcePlaylist.name === sourcePlaylist.creator.nickname + '喜欢的音乐') {
+          if (sourcePlaylist?.name === sourcePlaylist?.creator?.nickname + '喜欢的音乐') {
             for (const songId of songIds) {
               removeWyLikedSong(songId)
             }
           }
           onAdded?.()
           toast(t('list_edit_action_tip_move_success'))
-          // 3. 更新两个歌单的歌曲数量
           updateWySubscribedPlaylistTrackCount(toListId, songIds.length)
           const sourcePlaylistId = fromListId.replace('wy__', '')
           updateWySubscribedPlaylistTrackCount(sourcePlaylistId, -songIds.length)
-          // 4. 更新源歌单的缓存和UI
           clearListDetailCache('wy', sourcePlaylistId)
           global.app_event.playlist_updated({ source: 'wy', listId: sourcePlaylistId })
+          log.info('[MusicMultiAddModal] 网易歌单移动成功', { toListId, songCount: songIds.length })
         }).catch((err) => {
+          log.error('[MusicMultiAddModal] 网易歌单移动失败', {
+            error: err.message || err,
+            toListId,
+            songCount: songIds.length,
+            fromListId,
+          })
           toast(err.message || t('list_edit_action_tip_move_failed'))
         })
       } else {
@@ -120,10 +175,92 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
           updateWySubscribedPlaylistTrackCount(toListId, songIds.length)
           clearListDetailCache('wy', toListId)
           global.app_event.playlist_updated({ source: 'wy', listId: toListId })
+          log.info('[MusicMultiAddModal] 网易歌单添加成功', { toListId, songCount: songIds.length })
         }).catch((err) => {
+          log.error('[MusicMultiAddModal] 网易歌单添加失败', {
+            error: err.message || err,
+            toListId,
+            songCount: songIds.length,
+          })
           toast(err.message || t('list_edit_action_tip_add_failed'))
         })
       }
+      return
+    }
+    
+    // QQ音乐歌单
+    if (playlistType === 'tx') {
+      if (!selectedList.length) {
+        log.error('[MusicMultiAddModal] QQ歌单添加失败: selectedList 为空')
+        return
+      }
+      
+      // 检查歌曲来源 - QQ 歌单只能添加 QQ 音乐的歌曲
+      const nonTxSongs = selectedList.filter(m => m.source !== 'tx');
+      if (nonTxSongs.length > 0) {
+        log.error('[MusicMultiAddModal] QQ歌单添加失败: 部分歌曲来源不是QQ音乐', {
+          nonTxCount: nonTxSongs.length,
+          nonTxSongs: nonTxSongs.map(m => ({
+            name: m.name,
+            source: m.source,
+          })),
+          note: 'QQ歌单只能添加QQ音乐的歌曲',
+        })
+        toast(`QQ歌单只能添加QQ音乐的歌曲，有${nonTxSongs.length}首歌曲不支持跨平台添加`)
+        return;
+      }
+      
+      // 检查歌曲 mid 格式
+      const invalidSongs = selectedList.filter(m => !m.meta.mid && !m.meta.songId);
+      if (invalidSongs.length > 0) {
+        log.error('[MusicMultiAddModal] QQ歌单添加失败: 部分歌曲 mid 为空', {
+          invalidCount: invalidSongs.length,
+          invalidSongs: invalidSongs.map(m => ({
+            name: m.name,
+            source: m.source,
+            meta: m.meta,
+          })),
+        })
+        toast(`${invalidSongs.length}首歌曲 mid 为空，无法添加`)
+        return;
+      }
+      
+      // 获取真实的 QQ 歌单 ID（去掉 tx__ 前缀）
+      const toListId = String(listInfo.id).replace('tx__', '')
+      if (!toListId || toListId === String(listInfo.id)) {
+        log.error('[MusicMultiAddModal] QQ歌单添加失败: 目标歌单 ID 格式错误', {
+          originalId: listInfo.id,
+          toListId,
+          expected: 'tx__开头的ID',
+        })
+        toast('目标歌单 ID 格式错误，请选择 QQ 歌单')
+        return
+      }
+      
+      const songMids = selectedList.map(m => String(m.meta.mid || m.meta.songId))
+      
+      log.info('[MusicMultiAddModal] QQ歌单添加开始', {
+        toListId,
+        songCount: songMids.length,
+        songMids,
+        songSources: selectedList.map(m => m.source),
+      })
+      
+      txApi.addSongToPlaylist(toListId, songMids).then(() => {
+        onAdded?.()
+        toast(t('list_edit_action_tip_add_success'))
+        global.app_event.playlist_updated({ source: 'tx', listId: toListId })
+        log.info('[MusicMultiAddModal] QQ歌单添加成功', { toListId, songCount: songMids.length })
+      }).catch((err) => {
+        log.error('[MusicMultiAddModal] QQ歌单添加失败', {
+          error: err.message || err,
+          toListId,
+          songCount: songMids.length,
+          songMids,
+          songSources: selectedList.map(m => m.source),
+        })
+        toast(err.message || t('list_edit_action_tip_add_failed'))
+      })
       return
     }
     if (selectInfo.isMove) {
@@ -165,8 +302,11 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
             <Button onPress={() => handlePlaylistTypeChange('local')} style={{ marginRight: 10, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4, backgroundColor: playlistType === 'local' ? theme['c-button-background-active'] : theme['c-button-background'] }}>
               <Text color={theme['c-button-font']}>本地歌单</Text>
             </Button>
-            <Button onPress={() => handlePlaylistTypeChange('online')} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4, backgroundColor: playlistType === 'online' ? theme['c-button-background-active'] : theme['c-button-background'] }}>
-              <Text color={theme['c-button-font']}>在线歌单</Text>
+            <Button onPress={() => handlePlaylistTypeChange('wy')} style={{ marginRight: 10, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4, backgroundColor: playlistType === 'wy' ? theme['c-button-background-active'] : theme['c-button-background'] }}>
+              <Text color={theme['c-button-font']}>网易歌单</Text>
+            </Button>
+            <Button onPress={() => handlePlaylistTypeChange('tx')} style={{ paddingHorizontal: 10, paddingVertical: 5, borderRadius: 4, backgroundColor: playlistType === 'tx' ? theme['c-button-background-active'] : theme['c-button-background'] }}>
+              <Text color={theme['c-button-font']}>QQ歌单</Text>
             </Button>
           </View>
           <List listId={selectInfo.listId} onPress={handleSelect} playlistType={playlistType} />

@@ -1,4 +1,4 @@
-import {forwardRef, useCallback, useEffect, useImperativeHandle, useRef} from 'react'
+import {forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react'
 import OnlineList, { type OnlineListType, type OnlineListProps } from '@/components/OnlineList'
 import { clearListDetail, getListDetail, setListDetail, setListDetailInfo } from '@/core/songlist'
 import songlistState from '@/store/songlist/state'
@@ -9,6 +9,7 @@ import playerState from '@/store/player/state'
 import { LIST_IDS } from '@/config/constant'
 import listState from '@/store/list/state'
 import { getListMusics } from '@/core/list'
+import txUserApi from '@/utils/musicSdk/tx/user'
 
 export interface MusicListProps {
   componentId: string
@@ -26,6 +27,28 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
   const listRef = useRef<OnlineListType>(null)
   const isUnmountedRef = useRef(false)
   const info = useListInfo()
+  const [txIsUserCreated, setTxIsUserCreated] = useState(false)
+
+  // 判断QQ音乐歌单是否是用户自建歌单
+  useEffect(() => {
+    if (info.source === 'tx') {
+      txUserApi.getUserPlaylists().then(playlists => {
+        const targetPlaylist = playlists.find((p: any) => String(p.id) === String(info.id))
+        if (targetPlaylist && !targetPlaylist.isCollected) {
+          setTxIsUserCreated(true)
+        } else {
+          setTxIsUserCreated(false)
+        }
+      }).catch(() => {
+        setTxIsUserCreated(false)
+      })
+    } else {
+      setTxIsUserCreated(false)
+    }
+  }, [info.source, info.id])
+
+  // 最终的 isCreator 判断：网易云用传入的 isCreator，QQ音乐用自己判断的
+  const finalIsCreator = info.source === 'tx' ? txIsUserCreated : isCreator
 
   useEffect(() => {
     const handleJumpPosition = () => {
@@ -204,7 +227,7 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
                 onListUpdate={handleListUpdate}
                 forcePlayList={true}
                 listId={`${info.source}__${info.id}`}
-                isCreator={isCreator}
+                isCreator={finalIsCreator}
                 playingId={playingId}
     />
   )

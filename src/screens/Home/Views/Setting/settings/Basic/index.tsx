@@ -21,6 +21,7 @@ import IsShowMyListSubMenu from './IsShowMyListSubMenu'
 import IsNewListUI from './IsNewListUI'
 import { useI18n } from '@/lang/i18n'
 import WyCookie from './WyCookie'
+import TxCookie from './TxCookie'
 import NavMenu from "@/screens/Home/Views/Setting/settings/Basic/NavMenu.tsx";
 import BilibiliMultiPage from './BilibiliMultiPage'
 
@@ -52,6 +53,7 @@ export default memo(() => {
       <Source />
       <SourceName />
       <WyCookie />
+      <TxCookie />
       <BilibiliMultiPage />
     </Section>
   )

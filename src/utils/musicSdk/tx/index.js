@@ -5,6 +5,8 @@ import musicSearch from './musicSearch'
 import { apis } from '../api-source'
 import hotSearch from './hotSearch'
 import comment from './comment'
+import user from './user'
+import dailyRec from './dailyRec'
 import {resolveQualityAlias} from "@/utils/musicSdk/utils";
 // import tipSearch from './tipSearch'
 
@@ -15,6 +17,8 @@ const tx = {
   musicSearch,
   hotSearch,
   comment,
+  user,
+  dailyRec,
 
   getMusicUrl(songInfo, type) {
     const qualityToRequest = resolveQualityAlias('tx', type);
