@@ -9,7 +9,7 @@ import { useWindowSize } from '@/utils/hooks'
 import { useTheme } from '@/store/theme/hook'
 import { useI18n } from '@/lang'
 import { createStyle } from '@/utils/tools'
-import { scaleSizeW } from '@/utils/pixelRatio'
+import { scaleSizeW, scaleSizeH } from '@/utils/pixelRatio'
 import {useWySubscribedPlaylists, useWyUid} from "@/store/user/hook.ts"
 import txApi from '@/utils/musicSdk/tx/user'
 import { useEffect } from 'react'
@@ -86,7 +86,25 @@ export default ({
   const uid = useWyUid()
 
   useEffect(() => {
-    if (playlistType === 'tx' && !isLoaded.current) {
+    // 在组件挂载时就预加载 QQ 歌单，避免切换标签时界面抖动
+    if (playlistType === 'tx') {
+      if (!isLoaded.current) {
+        isLoaded.current = true
+        txApi.getUserPlaylists().then(playlists => {
+          const formattedPlaylists = playlists.map(p => ({
+            id: `tx__${p.id}`,
+            name: p.name,
+            cover: p.cover,
+            songCount: p.songCount,
+            creator: { nickname: 'QQ音乐' },
+          }))
+          setTxPlaylists(formattedPlaylists)
+        }).catch(() => {
+          setTxPlaylists([])
+        })
+      }
+    } else if (!isLoaded.current) {
+      // 预加载：在组件挂载时也加载 QQ 歌单数据
       isLoaded.current = true
       txApi.getUserPlaylists().then(playlists => {
         const formattedPlaylists = playlists.map(p => ({
@@ -100,9 +118,6 @@ export default ({
       }).catch(() => {
         setTxPlaylists([])
       })
-    }
-    if (playlistType !== 'tx') {
-      isLoaded.current = false
     }
   }, [playlistType])
 
@@ -124,7 +139,7 @@ export default ({
   }, [windowSize])
 
   return (
-    <ScrollView style={{ flexGrow: 0 }}>
+    <ScrollView style={{ flexGrow: 0, minHeight: scaleSizeH(200) }}>
       <View style={styles.list} onStartShouldSetResponder={() => true}>
         {allList.map((info) => (
           <ListItem
