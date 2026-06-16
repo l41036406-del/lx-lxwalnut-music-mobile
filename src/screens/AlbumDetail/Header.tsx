@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import Image from '@/components/common/Image';
 import ImagePreviewModal from '@/components/common/ImagePreviewModal';
@@ -13,6 +13,7 @@ import { useIsWyAlbumSubscribed } from '@/store/user/hook';
 import wyApi from '@/utils/musicSdk/wy/user';
 import { addWySubscribedAlbum, removeWySubscribedAlbum } from '@/store/user/action';
 import { type SubscribedAlbumInfo } from '@/store/user/state';
+import { log } from '@/utils/log';
 
 interface Props {
   albumInfo: any
@@ -26,9 +27,19 @@ export default memo(({ albumInfo, componentId }: Props) => {
   const [isPreviewVisible, setPreviewVisible] = useState(false);
   const albumPic = albumInfo.picUrl || albumInfo.img;
 
+  useEffect(() => {
+    log.info('[AlbumDetail/Header] albumInfo更新', {
+      albumId: albumInfo.id,
+      publishTime: albumInfo.publishTime,
+      publishTimeType: typeof albumInfo.publishTime,
+      size: albumInfo.size,
+      total: albumInfo.total,
+    })
+  }, [albumInfo.id, albumInfo.publishTime, albumInfo.size, albumInfo.total])
+
   const handleArtistPress = (artist: any) => {
-    if (!artist.id) return;
-    navigations.pushArtistDetailScreen(componentId, { id: String(artist.id), name: artist.name });
+    if (!artist.id && !artist.mid) return;
+    navigations.pushArtistDetailScreen(componentId, { id: String(artist.id || artist.mid), mid: artist.mid || artist.id, name: artist.name, picUrl: artist.picUrl, source: albumInfo.source });
   };
 
   const toggleSubscribe = () => {
@@ -76,12 +87,14 @@ export default memo(({ albumInfo, componentId }: Props) => {
           <Text style={styles.albumName} size={18} color="#FFF" numberOfLines={2}>{albumInfo.name}</Text>
           <View style={styles.artistContainer}>{artists}</View>
           <Text style={styles.metaInfo} size={12} color="rgba(255,255,255,0.8)">
-            {albumInfo.publishTime ? dateFormat(albumInfo.publishTime, 'Y.M.D') : ''} • {albumInfo.size || albumInfo.total} 首
+            {albumInfo.publishTime ? `${dateFormat(albumInfo.publishTime, 'Y.M.D') || albumInfo.publishTime} • ` : ''}{albumInfo.size || albumInfo.total} 首
           </Text>
         </View>
-        <TouchableOpacity style={styles.followButton} onPress={toggleSubscribe}>
-          <Icon name={isSubscribed ? 'love-filled' : 'love'} color={isSubscribed ? theme['c-liked'] : '#fff'} size={18} />
-        </TouchableOpacity>
+        {albumInfo.source !== 'tx' && (
+          <TouchableOpacity style={styles.followButton} onPress={toggleSubscribe}>
+            <Icon name={isSubscribed ? 'love-filled' : 'love'} color={isSubscribed ? theme['c-liked'] : '#fff'} size={18} />
+          </TouchableOpacity>
+        )}
       </View>
       <ImagePreviewModal
         visible={isPreviewVisible}

@@ -7,11 +7,11 @@ import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
 import { navigations } from '@/navigation'
 import { useTheme } from '@/store/theme/hook'
-import { getSimilar } from '@/utils/musicSdk/wy/artist'
+import musicSdk from '@/utils/musicSdk'
 import { createStyle, toast } from '@/utils/tools'
 
 export interface SimilarArtistsModalType {
-  show: (artist: { id: string | number; name?: string }) => void
+  show: (artist: { id: string | number; name?: string; source?: string }) => void
 }
 
 type ArtistInfo = {
@@ -32,14 +32,17 @@ const getArtistPic = (artist: ArtistInfo) => artist.avatar || artist.picUrl || a
 const ArtistItem = memo(({
   item,
   onOpen,
+  source,
 }: {
-  item: ArtistInfo
-  onOpen: (artist: ArtistInfo) => void
+  item: ArtistInfo & { source?: string }
+  onOpen: (artist: ArtistInfo & { mid?: string; source?: string; picUrl?: string }) => void
+  source?: string
 }) => {
   const theme = useTheme()
   const [expanded, setExpanded] = useState(false)
   const desc = item.briefDesc?.trim() || '暂无简介'
   const alias = item.alias?.length ? item.alias.join(' / ') : ''
+  const showDesc = source !== 'tx'
 
   const handleOpen = useCallback(() => {
     onOpen(item)
@@ -61,16 +64,18 @@ const ArtistItem = memo(({
         </View>
         <Icon name="chevron-right" size={16} color={theme['c-font-label']} />
       </TouchableOpacity>
-      <TouchableOpacity activeOpacity={0.8} onPress={() => setExpanded(!expanded)}>
-        <Text
-          color={theme['c-font-label']}
-          size={12}
-          numberOfLines={expanded ? undefined : 3}
-          style={styles.desc}
-        >
-          {desc}
-        </Text>
-      </TouchableOpacity>
+      {showDesc && (
+        <TouchableOpacity activeOpacity={0.8} onPress={() => setExpanded(!expanded)}>
+          <Text
+            color={theme['c-font-label']}
+            size={12}
+            numberOfLines={expanded ? undefined : 3}
+            style={styles.desc}
+          >
+            {desc}
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   )
 })
@@ -81,15 +86,26 @@ export default forwardRef<SimilarArtistsModalType, { componentId: string }>(({ c
   const [loading, setLoading] = useState(false)
   const [list, setList] = useState<ArtistInfo[]>([])
   const [title, setTitle] = useState('相似歌手')
+  const [currentSource, setCurrentSource] = useState<string>('wy')
   const requestIdRef = useRef(0)
   const theme = useTheme()
 
-  const loadData = useCallback((artist: { id: string | number; name?: string }) => {
+  const loadData = useCallback((artist: { id: string | number; name?: string; source?: string }) => {
     const requestId = ++requestIdRef.current
     setLoading(true)
     setList([])
 
-    getSimilar(artist.id).then((artists: ArtistInfo[]) => {
+    const source = artist.source || 'wy'
+    setCurrentSource(source)
+    const api = musicSdk[source]?.artist
+
+    if (!api?.getSimilar) {
+      toast('暂不支持该音源获取相似歌手')
+      setLoading(false)
+      return
+    }
+
+    api.getSimilar(artist.id).then((artists: ArtistInfo[]) => {
       if (requestId !== requestIdRef.current) return
       setList(artists)
       if (!artists.length) toast('暂无相似歌手')
@@ -119,19 +135,22 @@ export default forwardRef<SimilarArtistsModalType, { componentId: string }>(({ c
     },
   }))
 
-  const handleOpenArtist = useCallback((artist: ArtistInfo) => {
+  const handleOpenArtist = useCallback((artist: ArtistInfo & { mid?: string; source?: string; picUrl?: string }) => {
     popupRef.current?.setVisible(false)
     requestAnimationFrame(() => {
       navigations.pushArtistDetailScreen(componentId, {
-        id: String(artist.id),
+        id: String(artist.mid || artist.id),
+        mid: artist.mid,
         name: artist.name,
+        picUrl: artist.picUrl,
+        source: artist.source,
       })
     })
   }, [componentId])
 
   const renderItem = useCallback<NonNullable<FlatListType['renderItem']>>(({ item }) => {
-    return <ArtistItem item={item} onOpen={handleOpenArtist} />
-  }, [handleOpenArtist])
+    return <ArtistItem item={item} onOpen={handleOpenArtist} source={currentSource} />
+  }, [handleOpenArtist, currentSource])
 
   const keyExtractor = useCallback<NonNullable<FlatListType['keyExtractor']>>((item) => String(item.id), [])
 

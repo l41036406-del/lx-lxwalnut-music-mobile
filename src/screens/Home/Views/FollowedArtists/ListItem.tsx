@@ -56,6 +56,7 @@ export default memo(({ artist, showFollowButton = false }: { artist: any, showFo
       id: String(artist.id),
       mid: String(artist.mid),
       name: artist.name,
+      picUrl: artist.picUrl,
       source: artist.source,
     });
     log.info('[FollowedArtists/ListItem] === 跳转请求已发送 ===', {
@@ -80,7 +81,7 @@ export default memo(({ artist, showFollowButton = false }: { artist: any, showFo
             : `专辑: ${artist.albumSize}`}
         </Text>
       </View>
-      {showFollowButton && (
+      {showFollowButton && artist.source !== 'tx' && (
         <TouchableOpacity style={styles.followButton} onPress={handleFollow}>
           <Icon name={isFollowed ? 'love-filled' : 'love'} color={isFollowed ? theme['c-liked'] : theme['c-font-label']} size={20} />
         </TouchableOpacity>

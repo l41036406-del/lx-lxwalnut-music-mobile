@@ -79,24 +79,28 @@ export default memo(({ artist, onFollow, componentId }: Props) => {
               {artistAlias ? <Text size={12} color="rgba(255,255,255,0.8)">{artistAlias}</Text> : null}
             </Text>
 
-            <View style={styles.descWrapper}>
-              <ScrollView nestedScrollEnabled={true}>
-                <TouchableOpacity activeOpacity={0.8} onPress={() => setDescExpanded(!isDescExpanded)}>
-                  <Text size={12} color="rgba(255,255,255,0.8)">
-                    {truncatedDesc}
-                  </Text>
-                </TouchableOpacity>
-              </ScrollView>
-            </View>
+            {!!description && (
+              <View style={styles.descWrapper}>
+                <ScrollView nestedScrollEnabled={true}>
+                  <TouchableOpacity activeOpacity={0.8} onPress={() => setDescExpanded(!isDescExpanded)}>
+                    <Text size={12} color="rgba(255,255,255,0.8)">
+                      {truncatedDesc}
+                    </Text>
+                  </TouchableOpacity>
+                </ScrollView>
+              </View>
+            )}
 
           </View>
-          <TouchableOpacity style={styles.followButton} onPress={toggleFollow}>
-            <Icon name={isFollowed ? 'love-filled' : 'love'} color={isFollowed ? theme['c-liked'] : '#fff'} size={18} />
-          </TouchableOpacity>
+          {artist.source !== 'tx' && (
+            <TouchableOpacity style={styles.followButton} onPress={toggleFollow}>
+              <Icon name={isFollowed ? 'love-filled' : 'love'} color={isFollowed ? theme['c-liked'] : '#fff'} size={18} />
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             activeOpacity={0.82}
             style={styles.similarButton}
-            onPress={() => similarArtistsModalRef.current?.show({ id: artist.id, name: artistName })}
+            onPress={() => similarArtistsModalRef.current?.show({ id: artist.mid || artist.id, name: artistName, source: artist.source })}
           >
             <Text size={12} color="#fff" numberOfLines={1}>相似歌手</Text>
             <Icon name="chevron-right" color="#fff" size={12} />
@@ -138,8 +142,6 @@ const styles = createStyle({
     flexDirection: 'column',
     justifyContent: 'center',
     height: '100%',
-    paddingTop: 10,
-    paddingBottom: 34,
   },
   name: {
     fontWeight: 'bold',

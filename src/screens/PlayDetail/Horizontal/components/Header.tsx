@@ -27,24 +27,34 @@ const Title = () => {
   }, [musicInfo])
 
   const handleAlbumPress = useCallback(() => {
-    if (!musicInfo || musicInfo.source !== 'wy' || !(musicInfo.meta as any).albumId) return
-    navigations.pushAlbumDetailScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!, { id: String((musicInfo.meta as any).albumId), name: musicInfo.meta.albumName, source: musicInfo.source })
+    if (!musicInfo) return
+    // 专辑详情仅网易云与QQ音乐支持
+    if (musicInfo.source !== 'wy' && musicInfo.source !== 'tx') return
+    const albumId = (musicInfo.meta as any)?.albumId || musicInfo.albumId
+    const albumName = musicInfo.meta?.albumName || musicInfo.albumName
+    const albumMid = (musicInfo.meta as any)?.albumMid || musicInfo.albumMid || albumId
+    if (!albumId || !albumName) return
+    if (musicInfo.source === 'wy') {
+      navigations.pushAlbumDetailScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!, { id: String(albumId), name: albumName, source: musicInfo.source })
+    } else if (musicInfo.source === 'tx') {
+      navigations.pushAlbumDetailScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!, { id: String(albumId), mid: albumMid, name: albumName, source: 'tx' })
+    }
   }, [musicInfo])
 
 
   const singerRender = useMemo(() => {
     if (!musicInfo) return null
-    const albumName = musicInfo.meta?.albumName
-    const albumId = (musicInfo.meta as any)?.albumId
+    const albumName = musicInfo.meta?.albumName || musicInfo.albumName
+    const albumId = (musicInfo.meta as any)?.albumId || musicInfo.albumId
 
-    if (!musicInfo.artists?.length || musicInfo.source == 'local') {
+    if (!musicInfo.artists?.length || musicInfo.source == 'local' || musicInfo.source === 'tx') {
       return (
         <View style={styles.singerContainer}>
           <Text numberOfLines={1} size={12} color={theme['c-font-label']}>
             {musicInfo.singer}
           </Text>
           {albumName ? (
-            <TouchableOpacity style={{ flexShrink: 1 }} onPress={handleAlbumPress} disabled={musicInfo.source !== 'wy' || !albumId}>
+            <TouchableOpacity style={{ flexShrink: 1 }} onPress={handleAlbumPress} disabled={(musicInfo.source !== 'wy' && musicInfo.source !== 'tx') || !albumId}>
               <Text numberOfLines={1} size={12} color={theme['c-font-label']}>
                 {` · ${albumName}`}
               </Text>

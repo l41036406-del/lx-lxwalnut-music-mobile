@@ -7,6 +7,99 @@ import { txLog } from '@/utils/txLog'
 export default {
   successCode: 0,
 
+  async getAlbumDetail(albumMid, retryNum = 0) {
+    if (retryNum > 2) {
+      txLog.error('=== txApi.getAlbumDetail 重试次数超限 ===', { albumMid, retryNum })
+      return Promise.reject(new Error('获取专辑详情失败'))
+    }
+
+    txLog.info('=== txApi.getAlbumDetail 开始 ===', { albumMid, retryNum })
+
+    const requestData = {
+      comm: {
+        ct: '11',
+        cv: '14090508',
+        v: '14090508',
+        tmeAppID: 'qqmusic',
+        phonetype: 'EBG-AN10',
+        deviceScore: '553.47',
+        devicelevel: '50',
+        newdevicelevel: '20',
+        rom: 'HuaWei/EMOTION/EmotionUI_14.2.0',
+        os_ver: '12',
+        OpenUDID: '0',
+        OpenUDID2: '0',
+        QIMEI36: '0',
+        udid: '0',
+        chid: '0',
+        aid: '0',
+        oaid: '0',
+        taid: '0',
+        tid: '0',
+        wid: '0',
+        uid: '0',
+        sid: '0',
+        modeSwitch: '6',
+        teenMode: '0',
+        ui_mode: '2',
+        nettype: '1020',
+        v4ip: '',
+      },
+      req: {
+        module: 'music.musichallAlbum.AlbumInfoServer',
+        method: 'GetAlbumDetail',
+        param: {
+          albumMId: albumMid,
+        },
+      },
+    }
+
+    txLog.info('=== txApi.getAlbumDetail 请求参数 ===', {
+      albumMid,
+      module: requestData.req.module,
+      method: requestData.req.method,
+    })
+
+    const request = signRequest(requestData)
+
+    try {
+      const { body } = await request
+
+      txLog.info('=== txApi.getAlbumDetail 原始响应 ===', {
+        albumMid,
+        bodyCode: body?.code,
+        reqCode: body?.req?.code,
+        bodyPreview: JSON.stringify(body).slice(0, 500),
+      })
+
+      if (!body || !body.req || body.code != this.successCode || body.req.code != this.successCode) {
+        txLog.warn('=== txApi.getAlbumDetail 获取失败，准备重试 ===', {
+          albumMid,
+          bodyCode: body?.code,
+          reqCode: body?.req?.code,
+          retryNum: retryNum + 1,
+        })
+        return this.getAlbumDetail(albumMid, ++retryNum)
+      }
+
+      const data = body.req.data
+      txLog.info('=== txApi.getAlbumDetail 获取成功 ===', {
+        albumMid,
+        dataKeys: data ? Object.keys(data) : [],
+      })
+
+      return data
+    } catch (error) {
+      txLog.error('=== txApi.getAlbumDetail 出错 ===', {
+        albumMid,
+        error: error.message,
+        stack: error.stack,
+        retryNum: retryNum + 1,
+      })
+      return this.getAlbumDetail(albumMid, ++retryNum)
+    }
+  },
+
   async getAlbum(albumMid, retryNum = 0) {
     if (retryNum > 2) {
       txLog.error('=== txApi.getAlbum 重试次数超限 ===', { albumMid, retryNum })
@@ -117,7 +210,39 @@ export default {
       })
 
       const list = this.handleResult(songList)
-      const info = this.handleAlbumInfo(data, albumMid)
+      
+      let detailInfo = null
+      try {
+        detailInfo = await this.getAlbumDetail(albumMid)
+        txLog.info('=== txApi.getAlbum 获取专辑详情成功 ===', {
+          albumMid,
+          hasDetailInfo: !!detailInfo,
+          detailInfoKeys: detailInfo ? Object.keys(detailInfo) : [],
+          basicInfo: detailInfo?.basicInfo ? {
+            name: detailInfo.basicInfo.name,
+            time_public: detailInfo.basicInfo.time_public,
+            publishDate: detailInfo.basicInfo.publishDate,
+            subtitle: detailInfo.basicInfo.subtitle,
+            language: detailInfo.basicInfo.language,
+            genre: detailInfo.basicInfo.genre,
+          } : null,
+          singers: detailInfo?.singers ? detailInfo.singers.slice(0, 3).map(s => ({ id: s.id, name: s.name || s.singerName })) : null,
+          singerList: detailInfo?.singer?.singerList ? detailInfo.singer.singerList.slice(0, 3).map(s => ({ id: s.id, name: s.name || s.singerName })) : null,
+        })
+      } catch (e) {
+        txLog.warn('=== txApi.getAlbum 获取专辑详情失败，使用默认信息 ===', { albumMid, error: e.message })
+      }
+
+      const info = this.handleAlbumInfo(data, albumMid, detailInfo)
+      
+      txLog.info('=== txApi.getAlbum 最终专辑信息 ===', {
+        albumMid,
+        albumName: info.name,
+        artist: info.artist,
+        publishTime: info.publishTime,
+        size: info.size,
+        artistId: info.artistId,
+      })
 
       return {
         list,
@@ -251,7 +376,7 @@ export default {
       list.push({
         id: String(songInfo.id),
         singer: formatSingerName(songInfo.singer, 'name'),
-        artists: songInfo.singer?.map(s => ({ id: s.id || s.mid, name: s.name })) || [],
+        artists: songInfo.singer?.map(s => ({ id: s.id || s.mid, mid: s.mid, name: s.name })) || [],
         name: songInfo.title,
         albumName,
         albumId,
@@ -282,21 +407,49 @@ export default {
     return list
   },
 
-  handleAlbumInfo(data, albumMid) {
+  handleAlbumInfo(data, albumMid, detailInfo = null) {
     if (!data) return null
     
     const songList = data.songList || data.list || []
     const firstSong = songList[0]
     
+    const basicInfo = detailInfo?.basicInfo || detailInfo?.album || {}
+    const singers = detailInfo?.singers || detailInfo?.singer?.singerList || []
+    
+    txLog.info('=== txApi.handleAlbumInfo 诊断 ===', {
+      albumMid,
+      basicInfoKeys: Object.keys(basicInfo),
+      basicInfoAlbumName: basicInfo.albumName,
+      basicInfoName: basicInfo.name,
+      basicInfoPublishDate: basicInfo.publishDate,
+      basicInfoTimePublic: basicInfo.time_public,
+      singersLength: singers.length,
+      firstSinger: singers[0] ? Object.keys(singers[0]) : null,
+      singers0Name: singers[0]?.name,
+      singers0Id: singers[0]?.id,
+      singers0SingerId: singers[0]?.singerId,
+      singers0SingerMid: singers[0]?.singerMid,
+      dataAlbumName: data.albumName,
+      firstSongAlbumName: firstSong?.album?.name,
+      firstSongSinger: firstSong?.singer?.map(s => ({ id: s.id, mid: s.mid, name: s.name })) || null,
+    })
+    
+    const artistName = singers.length ? formatSingerName(singers.map(s => ({ name: s.name || s.singerName })), 'name') : formatSingerName(firstSong?.singer || [], 'name')
+    const artistObj = singers.length 
+      ? singers.map(s => ({ id: s.id || s.singerId || s.singerMid, mid: s.mid || s.singerMid, name: s.name || s.singerName }))
+      : (firstSong?.singer || []).map(s => ({ id: s.id || s.mid, mid: s.mid, name: s.name }))
+    
     return {
       id: albumMid,
       mid: albumMid,
-      name: data.albumName || firstSong?.album?.name || firstSong?.title || '',
-      artist: formatSingerName(firstSong?.singer || [], 'name'),
-      artistId: firstSong?.singer?.[0]?.id || '',
+      name: basicInfo.albumName || data.albumName || firstSong?.album?.name || firstSong?.title || '',
+      artist: artistName,
+      artistId: singers[0]?.id || singers[0]?.singerId || singers[0]?.singerMid || firstSong?.singer?.[0]?.id || '',
+      artists: artistObj,
       picUrl: `https://y.gtimg.cn/music/photo_new/T002R500x500M000${albumMid}.jpg`,
-      publishTime: data.time_public || '',
+      publishTime: basicInfo.time_public || basicInfo.publishDate || data.time_public || '',
       size: data.totalNum || data.total_num || songList.length,
+      source: 'tx',
     }
   },
 }

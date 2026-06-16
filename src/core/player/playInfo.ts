@@ -95,6 +95,10 @@ export const resetPlayerMusicInfo = () => {
 
 const setPlayerMusicInfo = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem | null) => {
   if (musicInfo) {
+    const onlineMusicInfo = 'progress' in musicInfo 
+      ? musicInfo.metadata.musicInfo 
+      : (musicInfo as LX.Music.MusicInfoOnline)
+    
     setMusicInfo(
       'progress' in musicInfo
         ? {
@@ -104,6 +108,7 @@ const setPlayerMusicInfo = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
             alias: musicInfo.metadata.musicInfo.alias,
             singer: musicInfo.metadata.musicInfo.singer,
             album: musicInfo.metadata.musicInfo.meta.albumName ?? '',
+            artists: musicInfo.metadata.musicInfo.artists,
             lrc: null,
             tlrc: null,
             rlrc: null,
@@ -117,6 +122,7 @@ const setPlayerMusicInfo = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
             alias: musicInfo.alias,
             singer: musicInfo.singer,
             album: musicInfo.meta.albumName ?? '',
+            artists: onlineMusicInfo.artists,
             lrc: null,
             tlrc: null,
             rlrc: null,

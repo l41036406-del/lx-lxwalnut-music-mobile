@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState, useCallback } from 'react'
+import { memo, useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { View } from 'react-native'
 import PageContent from '@/components/PageContent'
 import Header from './Header'
@@ -145,10 +145,41 @@ export default memo(({ componentId, albumInfo }: { componentId: string; albumInf
       list: newList,
     }));
   }, [albumDetail.list, albumInfo.id]);
+  const displayAlbumInfo = useMemo(() => {
+    const info = {
+      ...albumInfo,
+      ...(albumDetail.info || {}),
+      publishTime: albumDetail.info?.publishTime || albumInfo.publishTime || '',
+      total: albumDetail.list.length || (albumDetail.info?.total || albumDetail.info?.size),
+    }
+    log.info('[AlbumDetail] === displayAlbumInfo构造 ===', {
+      albumId: albumInfo.id,
+      albumInfoPublishTime: albumInfo.publishTime,
+      albumDetailInfoPublishTime: albumDetail.info?.publishTime,
+      resultPublishTime: info.publishTime,
+      hasAlbumDetail: !!albumDetail.info,
+    })
+    return info
+  }, [albumInfo, albumDetail.info, albumDetail.list])
+
+  log.info('[AlbumDetail] === 界面渲染诊断 ===', {
+    albumId: albumInfo.id,
+    hasAlbumDetail: !!albumDetail.info,
+    displayAlbumName: displayAlbumInfo.name,
+    displayAlbumPicUrl: displayAlbumInfo.picUrl || displayAlbumInfo.img,
+    displayAlbumPublishTime: displayAlbumInfo.publishTime,
+    displayAlbumArtists: displayAlbumInfo.artists,
+    displayAlbumSource: displayAlbumInfo.source,
+    albumDetailInfoPublishTime: albumDetail.info?.publishTime,
+    albumDetailInfoArtists: albumDetail.info?.artists,
+    songsListLength: albumDetail.list.length,
+    timestamp: new Date().toISOString(),
+  })
+
   return (
     <PageContent>
       <View style={styles.container}>
-        <Header albumInfo={albumDetail.info || albumInfo} componentId={componentId} />
+        <Header albumInfo={displayAlbumInfo} componentId={componentId} />
         <OnlineList componentId={componentId}
           ref={listRef}
           listId='album'

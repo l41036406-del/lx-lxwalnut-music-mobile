@@ -91,7 +91,7 @@ export default memo(({ item, showSubscribeButton = false }: { item: any, showSub
         <Text size={12} color={theme['c-font-label']}>
           {item.size} 首</Text>
       </View>
-      {showSubscribeButton && (
+      {showSubscribeButton && item.source !== 'tx' && (
         <TouchableOpacity style={styles.subscribeButton} onPress={toggleSubscribe}>
           <Icon name={isSubscribed ? 'love-filled' : 'love'} color={isSubscribed ? theme['c-liked'] : theme['c-font-label']} size={20} />
         </TouchableOpacity>

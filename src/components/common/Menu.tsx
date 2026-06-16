@@ -1,4 +1,4 @@
-import { useImperativeHandle, forwardRef, useMemo, useRef, useState, type Ref } from 'react'
+import React, { useImperativeHandle, forwardRef, useMemo, useRef, useState, type Ref } from 'react'
 import { View, Animated, TouchableHighlight } from 'react-native'
 import { useWindowSize } from '@/utils/hooks'
 
@@ -24,7 +24,7 @@ export interface MenuSize {
   width?: number
   height?: number
 }
-export type Menus = Readonly<Array<{ action: string; label: string; disabled?: boolean }>>
+export type Menus = Readonly<Array<{ action: string; label: string | React.ReactNode; disabled?: boolean }>>
 
 const styles = createStyle({
   mask: {
@@ -158,13 +158,19 @@ const Menu = ({
                 opacity: 0.4,
               }}
             >
-              <Text
-                style={{ textAlign: center ? 'center' : 'left' }}
-                size={fontSize}
-                numberOfLines={1}
-              >
-                {menu.label}
-              </Text>
+              {typeof menu.label === 'string' ? (
+                <Text
+                  style={{ textAlign: center ? 'center' : 'left' }}
+                  size={fontSize}
+                  numberOfLines={1}
+                >
+                  {menu.label}
+                </Text>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: center ? 'center' : 'flex-start' }}>
+                  {menu.label}
+                </View>
+              )}
             </View>
           ) : menu.action == activeId ? (
             <View
@@ -175,14 +181,20 @@ const Menu = ({
                 height: menuItemStyle.height,
               }}
             >
-              <Text
-                style={{ textAlign: center ? 'center' : 'left' }}
-                color={theme['c-primary-font-active']}
-                size={fontSize}
-                numberOfLines={1}
-              >
-                {menu.label}
-              </Text>
+              {typeof menu.label === 'string' ? (
+                <Text
+                  style={{ textAlign: center ? 'center' : 'left' }}
+                  color={theme['c-primary-font-active']}
+                  size={fontSize}
+                  numberOfLines={1}
+                >
+                  {menu.label}
+                </Text>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: center ? 'center' : 'flex-start' }}>
+                  {menu.label}
+                </View>
+              )}
             </View>
           ) : (
             <TouchableHighlight
@@ -197,13 +209,19 @@ const Menu = ({
                 menuPress(menu)
               }}
             >
-              <Text
-                style={{ textAlign: center ? 'center' : 'left' }}
-                size={fontSize}
-                numberOfLines={1}
-              >
-                {menu.label}
-              </Text>
+              {typeof menu.label === 'string' ? (
+                <Text
+                  style={{ textAlign: center ? 'center' : 'left' }}
+                  size={fontSize}
+                  numberOfLines={1}
+                >
+                  {menu.label}
+                </Text>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: center ? 'center' : 'flex-start' }}>
+                  {menu.label}
+                </View>
+              )}
             </TouchableHighlight>
           )
         )}

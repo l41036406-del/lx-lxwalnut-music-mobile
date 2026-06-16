@@ -462,6 +462,127 @@ const artistApi = {
     }
   },
 
+  async getSimilar(artistMid, retryNum = 0) {
+    if (!artistMid || artistMid === 'undefined' || artistMid === '') {
+      txLog.error('=== txApi.getSimilar 参数为空 ===', { artistMid, retryNum })
+      return Promise.reject(new Error('歌手ID为空'))
+    }
+
+    if (retryNum > 2) {
+      txLog.warn('=== txApi.getSimilar 重试次数超限 ===', { artistMid, retryNum })
+      return Promise.reject(new Error('获取相似歌手失败'))
+    }
+
+    txLog.info('=== txApi.getSimilar 开始 ===', { artistMid, retryNum })
+
+    const uin = getUinFromCookie()
+    const requestData = {
+      comm: {
+        ct: '11',
+        cv: '14090508',
+        v: '14090508',
+        tmeAppID: 'qqmusic',
+        phonetype: 'EBG-AN10',
+        deviceScore: '553.47',
+        devicelevel: '50',
+        newdevicelevel: '20',
+        rom: '',
+        resolution: '1080x2340',
+        IMEI: '',
+        IMEI2: '',
+        AndroidID: '',
+        OpenUDID: '',
+        OpenUDID2: '0',
+        QIMEI36: '0',
+        udid: '0',
+        chid: '0',
+        aid: '0',
+        oaid: '0',
+        taid: '0',
+        tid: '0',
+        wid: '0',
+        uid: uin,
+        sid: '0',
+        modeSwitch: '6',
+        teenMode: '0',
+        ui_mode: '2',
+        nettype: '1020',
+        v4ip: '',
+      },
+      req: {
+        module: 'music.SimilarSingerSvr',
+        method: 'GetSimilarSingerList',
+        param: {
+          singerMid: artistMid,
+          number: 10,
+        },
+      },
+    }
+
+    txLog.info('=== txApi.getSimilar 请求参数 ===', {
+      artistMid,
+      module: requestData.req.module,
+      method: requestData.req.method,
+      uid: requestData.comm.uid,
+    })
+
+    const request = signRequest(requestData)
+
+    try {
+      const { body } = await request
+
+      txLog.info('=== txApi.getSimilar 原始响应 ===', {
+        artistMid,
+        bodyCode: body?.code,
+        reqCode: body?.req?.code,
+        bodyPreview: JSON.stringify(body).slice(0, 300),
+      })
+
+      if (!body || !body.req || body.code != this.successCode || body.req.code != this.successCode) {
+        txLog.warn('=== txApi.getSimilar 获取失败，准备重试 ===', {
+          artistMid,
+          bodyCode: body?.code,
+          reqCode: body?.req?.code,
+          retryNum: retryNum + 1,
+        })
+        return this.getSimilar(artistMid, ++retryNum)
+      }
+
+      const data = body.req.data
+      const singerList = data.singerlist || data.singerList || data.list || data.similarSingers || []
+
+      txLog.info('=== txApi.getSimilar 获取成功 ===', {
+        artistMid,
+        singerCount: singerList.length,
+        dataKeys: data ? Object.keys(data) : [],
+      })
+
+      const similarArtists = singerList.map((singer) => ({
+        id: singer.singerId || singer.id || singer.mid,
+        mid: singer.singerMid || singer.mid || singer.id,
+        name: singer.singerName || singer.name || '',
+        picUrl: singer.singerPic || '',
+        source: 'tx',
+      }))
+
+      txLog.info('=== txApi.getSimilar 解析结果 ===', {
+        artistMid,
+        similarArtistCount: similarArtists.length,
+        sampleArtists: similarArtists.slice(0, 3).map(a => ({ id: a.id, name: a.name })),
+      })
+
+      return similarArtists
+    } catch (error) {
+      txLog.error('=== txApi.getSimilar 出错 ===', {
+        artistMid,
+        error: error.message,
+        stack: error.stack,
+        retryNum: retryNum + 1,
+      })
+      return this.getSimilar(artistMid, ++retryNum)
+    }
+  },
+
   handleSongResult(rawList) {
     if (!rawList || !Array.isArray(rawList)) return []
 
@@ -554,7 +675,7 @@ const artistApi = {
       list.push({
         id: String(songInfo.id),
         singer: formatSingerName(songInfo.singer, 'name'),
-        artists: songInfo.singer?.map(s => ({ id: s.id || s.mid, name: s.name })) || [],
+        artists: songInfo.singer?.map(s => ({ id: s.id || s.mid, mid: s.mid, name: s.name })) || [],
         name: songInfo.title,
         albumName,
         albumId,

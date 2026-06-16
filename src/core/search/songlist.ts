@@ -1,6 +1,7 @@
 import searchSonglistState, { type Source, type ListInfoItem } from '@/store/search/songlist/state'
 import searchSonglistActions, { type SearchResult } from '@/store/search/songlist/action'
 import musicSdk from '@/utils/musicSdk'
+import { toast } from '@/utils/tools'
 
 export const setSource: (typeof searchSonglistActions)['setSource'] = (source) => {
   searchSonglistActions.setSource(source)
@@ -21,6 +22,12 @@ export const search = async (
   page: number,
   sourceId: Source
 ): Promise<ListInfoItem[]> => {
+  // 哔哩哔哩平台暂不支持歌单搜索
+  if (sourceId === 'bilibili') {
+    toast('哔哩哔哩音源暂不支持歌单搜索')
+    return []
+  }
+
   const listInfo = searchSonglistState.listInfos[sourceId]!
   // if (!text) return []
   const key = `${page}__${sourceId}__${text}`

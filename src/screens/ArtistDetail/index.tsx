@@ -334,7 +334,7 @@ export default memo(({ componentId, artistInfo }: { componentId: string, artistI
     updateSetting({ 'artistDetail.albumViewMode': mode })
   }, [])
 
-  const displayArtist = artistDetail?.artist || artistInfo
+  const displayArtist = artistDetail?.artist && artistDetail.artist.name ? artistDetail.artist : artistInfo
 
   log.info('[ArtistDetail] === 界面渲染诊断 ===', {
     artistId: artistInfo.id,

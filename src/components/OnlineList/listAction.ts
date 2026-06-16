@@ -18,6 +18,7 @@ import {navigations} from "@/navigation";
 import commonState from '@/store/common/state'
 import wyApi from '@/utils/musicSdk/wy/user'
 import txApi from '@/utils/musicSdk/tx/user'
+import { log } from '@/utils/log'
 
 export const handleShowAlbumDetail = (componentId: string, musicInfo: LX.Music.MusicInfoOnline) => {
   const albumId = musicInfo.meta.albumId
@@ -37,24 +38,82 @@ export const handleShowAlbumDetail = (componentId: string, musicInfo: LX.Music.M
 }
 
 export const handleShowArtistDetail = async (componentId: string, musicInfo: LX.Music.MusicInfoOnline) => {
+  log.info('[handleShowArtistDetail] === 开始查看歌手详情 ===', {
+    source: musicInfo.source,
+    name: musicInfo.name,
+    singer: musicInfo.singer,
+    hasArtists: !!musicInfo.artists,
+    artistsLength: musicInfo.artists?.length || 0,
+    artists: musicInfo.artists,
+    meta: musicInfo.meta,
+    timestamp: new Date().toISOString(),
+  })
+
   if (musicInfo.source !== 'wy' && musicInfo.source !== 'tx') {
+    log.info('[handleShowArtistDetail] 暂不支持该音源', { source: musicInfo.source })
     toast('暂不支持该音源查看歌手详情')
     return
   }
 
-  const artists = musicInfo.artists
+  let artists = musicInfo.artists
+
+  if (!artists?.length && musicInfo.singer) {
+    log.info('[handleShowArtistDetail] artists 为空，尝试通过搜索API获取', {
+      singer: musicInfo.singer,
+      source: musicInfo.source,
+    })
+
+    try {
+      const singerNames = musicInfo.singer.split(/[、,，&/]/).map(s => s.trim()).filter(Boolean)
+      const foundArtists: Array<{ id: string | number, mid?: string, name: string, picUrl?: string }> = []
+      for (const singerName of singerNames) {
+        const searchResult = await musicSdk[musicInfo.source].musicSearch.searchSinger(singerName, 1, 1)
+        if (searchResult?.list?.length) {
+          const firstResult = searchResult.list[0]
+          foundArtists.push({
+            id: firstResult.id,
+            mid: firstResult.mid,
+            name: firstResult.name,
+            picUrl: firstResult.picUrl,
+          })
+        }
+      }
+      if (foundArtists.length > 0) {
+        artists = foundArtists
+        log.info('[handleShowArtistDetail] 通过搜索API成功获取歌手信息', {
+          artists,
+        })
+      }
+    } catch (error: any) {
+      log.error('[handleShowArtistDetail] 搜索API出错', { error: error.message })
+    }
+  }
+
   if (!artists?.length) {
+    log.warn('[handleShowArtistDetail] 未找到歌手信息', {
+      name: musicInfo.name,
+      singer: musicInfo.singer,
+      source: musicInfo.source,
+    })
     toast('未找到该歌曲的歌手信息')
     return
   }
 
-  const onSelect = (artist: { id: string | number, name: string }) => {
-    navigations.pushArtistDetailScreen(componentId, { id: String(artist.id), name: artist.name, source: musicInfo.source })
+  const onSelect = (artist: { id: string | number, mid?: string, name: string }) => {
+    log.info('[handleShowArtistDetail] 选中歌手，跳转歌手详情页', {
+      artistId: artist.id,
+      artistMid: artist.mid,
+      artistName: artist.name,
+      source: musicInfo.source,
+    })
+    navigations.pushArtistDetailScreen(componentId, { id: String(artist.id), mid: artist.mid, name: artist.name, picUrl: artist.picUrl, source: musicInfo.source })
   }
 
   if (artists.length > 1) {
+    log.info('[handleShowArtistDetail] 多个歌手，显示选择器', { artists })
     global.app_event.showArtistSelector(artists, onSelect)
   } else if (artists.length === 1) {
+    log.info('[handleShowArtistDetail] 单个歌手，直接跳转', { artist: artists[0] })
     onSelect(artists[0])
   }
 }

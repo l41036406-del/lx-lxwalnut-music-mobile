@@ -6,6 +6,7 @@ import { useTheme } from '@/store/theme/hook'
 import SingerListItem from '../FollowedArtists/ListItem'
 import AlbumListItem from '../../Views/SubscribedAlbums/ListItem'
 import { log } from '@/utils/log'
+import { toast } from '@/utils/tools'
 
 interface SearchResultListProps {
   searchType: 'singer' | 'album'
@@ -49,6 +50,15 @@ export default forwardRef(({ searchType, source }: SearchResultListProps, ref) =
       return
     }
     setLoading(true)
+
+    // 歌手/专辑搜索仅支持网易云与QQ音乐平台
+    if (source !== 'wy' && source !== 'tx') {
+      toast('当前音源平台暂不支持歌手/专辑搜索')
+      setLoading(false)
+      setList([])
+      searchInfoRef.current.hasMore = false
+      return
+    }
 
     const musicSearch = source === 'tx' ? txMusicSearch : wyMusicSearch
     log.info('[SearchResultList] === 开始搜索 ===', {
