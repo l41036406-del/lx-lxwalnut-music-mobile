@@ -43,17 +43,17 @@ const defaultSetting: LX.AppSetting = {
 
   'common.navOrder': [
     'nav_search',
-    'nav_play_history',
-    'nav_songlist',
-    'nav_top',
     'nav_love',
-    'nav_daily_rec',
+    'nav_tx_playlist',
     'nav_tx_daily_rec',
+    'nav_my_playlist',
+    'nav_daily_rec',
     'nav_followed_artists',
     'nav_subscribed_albums',
-    'nav_my_playlist',
-    'nav_onedrive',
+    'nav_songlist',
+    'nav_top',
     'nav_webdav',
+    'nav_onedrive',
     'nav_setting',
   ],
 
