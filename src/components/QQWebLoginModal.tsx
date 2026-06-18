@@ -9,7 +9,7 @@ import Text from '@/components/common/Text';
 import { toast } from '@/utils/tools';
 import CookieManager from '@react-native-cookies/cookies';
 
-const LOGIN_URL = 'https://y.qq.com/; 
+const LOGIN_URL = 'https://y.qq.com/n/ryqq/login';
 
 export interface QQWebLoginModalType {
   show: () => void;
