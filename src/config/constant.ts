@@ -114,6 +114,7 @@ export const NAV_MENUS = [
   { id: 'nav_daily_rec', icon: 'svg:calendar' },
   { id: 'nav_tx_playlist', icon: 'album' },
   { id: 'nav_tx_daily_rec', icon: 'svg:calendar' },
+  { id: 'nav_kg_playlist', icon: 'album' },
   { id: 'nav_songlist', icon: 'album' },
   { id: 'nav_top', icon: 'leaderboard' },
   { id: 'nav_followed_artists', icon: 'svg:artist' },
