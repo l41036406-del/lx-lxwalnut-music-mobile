@@ -301,7 +301,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
             <View style={styles.inputGroup}>
               <Text size={13} weight="500" style={[styles.inputLabel, { color: theme['c-font-label'] }]}>手机号</Text>
               <View style={[styles.inputContainer, { borderColor: theme['c-border'], backgroundColor: theme['c-content-background'] }]}>
-                <Icon name="search-2" size={18} color={theme['c-font-label']} />
                 <TextInput
                   style={[styles.input, { color: theme['c-font'] }]}
                   placeholder="请输入手机号"
@@ -320,7 +319,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
               <Text size={13} weight="500" style={[styles.inputLabel, { color: theme['c-font-label'] }]}>验证码</Text>
               <View style={styles.codeRow}>
                 <View style={[styles.codeInputContainer, { borderColor: theme['c-border'], backgroundColor: theme['c-content-background'] }]}>
-                  <Icon name="setting" size={18} color={theme['c-font-label']} />
                   <TextInput
                     style={[styles.input, { color: theme['c-font'] }]}
                     placeholder="请输入验证码"

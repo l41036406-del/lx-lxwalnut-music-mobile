@@ -3,9 +3,9 @@
 <h1 align="center">LX-X Music 移动版</h1>
 
 <p align="center">
-  <a href="https://github.com/WalnutBai/lx-lxnetease-music-mobile-pro/releases"><img src="https://img.shields.io/github/release/WalnutBai/lx-lxnetease-music-mobile-pro" alt="Release version"></a>
-  <a href="https://github.com/WalnutBai/lx-lxnetease-music-mobile-pro/actions/workflows/release.yml"><img src="https://github.com/WalnutBai/lx-lxnetease-music-mobile-pro/workflows/Build/badge.svg" alt="Build status"></a>
-  <a href="https://github.com/facebook/react-native"><img src="https://img.shields.io/github/package-json/dependency-version/WalnutBai/lx-lxnetease-music-mobile-pro/react-native/master" alt="React native version"></a>
+  <a href="https://github.com/WalnutBai/lx-lxwalnut-music-mobile/releases"><img src="https://img.shields.io/github/release/WalnutBai/lx-lxwalnut-music-mobile" alt="Release version"></a>
+  <a href="https://github.com/WalnutBai/lx-lxwalnut-music-mobile/actions/workflows/release.yml"><img src="https://github.com/WalnutBai/lx-lxwalnut-music-mobile/workflows/Build/badge.svg" alt="Build status"></a>
+  <a href="https://github.com/facebook/react-native"><img src="https://img.shields.io/github/package-json/dependency-version/WalnutBai/lx-lxwalnut-music-mobile/react-native/master" alt="React native version"></a>
 </p>
 
 <p align="center">一个基于 React Native 开发的音乐软件</p>
@@ -24,20 +24,22 @@
 
 ## 最新发行版本更新日志：
 
-## 26.06.11
+## 26.06.12
 
 ### 新增
 
 1. 添加播放器详情页新UI
-3. 添加侧边栏，我的列表背景同步全局样式
-4. 酷狗音乐平台登录
-5. 酷狗歌单同步
-6. 酷狗每日推荐
-7. 酷狗歌手搜索、专辑搜索
-8. 酷狗添加播放 MV
-9. 酷狗更多设置快速跳转添加歌手详情、专辑
-10. 酷狗添加音乐列表收藏、详情页收藏
-11. 添加 QQ 音乐更多设置，跳转歌手详情专辑页
+2. 添加侧边栏，我的列表背景同步全局样式
+3. 酷狗音乐平台登录
+4. 酷狗歌单同步
+5. 酷狗每日推荐
+6. 酷狗歌手搜索、专辑搜索
+7. 酷狗添加播放 MV
+8. 酷狗更多设置快速跳转添加歌手详情、专辑
+9. 酷狗添加音乐列表收藏、详情页收藏
+10. QQ 音乐更多设置，跳转歌手详情专辑页
+11. QQ 音乐歌手名快捷跳转
+12. 适配点击 logo 返回我的列表
 
 ### 移除
 
@@ -50,8 +52,9 @@
 3. 修复收藏歌单消失 bug
 4. 修复日志界面无法滑动
 5. 修复部分机型启动报错 TypeError Cannot convert undefined value to object
-6. 可能修复登录网易云报错问题
+6. 修复登录或退出网易云报错 BUG
 7. 修复歌单播放全部无法使用
+8. 修复部分歌单无法打开的 bug
 
 ## 26.06.10
 
@@ -179,4 +182,3 @@
 - 我的歌单中音乐列表的背景样式 BUG
 - 我中音乐列表的背景样式不同步设置修改的 BUG
 - 每日推荐中推荐歌单背景样式不同步设置修改的 BUG
-

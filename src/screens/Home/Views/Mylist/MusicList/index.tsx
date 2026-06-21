@@ -56,10 +56,7 @@ export default ({ onBack }: MusicListProps) => {
   const listMusicAddRef = useRef<ListMusicAddType>(null)
   const listMusicMultiAddRef = useRef<ListAddMultiType>(null)
   const musicPositionModalRef = useRef<MusicPositionModalType>(null)
-  let musicDownloadModalRef = null
-  if (settingState.setting['download.enable']) {
-    musicDownloadModalRef = useRef<MusicDownloadModalType>(null)
-  }
+  const musicDownloadModalRef = useRef<MusicDownloadModalType>(null)
   const metadataEditTypeRef = useRef<MetadataEditType>(null)
   const listMenuRef = useRef<ListMenuType>(null)
   const musicToggleModalRef = useRef<MusicToggleModalType>(null)
@@ -295,7 +292,7 @@ export default ({ onBack }: MusicListProps) => {
           )
         }}
       />
-      {musicDownloadModalRef && (
+      {settingState.setting['download.enable'] && (
         <MusicDownloadModal ref={musicDownloadModalRef} onDownloadInfo={(info) => {}} />
       )}
       <ListMenu

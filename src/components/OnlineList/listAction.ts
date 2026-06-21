@@ -67,18 +67,62 @@ export const handleShowArtistDetail = async (componentId: string, musicInfo: LX.
     try {
       const singerNames = musicInfo.singer.split(/[、,，&/]/).map(s => s.trim()).filter(Boolean)
       const foundArtists: Array<{ id: string | number, mid?: string, name: string, picUrl?: string }> = []
+
       for (const singerName of singerNames) {
         const searchResult = await musicSdk[musicInfo.source].musicSearch.searchSinger(singerName, 1, 1)
         if (searchResult?.list?.length) {
           const firstResult = searchResult.list[0]
-          foundArtists.push({
-            id: firstResult.id,
-            mid: firstResult.mid,
-            name: firstResult.name,
-            picUrl: firstResult.picUrl,
-          })
+          const resultName = firstResult.name.toLowerCase()
+          const searchName = singerName.toLowerCase()
+          if (resultName === searchName || resultName.includes(searchName) || searchName.includes(resultName)) {
+            foundArtists.push({
+              id: firstResult.id,
+              mid: firstResult.mid,
+              name: firstResult.name,
+              picUrl: firstResult.picUrl,
+            })
+          }
         }
       }
+
+      if (foundArtists.length === 0 && musicInfo.name) {
+        log.info('[handleShowArtistDetail] 歌手名搜索未匹配，尝试通过歌曲名搜索获取歌手', {
+          songName: musicInfo.name,
+          source: musicInfo.source,
+        })
+        try {
+          const response = await httpFetch(
+            `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(musicInfo.name)}&page=1&pagesize=10&userid=0&platform=WebFilter&filter=2&iscorrection=1&area_code=1`
+          )
+          const { body } = await response.promise
+          if (body?.data?.lists?.length) {
+            for (const song of body.data.lists) {
+              const songName = (song.SongName || '').toLowerCase()
+              const targetName = musicInfo.name.toLowerCase()
+              if (songName.includes(targetName) || targetName.includes(songName)) {
+                if (song.Singers && song.Singers.length > 0) {
+                  for (const s of song.Singers) {
+                    if (s.id && s.name) {
+                      const sName = s.name.toLowerCase()
+                      for (const sn of singerNames) {
+                        if (sName.includes(sn.toLowerCase()) || sn.toLowerCase().includes(sName)) {
+                          foundArtists.push({ id: s.id, name: s.name })
+                          break
+                        }
+                      }
+                      if (foundArtists.length > 0) break
+                    }
+                  }
+                  if (foundArtists.length > 0) break
+                }
+              }
+            }
+          }
+        } catch (e: any) {
+          log.error('[handleShowArtistDetail] 歌曲名搜索出错', { error: e.message })
+        }
+      }
+
       if (foundArtists.length > 0) {
         artists = foundArtists
         log.info('[handleShowArtistDetail] 通过搜索API成功获取歌手信息', {

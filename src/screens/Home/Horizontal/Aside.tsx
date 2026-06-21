@@ -69,12 +69,16 @@ const styles = createStyle({
 const Header = () => {
   const theme = useTheme()
   const statusBarHeight = useStatusbarHeight()
+
+  const handleLogoPress = () => {
+    setNavActiveId('nav_love')
+  }
+
   return (
     <View style={{ paddingTop: statusBarHeight }}>
-      <View style={styles.header}>
+      <TouchableOpacity style={styles.header} onPress={handleLogoPress}>
         <Icon name="logo" color={theme['c-primary-dark-100-alpha-300']} size={22} />
-        {/* <Text style={styles.headerText} size={16} color={theme['c-primary-dark-100-alpha-300']}>LX-X Music</Text> */}
-      </View>
+      </TouchableOpacity>
     </View>
   )
 }

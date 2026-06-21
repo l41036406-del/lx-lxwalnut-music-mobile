@@ -283,33 +283,62 @@ export default {
 
     log.info(`[TX SongList] getListDetailNew 成功`, { songCount: data.songlist.length, dissname: data.dissinfo?.dissname })
 
-    // 如果 dissinfo 中缺少关键字段，尝试从旧接口获取
-    let dissname = data.dissinfo?.dissname || ''
-    let logo = data.dissinfo?.logo || ''
-    let desc = data.dissinfo?.desc ? decodeName(data.dissinfo.desc).replace(/<br>/g, '\n') : ''
-    let nickname = data.dissinfo?.nickname || ''
-    let visitnum = data.dissinfo?.visitnum || 0
+    // 打印新接口 dissinfo 完整结构，方便排查
+    log.info(`[TX SongList] 新接口 dissinfo 完整数据`, {
+      dissinfoKeys: data.dissinfo ? Object.keys(data.dissinfo) : [],
+      dissinfo: data.dissinfo,
+    })
 
-    if (!dissname || !logo || !visitnum) {
-      try {
-        log.info(`[TX SongList] getListDetailNew dissinfo缺失关键字段(dissname:${!!dissname} logo:${!!logo} visitnum:${!!visitnum})，尝试旧接口`)
-        const oldUrl = this.getListDetailUrl(id)
-        const { body: oldBody } = await httpFetch(oldUrl, {
-          headers: { Origin: 'https://y.qq.com', Referer: `https://y.qq.com/n/yqq/playsquare/${id}.html` },
-        }).promise
-        if (oldBody?.cdlist?.[0]) {
-          const cdlist = oldBody.cdlist[0]
-          dissname = cdlist.dissname || dissname
-          logo = cdlist.logo || logo
-          desc = cdlist.desc ? decodeName(cdlist.desc).replace(/<br>/g, '\n') : desc
-          nickname = cdlist.nickname || nickname
-          visitnum = cdlist.visitnum || visitnum
-          log.info(`[TX SongList] 旧接口获取到歌单信息`, { dissname, logo, visitnum })
-        }
-      } catch (e) {
-        log.warn(`[TX SongList] 旧接口获取歌单信息失败`, { error: e.message })
+    // 优先使用旧接口获取歌单信息，失败则用新接口的 dissinfo 补充
+    let dissname = ''
+    let logo = ''
+    let desc = ''
+    let nickname = ''
+    let visitnum = 0
+
+    try {
+      log.info(`[TX SongList] getListDetailNew 开始请求旧接口`, { oldUrl: this.getListDetailUrl(id) })
+      const oldUrl = this.getListDetailUrl(id)
+      const { body: oldBody, statusCode } = await httpFetch(oldUrl, {
+        headers: { Origin: 'https://y.qq.com', Referer: `https://y.qq.com/n/yqq/playsquare/${id}.html` },
+      }).promise
+      log.info(`[TX SongList] 旧接口响应`, { statusCode, bodyCode: oldBody?.code, cdlistLength: oldBody?.cdlist?.length })
+      // 打印旧接口完整返回
+      log.info(`[TX SongList] 旧接口完整返回`, { oldBodyKeys: oldBody ? Object.keys(oldBody) : [], oldBody })
+
+      if (oldBody?.cdlist?.[0]) {
+        const cdlist = oldBody.cdlist[0]
+        log.info(`[TX SongList] 旧接口 cdlist[0] 完整数据`, {
+          cdlistKeys: Object.keys(cdlist),
+          cdlist,
+        })
+        dissname = cdlist.dissname || ''
+        logo = cdlist.logo || ''
+        desc = cdlist.desc ? decodeName(cdlist.desc).replace(/<br>/g, '\n') : ''
+        nickname = cdlist.nickname || ''
+        visitnum = cdlist.visitnum || 0
+        log.info(`[TX SongList] 旧接口获取到歌单信息`, { dissname, logo, visitnum, desc: desc?.substring(0, 50), nickname })
+      } else {
+        log.warn(`[TX SongList] 旧接口未返回 cdlist[0]，降级使用新接口`)
+        dissname = data.dissinfo?.dissname || ''
+        logo = data.dissinfo?.logo || ''
+        desc = data.dissinfo?.desc ? decodeName(data.dissinfo.desc).replace(/<br>/g, '\n') : ''
+        nickname = data.dissinfo?.nickname || ''
+        visitnum = data.dissinfo?.visitnum || 0
+        log.info(`[TX SongList] 新接口 dissinfo 降级数据`, { dissname, logo, visitnum })
       }
+    } catch (e) {
+      log.error(`[TX SongList] 旧接口请求异常`, { error: e.message, stack: e.stack })
+      log.warn(`[TX SongList] 旧接口请求失败，降级使用新接口`)
+      dissname = data.dissinfo?.dissname || ''
+      logo = data.dissinfo?.logo || ''
+      desc = data.dissinfo?.desc ? decodeName(data.dissinfo.desc).replace(/<br>/g, '\n') : ''
+      nickname = data.dissinfo?.nickname || ''
+      visitnum = data.dissinfo?.visitnum || 0
+      log.info(`[TX SongList] 新接口 dissinfo 降级数据`, { dissname, logo, visitnum })
     }
+
+    log.info(`[TX SongList] getListDetailNew 最终返回歌单信息`, { dissname, logo, visitnum, descLen: desc?.length, nickname })
 
     return {
       list: await this.filterListDetailNew(data.songlist),

@@ -7,7 +7,7 @@ import commonState from '@/store/common/state'
 import { createStyle, toast, clipboardWriteText } from '@/utils/tools'
 import Text from '@/components/common/Text'
 import { Icon } from '@/components/common/Icon'
-import { handleLikeMusic, handleTxLikeMusic, handleKgLikeMusic } from '@/components/OnlineList/listAction'
+import { handleLikeMusic, handleTxLikeMusic, handleKgLikeMusic, handleShowArtistDetail } from '@/components/OnlineList/listAction'
 import playerState from '@/store/player/state'
 import { useIsWyLiked, useIsTxLiked, useIsKgLiked } from '@/store/user/hook'
 import { useWindowSize } from '@/utils/hooks'
@@ -19,22 +19,22 @@ export default memo(() => {
   const isSmallWindow = winHeight < 700
   const musicInfo = playMusicInfo.musicInfo ? ('progress' in playMusicInfo.musicInfo ? playMusicInfo.musicInfo.metadata.musicInfo : playMusicInfo.musicInfo) : null
 
-  const handleArtistPress = (artist: { id: string | number; name: string }) => {
-    if (!musicInfo || musicInfo.source !== 'wy' || !artist.id) return
-    navigations.pushArtistDetailScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!, { id: String(artist.id), name: artist.name })
+  const handleArtistPress = (artist: { id: string | number; mid?: string; name: string }) => {
+    if (!musicInfo || (musicInfo.source !== 'wy' && musicInfo.source !== 'tx' && musicInfo.source !== 'kg') || !artist.id) return
+    navigations.pushArtistDetailScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!, { id: String(artist.id), mid: artist.mid, name: artist.name, source: musicInfo.source })
   }
 
   const handleAlbumPress = () => {
     if (!musicInfo) return
-    if (musicInfo.source !== 'wy' && musicInfo.source !== 'tx') return
+    if (musicInfo.source !== 'wy' && musicInfo.source !== 'tx' && musicInfo.source !== 'kg') return
     const albumId = (musicInfo.meta as any)?.albumId || musicInfo.albumId
     const albumName = musicInfo.meta?.albumName || musicInfo.albumName
     const albumMid = (musicInfo.meta as any)?.albumMid || musicInfo.albumMid || albumId
     if (!albumId || !albumName) return
-    if (musicInfo.source === 'wy') {
-      navigations.pushAlbumDetailScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!, { id: String(albumId), name: albumName, source: musicInfo.source })
-    } else if (musicInfo.source === 'tx') {
+    if (musicInfo.source === 'tx') {
       navigations.pushAlbumDetailScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!, { id: String(albumId), mid: albumMid, name: albumName, source: 'tx' })
+    } else {
+      navigations.pushAlbumDetailScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!, { id: String(albumId), name: albumName, source: musicInfo.source })
     }
   }
 
@@ -116,14 +116,16 @@ export default memo(() => {
             ))}
           </View>
         ) : (
-          <Text numberOfLines={1} size={16} color={theme['c-font-secondary']}>
-            {artistText}
-          </Text>
+          <TouchableOpacity onPress={() => handleShowArtistDetail(commonState.componentIds[commonState.componentIds.length - 1]?.id!, musicInfo)}>
+            <Text numberOfLines={1} size={16} color={theme['c-font-secondary']}>
+              {artistText}
+            </Text>
+          </TouchableOpacity>
         )}
       </View>
 
       {albumName ? (
-        <TouchableOpacity onPress={handleAlbumPress} disabled={musicInfo?.source !== 'wy' && musicInfo?.source !== 'tx'}>
+        <TouchableOpacity onPress={handleAlbumPress} disabled={musicInfo?.source !== 'wy' && musicInfo?.source !== 'tx' && musicInfo?.source !== 'kg'}>
           <Text numberOfLines={1} size={14} color={theme['c-font-secondary']}>
             {albumName}
           </Text>

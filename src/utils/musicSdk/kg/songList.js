@@ -564,24 +564,36 @@ export default {
 
     // 优先使用网关端点获取歌曲（无 2 分钟缓存）
     let songInfo
+    const totalSongs = info.songcount || 0
     try {
-      const clienttime = Math.floor(Date.now() / 1000)
-      const gwParams = `area_code=1&appid=1005&begin_idx=0&clienttime=${clienttime}&clientver=20489&extend_fields=abtags,hot_cmt,popularization&global_collection_id=${id}&mode=1&pagesize=${info.songcount || 500}&personal_switch=1&plat=1&type=1&uuid=-`
-      const gwSig = signatureParams(gwParams, 'android', '')
-      const gwUrl = `https://gateway.kugou.com/pubsongs/v2/get_other_list_file_nofilt?${gwParams}&signature=${gwSig}`
-      console.log('[KuGou] [SDK] 使用网关端点获取歌曲')
-      const gwResult = await this.createHttp(gwUrl, {
-        headers: {
-          'User-Agent': 'Android15-1070-11083-46-0-DiscoveryDRADProtocol-wifi',
-          'kg-rc': '1', 'kg-thash': '5d816a0', 'kg-rec': '1',
-          'kg-rf': 'B9EDA08A64250DEFFBCADDEE00F8F25F',
-        },
-      })
-      songInfo = gwResult?.songs || gwResult?.data?.songs || []
-      console.log('[KuGou] [SDK] 网关返回:', songInfo.length, '首')
+      const allSongs = []
+      let beginIdx = 0
+      const pageSize = 300
+      console.log('[KuGou] [SDK] 使用网关端点获取歌曲, 总数:', totalSongs)
+      while (beginIdx < totalSongs || allSongs.length < totalSongs) {
+        const clienttime = Math.floor(Date.now() / 1000)
+        const gwParams = `area_code=1&appid=1005&begin_idx=${beginIdx}&clienttime=${clienttime}&clientver=20489&extend_fields=abtags,hot_cmt,popularization&global_collection_id=${id}&mode=1&pagesize=${pageSize}&personal_switch=1&plat=1&type=1&uuid=-`
+        const gwSig = signatureParams(gwParams, 'android', '')
+        const gwUrl = `https://gateway.kugou.com/pubsongs/v2/get_other_list_file_nofilt?${gwParams}&signature=${gwSig}`
+        const gwResult = await this.createHttp(gwUrl, {
+          headers: {
+            'User-Agent': 'Android15-1070-11083-46-0-DiscoveryDRADProtocol-wifi',
+            'kg-rc': '1', 'kg-thash': '5d816a0', 'kg-rec': '1',
+            'kg-rf': 'B9EDA08A64250DEFFBCADDEE00F8F25F',
+          },
+        })
+        const batch = gwResult?.songs || gwResult?.data?.songs || []
+        console.log('[KuGou] [SDK] 网关批次返回:', batch.length, '首, beginIdx:', beginIdx)
+        if (batch.length === 0) break
+        allSongs.push(...batch)
+        beginIdx += batch.length
+        if (batch.length < pageSize) break
+      }
+      songInfo = allSongs
+      console.log('[KuGou] [SDK] 网关总计:', songInfo.length, '首')
     } catch (e) {
       console.log('[KuGou] [SDK] 网关失败，回退 mobiles:', e.message)
-      songInfo = await this.createGetListDetail2Task(id, info.songcount)
+      songInfo = await this.createGetListDetail2Task(id, totalSongs)
     }
 
     console.log('[KuGou] [SDK] 歌曲列表详情:', songInfo.map((s, i) => `${i + 1}. ${s.songname || s.filename || s.name} | hash=${s.hash}`).join('\n'))
