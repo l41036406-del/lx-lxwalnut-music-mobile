@@ -62,7 +62,6 @@ export default forwardRef<View, ImageBackgroundProps>(
             style={[
               StyleSheet.absoluteFill,
               {
-                // Temporary Workaround:
                 // Current (imperfect yet) implementation of <Image> overwrites width and height styles
                 // (which is not quite correct), and these styles conflict with explicitly set styles
                 // of <ImageBackground> and with our internal layout model here.

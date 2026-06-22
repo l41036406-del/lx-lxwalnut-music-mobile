@@ -65,11 +65,55 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
     private View logoButtonView;
     private boolean isExpanded = false;
     private String lastWavPath = null;
+    private boolean logoHidden = false;
+    private Runnable autoHideRunnable = null;
+    private static final int AUTO_HIDE_DELAY_MS = 10000;
 
     public MusicRecognitionModule(ReactApplicationContext reactContext) {
         super(reactContext);
         this.reactContext = reactContext;
         this.mainHandler = new Handler(Looper.getMainLooper());
+    }
+
+    private void resetAutoHideTimer() {
+        if (autoHideRunnable != null) {
+            mainHandler.removeCallbacks(autoHideRunnable);
+            logToJS("自动隐藏计时器已重置");
+        }
+        if (logoHidden) {
+            showLogoButton();
+        }
+        if (!isExpanded && !isRecording) {
+            autoHideRunnable = () -> hideLogoButton();
+            mainHandler.postDelayed(autoHideRunnable, AUTO_HIDE_DELAY_MS);
+            logToJS("自动隐藏计时器已启动，" + (AUTO_HIDE_DELAY_MS / 1000) + "秒后执行");
+        } else {
+            logToJS("跳过自动隐藏计时（isExpanded=" + isExpanded + ", isRecording=" + isRecording + "）");
+        }
+    }
+
+    private void hideLogoButton() {
+        if (logoButtonView != null && !logoHidden) {
+            logoHidden = true;
+            logToJS("悬浮按钮自动隐藏：滑出一半 + 半透明");
+            logoButtonView.animate()
+                .translationX(-logoButtonView.getWidth() / 2)
+                .alpha(0.5f)
+                .setDuration(300)
+                .start();
+        }
+    }
+
+    private void showLogoButton() {
+        if (logoButtonView != null && logoHidden) {
+            logoHidden = false;
+            logToJS("悬浮按钮恢复显示：滑回原位 + 全透明");
+            logoButtonView.animate()
+                .translationX(0)
+                .alpha(1.0f)
+                .setDuration(300)
+                .start();
+        }
     }
 
     @Override
@@ -211,6 +255,11 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
 
     private void hideFloatingButtonInternal() {
         try {
+            if (autoHideRunnable != null) {
+                mainHandler.removeCallbacks(autoHideRunnable);
+                autoHideRunnable = null;
+            }
+            logoHidden = false;
             if (floatingContainer != null && windowManager != null) {
                 windowManager.removeView(floatingContainer);
                 floatingContainer = null;
@@ -344,6 +393,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        resetAutoHideTimer();
                         downX = event.getRawX();
                         downY = event.getRawY();
                         lastX = event.getRawX();
@@ -359,6 +409,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         return true;
 
                     case MotionEvent.ACTION_MOVE:
+                        resetAutoHideTimer();
                         if (!isDragging && (Math.abs(event.getRawX() - downX) > 10 || Math.abs(event.getRawY() - downY) > 10)) {
                             isDragging = true;
                             if (longPressRunnable != null) {
@@ -383,6 +434,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         return true;
 
                     case MotionEvent.ACTION_UP:
+                        resetAutoHideTimer();
                         if (longPressRunnable != null) {
                             mainHandler.removeCallbacks(longPressRunnable);
                             longPressRunnable = null;
@@ -394,6 +446,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         return true;
 
                     case MotionEvent.ACTION_CANCEL:
+                        resetAutoHideTimer();
                         if (longPressRunnable != null) {
                             mainHandler.removeCallbacks(longPressRunnable);
                             longPressRunnable = null;
@@ -407,6 +460,8 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
 
         container.addView(logoButton);
         logoButtonView = logoButton;
+        // 首次显示时启动自动隐藏计时器
+        resetAutoHideTimer();
 
         expandedPanel = createExpandedPanel();
         expandedPanel.setVisibility(View.GONE);
@@ -609,6 +664,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
         if (isExpanded) {
             log("面板已展开");
         }
+        resetAutoHideTimer();
     }
 
     private void setStatus(String text) {
