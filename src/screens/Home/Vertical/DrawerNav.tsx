@@ -334,7 +334,7 @@ export default memo(() => {
 
       <View style={styles.footer}>
         <TouchableOpacity style={styles.footerBtn} onPress={handleMusicRecognitionPress}>
-          <Icon name="music" size={22} color={theme['c-font-label']} />
+          <SvgIcon name="music-recognition" size={28} color={theme['c-font-label']} />
         </TouchableOpacity>
         <TouchableOpacity style={styles.footerBtn} onPress={handleHistoryPress}>
           <Icon name="music_time" size={25} color={theme['c-font-label']} />

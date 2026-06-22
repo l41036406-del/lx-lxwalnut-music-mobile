@@ -1,12 +1,14 @@
 import { Alert } from 'react-native'
+import { Navigation } from 'react-native-navigation'
 import musicRecognition, { startRecognitionListener, stopRecognitionListener, type RecognitionResult } from '@/utils/nativeModules/musicRecognition'
 import { confirmDialog, toast } from '@/utils/tools'
 import { navigations } from '@/navigation'
 import commonState from '@/store/common/state'
+import commonAction from '@/store/common/action'
 import { addListMusics } from '@/core/list'
 import { getListMusicSync } from '@/utils/listManage'
 import { playList } from '@/core/player/player'
-import { LIST_IDS } from '@/config/constant'
+import { LIST_IDS, COMPONENT_IDS } from '@/config/constant'
 import settingState from '@/store/setting/state'
 
 let isListening = false
@@ -57,23 +59,30 @@ export const stopMusicRecognition = () => {
 
 const handleRecognitionEvent = (event: RecognitionResult) => {
   console.log('[MusicRecognition] event:', event)
-  if (event.action === 'play' && event.hash) {
+  if (event.action === 'play') {
+    console.log('[MusicRecognition] play event details:', JSON.stringify(event))
     playRecognizedSong(event)
   }
 }
 
 const playRecognizedSong = async (info: RecognitionResult) => {
   try {
+    // 优先使用 hash 作为 id，其次 songId，最后时间戳兜底
+    const songId = info.hash || info.songId || `kg_${Date.now()}`
+    // 替换封面URL中的 {size} 占位符为实际尺寸
+    const coverUrl = info.cover ? info.cover.replace(/\{size\}/g, '400') : null
+    console.log('[MusicRecognition] 构建音乐信息: hash=' + info.hash + ' | songId=' + info.songId + ' | albumId=' + info.albumId + ' | cover=' + coverUrl)
+
     // 构建完整的酷狗音乐信息对象
     const musicInfo = {
-      id: info.hash || `kg_${Date.now()}`,
+      id: songId,
       name: info.songname || '未知歌曲',
       singer: info.singername || '未知歌手',
       source: 'kg' as const,
       albumName: info.album || '',
       interval: info.duration ? formatDuration(Number(info.duration)) : null,
       _interval: info.duration ? Number(info.duration) : 0,
-      img: info.cover || null,
+      img: coverUrl,
       lrc: null,
       otherSource: null,
       hash: info.hash || '',
@@ -81,10 +90,10 @@ const playRecognizedSong = async (info: RecognitionResult) => {
       _types: {},
       typeUrl: {},
       meta: {
-        songId: info.hash || '',
+        songId: info.songId || info.hash || '',
         albumName: info.album || '',
-        albumId: '',
-        picUrl: info.cover || null,
+        albumId: info.albumId || '',
+        picUrl: coverUrl,
         qualitys: [],
         _qualitys: {},
         hash: info.hash || '',
@@ -108,6 +117,18 @@ const playRecognizedSong = async (info: RecognitionResult) => {
       // 开始播放
       await playList(LIST_IDS.DEFAULT, index)
       console.log('[MusicRecognition] playList called, index:', index)
+
+      // 先关闭已有的 PlayDetail 页面，避免重叠
+      const existingPlayDetail = commonState.componentIds.find(c => c.name === COMPONENT_IDS.playDetail)
+      if (existingPlayDetail) {
+        try {
+          await Navigation.pop(existingPlayDetail.id)
+          commonAction.removeComponentId(existingPlayDetail.id)
+          console.log('[MusicRecognition] 已关闭上一个 PlayDetail')
+        } catch (e) {
+          console.log('[MusicRecognition] pop previous PlayDetail failed:', e)
+        }
+      }
 
       // 跳转到播放详情页
       const componentId = commonState.componentIds[commonState.componentIds.length - 1]?.id

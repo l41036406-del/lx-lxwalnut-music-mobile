@@ -21,6 +21,9 @@ export type RecognitionResult = {
   album?: string
   hash?: string
   duration?: string
+  cover?: string
+  albumId?: string
+  songId?: string
 }
 
 const isNativeAvailable = Platform.OS === 'android' && !!MusicRecognitionModule

@@ -5,9 +5,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Outline;
 import android.media.AudioFormat;
@@ -27,7 +24,6 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
@@ -66,10 +62,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
     private LinearLayout expandedPanel;
     private TextView statusTextView;
     private LinearLayout resultsContainer;
-    private ScrollView debugScrollView;
-    private TextView debugLogView;
-    private WaveformView waveformView;
-    private TextView audioInfoView;
+    private View logoButtonView;
     private boolean isExpanded = false;
     private String lastWavPath = null;
 
@@ -100,18 +93,6 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         .emit("MusicRecognitionEvent", params);
             } catch (Exception e) {
                 Log.e(TAG, "sendEvent failed", e);
-            }
-        });
-    }
-
-    private void appendDebugLog(String msg) {
-        mainHandler.post(() -> {
-            if (debugLogView != null) {
-                String time = new java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault()).format(new java.util.Date());
-                debugLogView.append(time + " " + msg + "\n");
-                if (debugScrollView != null) {
-                    debugScrollView.post(() -> debugScrollView.fullScroll(View.FOCUS_DOWN));
-                }
             }
         });
     }
@@ -185,8 +166,10 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
         log("显示悬浮按钮...");
         mainHandler.post(() -> {
             try {
+                // 如果悬浮窗已存在，则关闭它（切换行为）
                 if (floatingContainer != null) {
-                    log("悬浮按钮已存在，跳过");
+                    log("悬浮按钮已存在，关闭它");
+                    hideFloatingButtonInternal();
                     return;
                 }
 
@@ -214,7 +197,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         PixelFormat.TRANSLUCENT
                 );
                 params.gravity = Gravity.LEFT | Gravity.CENTER_VERTICAL;
-                params.x = 0;
+                params.x = 0; // 按钮紧贴屏幕边缘
                 params.y = 0;
 
                 windowManager.addView(floatingContainer, params);
@@ -226,29 +209,28 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
         });
     }
 
+    private void hideFloatingButtonInternal() {
+        try {
+            if (floatingContainer != null && windowManager != null) {
+                windowManager.removeView(floatingContainer);
+                floatingContainer = null;
+                expandedPanel = null;
+                statusTextView = null;
+                resultsContainer = null;
+                logoButtonView = null;
+                isExpanded = false;
+                isRecording = false;
+                log("悬浮按钮已隐藏");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Failed to hide floating button", e);
+        }
+    }
+
     @ReactMethod
     public void hideFloatingButton() {
         log("隐藏悬浮按钮...");
-        mainHandler.post(() -> {
-            try {
-                if (floatingContainer != null && windowManager != null) {
-                    windowManager.removeView(floatingContainer);
-                    floatingContainer = null;
-                    expandedPanel = null;
-                    statusTextView = null;
-                    resultsContainer = null;
-                    debugLogView = null;
-                    debugScrollView = null;
-                    waveformView = null;
-                    audioInfoView = null;
-                    isExpanded = false;
-                    isRecording = false;
-                    log("悬浮按钮已隐藏");
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Failed to hide floating button", e);
-            }
-        });
+        mainHandler.post(this::hideFloatingButtonInternal);
     }
 
     @ReactMethod
@@ -336,11 +318,11 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
             Log.w(TAG, "Could not load launcher icon", e);
         }
 
-        FrameLayout.LayoutParams logoParams = new FrameLayout.LayoutParams(140, 140);
+        // 整体放大：小巧圆形 logo
+        FrameLayout.LayoutParams logoParams = new FrameLayout.LayoutParams(120, 120);
         logoButton.setLayoutParams(logoParams);
         logoButton.setScaleType(ImageView.ScaleType.CENTER_CROP);
-        logoButton.setBackgroundColor(0xFF6C8CFF);
-
+        logoButton.setBackgroundColor(0xFF7EB6FF);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             logoButton.setClipToOutline(true);
             logoButton.setOutlineProvider(new ViewOutlineProvider() {
@@ -351,55 +333,92 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
             });
         }
 
+        // logo 按钮触摸处理：拖拽移动 + 长按3秒关闭 + 短按切换面板
+        logoButton.setOnTouchListener(new View.OnTouchListener() {
+            private float downX, downY, lastX, lastY;
+            private boolean isDragging = false;
+            private boolean longPressTriggered = false;
+            private Runnable longPressRunnable = null;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        downX = event.getRawX();
+                        downY = event.getRawY();
+                        lastX = event.getRawX();
+                        lastY = event.getRawY();
+                        isDragging = false;
+                        longPressTriggered = false;
+                        longPressRunnable = () -> {
+                            longPressTriggered = true;
+                            logToJS("长按3秒，关闭悬浮窗");
+                            hideFloatingButtonInternal();
+                        };
+                        mainHandler.postDelayed(longPressRunnable, 3000);
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        if (!isDragging && (Math.abs(event.getRawX() - downX) > 10 || Math.abs(event.getRawY() - downY) > 10)) {
+                            isDragging = true;
+                            if (longPressRunnable != null) {
+                                mainHandler.removeCallbacks(longPressRunnable);
+                                longPressRunnable = null;
+                            }
+                        }
+                        if (isDragging && windowManager != null && floatingContainer != null) {
+                            float dx = event.getRawX() - lastX;
+                            float dy = event.getRawY() - lastY;
+                            WindowManager.LayoutParams params = (WindowManager.LayoutParams) floatingContainer.getLayoutParams();
+                            params.x += (int) dx;
+                            params.y += (int) dy;
+                            try {
+                                windowManager.updateViewLayout(floatingContainer, params);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Update layout failed", e);
+                            }
+                            lastX = event.getRawX();
+                            lastY = event.getRawY();
+                        }
+                        return true;
+
+                    case MotionEvent.ACTION_UP:
+                        if (longPressRunnable != null) {
+                            mainHandler.removeCallbacks(longPressRunnable);
+                            longPressRunnable = null;
+                        }
+                        if (!longPressTriggered && !isDragging) {
+                            togglePanel();
+                        }
+                        isDragging = false;
+                        return true;
+
+                    case MotionEvent.ACTION_CANCEL:
+                        if (longPressRunnable != null) {
+                            mainHandler.removeCallbacks(longPressRunnable);
+                            longPressRunnable = null;
+                        }
+                        isDragging = false;
+                        return true;
+                }
+                return false;
+            }
+        });
+
         container.addView(logoButton);
+        logoButtonView = logoButton;
 
         expandedPanel = createExpandedPanel();
         expandedPanel.setVisibility(View.GONE);
+        // 35度相对斜角布局：让 logo 按钮明显错开，避免与面板重叠
+        // 水平偏移远大于垂直偏移 (向右偏移 120，向下偏移 80)
+        FrameLayout.LayoutParams panelLayoutParams = new FrameLayout.LayoutParams(
+                760, FrameLayout.LayoutParams.WRAP_CONTENT
+        );
+        panelLayoutParams.leftMargin = 120;  // 水平向右大幅偏移，让 logo 在面板左外侧
+        panelLayoutParams.topMargin = 80;    // 垂直向下偏移 (与水平偏移形成 35度斜角)
+        expandedPanel.setLayoutParams(panelLayoutParams);
         container.addView(expandedPanel);
-
-        final float[] lastX = new float[1];
-        final float[] lastY = new float[1];
-        final float[] downX = new float[1];
-        final float[] downY = new float[1];
-        final boolean[] moved = new boolean[1];
-
-        container.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    lastX[0] = event.getRawX();
-                    lastY[0] = event.getRawY();
-                    downX[0] = event.getRawX();
-                    downY[0] = event.getRawY();
-                    moved[0] = false;
-                    return false; // 不消费，让子视图可以接收
-                case MotionEvent.ACTION_MOVE:
-                    float dx = event.getRawX() - lastX[0];
-                    float dy = event.getRawY() - lastY[0];
-                    if (Math.abs(event.getRawX() - downX[0]) > 10 || Math.abs(event.getRawY() - downY[0]) > 10) {
-                        moved[0] = true;
-                    }
-                    if (moved[0] && windowManager != null) {
-                        WindowManager.LayoutParams params = (WindowManager.LayoutParams) container.getLayoutParams();
-                        params.x += (int) dx;
-                        params.y += (int) dy;
-                        try {
-                            windowManager.updateViewLayout(container, params);
-                        } catch (Exception e) {
-                            Log.e(TAG, "Update layout failed", e);
-                        }
-                        lastX[0] = event.getRawX();
-                        lastY[0] = event.getRawY();
-                        return true; // 拖拽时消费
-                    }
-                    return false;
-                case MotionEvent.ACTION_UP:
-                    if (!moved[0]) {
-                        togglePanel();
-                    }
-                    return false; // 不消费，让子视图触发 click
-            }
-            return false;
-        });
 
         return container;
     }
@@ -407,121 +426,180 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
     private LinearLayout createExpandedPanel() {
         LinearLayout panel = new LinearLayout(reactContext);
         panel.setOrientation(LinearLayout.VERTICAL);
-        panel.setBackgroundColor(0xF0FFFFFF);
-        panel.setPadding(40, 32, 40, 32);
+        // 单层干净的白色背景 + 柔和圆角，避免多层 background 叠加产生黑色阴影
+        android.graphics.drawable.GradientDrawable panelBg = new android.graphics.drawable.GradientDrawable();
+        panelBg.setCornerRadius(24);
+        panelBg.setColor(0xE6FFFFFF); // 90%不透明白色
+        panel.setBackground(panelBg);
+        panel.setPadding(28, 22, 28, 22);
+        // 不设置 elevation，避免 WindowManager 悬浮窗渲染异常产生黑色阴影
 
-        // Title
+        // 顶部栏：标题 + 关闭按钮
+        LinearLayout topBar = new LinearLayout(reactContext);
+        topBar.setOrientation(LinearLayout.HORIZONTAL);
+        topBar.setGravity(Gravity.CENTER_VERTICAL);
+        topBar.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        // 顶部栏支持拖动悬浮窗
+        topBar.setOnTouchListener(new View.OnTouchListener() {
+            private float downX, downY, lastX, lastY;
+            private boolean isDragging = false;
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        downX = event.getRawX();
+                        downY = event.getRawY();
+                        lastX = event.getRawX();
+                        lastY = event.getRawY();
+                        isDragging = false;
+                        return true;
+
+                    case MotionEvent.ACTION_MOVE:
+                        if (!isDragging && (Math.abs(event.getRawX() - downX) > 10 || Math.abs(event.getRawY() - downY) > 10)) {
+                            isDragging = true;
+                        }
+                        if (isDragging && windowManager != null && floatingContainer != null) {
+                            float dx = event.getRawX() - lastX;
+                            float dy = event.getRawY() - lastY;
+                            WindowManager.LayoutParams params = (WindowManager.LayoutParams) floatingContainer.getLayoutParams();
+                            params.x += (int) dx;
+                            params.y += (int) dy;
+                            try {
+                                windowManager.updateViewLayout(floatingContainer, params);
+                            } catch (Exception e) {
+                                Log.e(TAG, "Update layout failed", e);
+                            }
+                            lastX = event.getRawX();
+                            lastY = event.getRawY();
+                        }
+                        return isDragging;
+
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        isDragging = false;
+                        return true;
+                }
+                return false;
+            }
+        });
+
         TextView title = new TextView(reactContext);
-        title.setText("听歌识曲 [调试模式]");
-        title.setTextSize(18);
-        title.setTextColor(0xFF333333);
-        title.setGravity(Gravity.CENTER);
-        panel.addView(title);
+        title.setText("听歌识曲");
+        title.setTextSize(17);
+        title.setTextColor(0xFF444444);
+        title.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        title.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        topBar.addView(title);
 
-        // Start button
-        TextView startBtn = new TextView(reactContext);
-        startBtn.setText("开始识别");
-        startBtn.setTextSize(15);
-        startBtn.setTextColor(0xFFFFFFFF);
-        startBtn.setBackgroundColor(0xFF6C8CFF);
-        startBtn.setPadding(40, 20, 40, 20);
-        startBtn.setGravity(Gravity.CENTER);
-        LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(
+        // 关闭按钮 - 小清新
+        TextView closeBtn = new TextView(reactContext);
+        closeBtn.setText("✕");
+        closeBtn.setTextSize(14);
+        closeBtn.setTextColor(0xFFBBBBBB);
+        closeBtn.setPadding(12, 4, 0, 4);
+        closeBtn.setOnClickListener(v -> {
+            logToJS("点击关闭按钮，关闭悬浮窗");
+            hideFloatingButtonInternal();
+        });
+        topBar.addView(closeBtn);
+
+        panel.addView(topBar);
+
+        // 开始识别按钮 - 小清新
+        FrameLayout startBtnWrapper = new FrameLayout(reactContext);
+        LinearLayout.LayoutParams btnWrapperParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        btnParams.topMargin = 20;
-        startBtn.setLayoutParams(btnParams);
-        startBtn.setOnClickListener(v -> onStartRecognizeClick());
-        panel.addView(startBtn);
+        btnWrapperParams.topMargin = 12;
+        startBtnWrapper.setLayoutParams(btnWrapperParams);
 
-        // Status
+        FrameLayout startBtn = new FrameLayout(reactContext);
+        startBtn.setId(android.R.id.button1);
+        android.graphics.drawable.GradientDrawable btnBg = new android.graphics.drawable.GradientDrawable();
+        btnBg.setCornerRadius(12);
+        btnBg.setColor(0xFF7EB6FF);
+        startBtn.setBackground(btnBg);
+
+        LinearLayout btnContent = new LinearLayout(reactContext);
+        btnContent.setOrientation(LinearLayout.HORIZONTAL);
+        btnContent.setGravity(Gravity.CENTER);
+        btnContent.setPadding(28, 14, 28, 14);
+
+        ImageView iconView = new ImageView(reactContext);
+        int iconResId = reactContext.getResources().getIdentifier("ic_music_recognition", "drawable", reactContext.getPackageName());
+        if (iconResId != 0) {
+            iconView.setImageResource(iconResId);
+        }
+        LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(36, 36);
+        iconParams.setMargins(0, 0, 10, 0);
+        iconView.setLayoutParams(iconParams);
+        iconView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+
+        TextView btnText = new TextView(reactContext);
+        btnText.setId(android.R.id.text1);
+        btnText.setText("开始识别");
+        btnText.setTextSize(15);
+        btnText.setTextColor(0xFFFFFFFF);
+        btnText.setGravity(Gravity.CENTER);
+
+        btnContent.addView(iconView);
+        btnContent.addView(btnText);
+        startBtn.addView(btnContent);
+
+        startBtn.setLayoutParams(new FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+        ));
+        startBtn.setOnClickListener(v -> onStartRecognizeClick());
+        startBtnWrapper.addView(startBtn);
+
+        panel.addView(startBtnWrapper);
+
+        // 状态文字
         statusTextView = new TextView(reactContext);
-        statusTextView.setText("点击开始识别");
-        statusTextView.setTextSize(13);
-        statusTextView.setTextColor(0xFF999999);
+        statusTextView.setText("结果:点击跳转，长按复制");
+        statusTextView.setTextSize(12);
+        statusTextView.setTextColor(0xFFAAAAAA);
         statusTextView.setGravity(Gravity.CENTER);
         LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        statusParams.topMargin = 16;
+        statusParams.topMargin = 8;
         statusTextView.setLayoutParams(statusParams);
         panel.addView(statusTextView);
 
-        // Audio info
-        audioInfoView = new TextView(reactContext);
-        audioInfoView.setText("采样率: " + SAMPLE_RATE + "Hz | 位深: 16bit | 声道: 单声道");
-        audioInfoView.setTextSize(11);
-        audioInfoView.setTextColor(0xFF666666);
-        audioInfoView.setBackgroundColor(0xFFF5F5F5);
-        audioInfoView.setPadding(16, 8, 16, 8);
-        LinearLayout.LayoutParams infoParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        infoParams.topMargin = 12;
-        audioInfoView.setLayoutParams(infoParams);
-        panel.addView(audioInfoView);
-
-        // Waveform view
-        waveformView = new WaveformView(reactContext);
-        LinearLayout.LayoutParams waveParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                120
-        );
-        waveParams.topMargin = 12;
-        waveformView.setLayoutParams(waveParams);
-        waveformView.setBackgroundColor(0xFF1A1A2E);
-        panel.addView(waveformView);
-
-        // Debug log title
-        TextView debugTitle = new TextView(reactContext);
-        debugTitle.setText("▼ 调试日志");
-        debugTitle.setTextSize(12);
-        debugTitle.setTextColor(0xFF333333);
-        LinearLayout.LayoutParams debugTitleParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        debugTitleParams.topMargin = 16;
-        debugTitle.setLayoutParams(debugTitleParams);
-        panel.addView(debugTitle);
-
-        // Debug log scroll view
-        debugScrollView = new ScrollView(reactContext);
-        LinearLayout.LayoutParams scrollParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                300
-        );
-        scrollParams.topMargin = 8;
-        debugScrollView.setLayoutParams(scrollParams);
-        debugScrollView.setBackgroundColor(0xFF0D1117);
-
-        debugLogView = new TextView(reactContext);
-        debugLogView.setTextSize(10);
-        debugLogView.setTextColor(0xFF00FF00);
-        debugLogView.setPadding(16, 12, 16, 12);
-        debugLogView.setTypeface(android.graphics.Typeface.MONOSPACE);
-        debugLogView.setText("等待操作...\n");
-        debugScrollView.addView(debugLogView);
-        panel.addView(debugScrollView);
-
-        // Results
+        // 识别结果
         resultsContainer = new LinearLayout(reactContext);
         resultsContainer.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams resultsParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        resultsParams.topMargin = 16;
+        resultsParams.topMargin = 8;
         resultsContainer.setLayoutParams(resultsParams);
         panel.addView(resultsContainer);
 
-        LinearLayout.LayoutParams panelParams = new LinearLayout.LayoutParams(700, LinearLayout.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams panelParams = new LinearLayout.LayoutParams(760, LinearLayout.LayoutParams.WRAP_CONTENT);
         panel.setLayoutParams(panelParams);
 
         return panel;
+    }
+
+    /**
+     * 判断触摸点是否在 logo 按钮区域内
+     */
+    private boolean isTouchOnLogo(float rawX, float rawY) {
+        if (logoButtonView == null) return false;
+        int[] loc = new int[2];
+        logoButtonView.getLocationOnScreen(loc);
+        return rawX >= loc[0] && rawX <= loc[0] + logoButtonView.getWidth()
+                && rawY >= loc[1] && rawY <= loc[1] + logoButtonView.getHeight();
     }
 
     private void togglePanel() {
@@ -542,8 +620,46 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
         Log.i(TAG, "状态: " + text);
     }
 
+    private void updateStartBtn(String text, boolean isRecording) {
+        mainHandler.post(() -> {
+            if (expandedPanel != null) {
+                View btnFrame = expandedPanel.findViewById(android.R.id.button1);
+                TextView btnText = expandedPanel.findViewById(android.R.id.text1);
+                if (btnFrame != null && btnText != null) {
+                    btnText.setText(text);
+                    android.graphics.drawable.GradientDrawable btnBg = new android.graphics.drawable.GradientDrawable();
+                    btnBg.setCornerRadius(12);
+                    if (isRecording) {
+                        btnBg.setColor(0xFFD0D0D0);
+                        btnText.setTextColor(0xFF888888);
+                    } else {
+                        btnBg.setColor(0xFF7EB6FF);
+                        btnText.setTextColor(0xFFFFFFFF);
+                    }
+                    btnFrame.setBackground(btnBg);
+                }
+            }
+        });
+    }
+
     private void onStartRecognizeClick() {
-        if (isRecording) return;
+        // 如果正在识别，直接停止
+        if (isRecording) {
+            log("正在识别中，停止识别");
+            isRecording = false;
+            try {
+                if (audioRecord != null) {
+                    audioRecord.stop();
+                    audioRecord.release();
+                    audioRecord = null;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Stop recording failed", e);
+            }
+            setStatus("已停止识别");
+            updateStartBtn("开始识别", false);
+            return;
+        }
         log("点击开始识别");
 
         if (ContextCompat.checkSelfPermission(reactContext, Manifest.permission.RECORD_AUDIO)
@@ -582,6 +698,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
         if (bufferSize == AudioRecord.ERROR || bufferSize == AudioRecord.ERROR_BAD_VALUE) {
             log("录音缓冲区初始化失败: " + bufferSize);
             setStatus("录音初始化失败");
+            updateStartBtn("重新识别", false);
             return;
         }
 
@@ -597,6 +714,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
             if (audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
                 log("录音设备状态: " + audioRecord.getState() + " (期望: " + AudioRecord.STATE_INITIALIZED + ")");
                 setStatus("录音设备初始化失败");
+                updateStartBtn("重新识别", false);
                 return;
             }
 
@@ -604,7 +722,8 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
             log("开始录音... 采样率=" + SAMPLE_RATE + "Hz, 时长=" + RECORD_DURATION_SECONDS + "秒");
             isRecording = true;
             audioRecord.startRecording();
-            setStatus("录制中... " + RECORD_DURATION_SECONDS + "秒");
+            setStatus("录制中...");
+            updateStartBtn("识别中... " + RECORD_DURATION_SECONDS + "秒", true);
 
             new Thread(() -> {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -645,11 +764,8 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         final int finalSampleCount = sampleCount;
 
                         mainHandler.post(() -> {
-                            setStatus("录制中... " + remaining + "秒 | 已读: " + finalBytesRead + "/" + finalTotal);
-                            audioInfoView.setText("PCM: " + finalBytesRead + " bytes | 采样: " + finalSampleCount
-                                    + " | 最大振幅: " + finalMax + " | 平均振幅: " + finalAvg
-                                    + " | 本帧: " + readBuf);
-                            waveformView.addAmplitude(finalMax);
+                            setStatus("录制中...");
+                            updateStartBtn("识别中... " + remaining + "秒", true);
                         });
 
                         if (readCount % 20 == 0) {
@@ -691,15 +807,18 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                 }
 
                 setStatus("识别中...");
+                updateStartBtn("等待中...", true);
                 sendToApi(pcmData);
             }).start();
 
         } catch (SecurityException e) {
             log("录音权限异常: " + e.getMessage());
             setStatus("录音权限被拒绝");
+            updateStartBtn("开始识别", false);
         } catch (Exception e) {
             log("录音异常: " + e.getMessage());
             setStatus("录音失败: " + e.getMessage());
+            updateStartBtn("重新识别", false);
         }
     }
 
@@ -807,17 +926,27 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
 
                 if (response != null && response.length() > 0) {
                     logToJS("响应长度: " + response.length() + " bytes");
-                    logToJS("响应: " + response.substring(0, Math.min(response.length(), 1000)));
+                    // 打印完整服务器响应包体
+                    logToJS("=== 完整服务器响应 ===");
+                    // 分段打印，避免单条日志过长
+                    int chunkSize = 2000;
+                    for (int offset = 0; offset < response.length(); offset += chunkSize) {
+                        String chunk = response.substring(offset, Math.min(offset + chunkSize, response.length()));
+                        logToJS("[响应 " + offset + "-" + Math.min(offset + chunkSize, response.length()) + "] " + chunk);
+                    }
+                    logToJS("=== 响应结束 ===");
                     parseResults(response);
                 } else {
                     logToJS("响应为空 | HTTP " + responseCode);
                     setStatus("请求失败: HTTP " + responseCode);
+                    updateStartBtn("重新识别", false);
                 }
             } catch (Exception e) {
                 Log.e(TAG, "API error", e);
                 String errorDetail = e.getClass().getSimpleName() + ": " + e.getMessage();
                 logToJS("!!! API 错误: " + errorDetail);
                 setStatus("网络错误: " + errorDetail);
+                updateStartBtn("重新识别", false);
             }
         }).start();
     }
@@ -834,6 +963,97 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
         } catch (Exception e) {
             Log.e(TAG, "MD5 error", e);
             return "";
+        }
+    }
+
+    /**
+     * 唤起应用到前台
+     */
+    private void bringAppToForeground() {
+        try {
+            Activity currentActivity = getCurrentActivity();
+            if (currentActivity != null) {
+                // 应用在前台但可能不在当前 Activity
+                Intent intent = new Intent(reactContext, currentActivity.getClass());
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                reactContext.startActivity(intent);
+            } else {
+                // 应用在后台，通过包名启动
+                String packageName = reactContext.getPackageName();
+                Intent launchIntent = reactContext.getPackageManager().getLaunchIntentForPackage(packageName);
+                if (launchIntent != null) {
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                    reactContext.startActivity(launchIntent);
+                }
+            }
+            log("已唤起应用到前台");
+        } catch (Exception e) {
+            Log.e(TAG, "bringAppToForeground failed", e);
+            log("唤起应用失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 从 JSONObject 中按优先级依次尝试取字符串值，返回第一个非空的值
+     * 对应 EchoMusic mapper 中的 pickValue 逻辑
+     */
+    private String pickString(JSONObject obj, String... keys) {
+        for (String key : keys) {
+            String val = obj.optString(key, "");
+            if (val != null && !val.isEmpty()) return val;
+        }
+        return "";
+    }
+
+    /**
+     * 打开酷狗音乐歌曲播放详情页
+     * 优先尝试酷狗App深度链接，若未安装则打开酷狗网页版
+     */
+    private void openKugouSongPage(String hash, String albumId) {
+        if (hash == null || hash.isEmpty()) {
+            logToJS("hash 为空，无法跳转酷狗音乐");
+            return;
+        }
+
+        // 构建酷狗网页版歌曲详情URL
+        StringBuilder webUrlBuilder = new StringBuilder("https://www.kugou.com/song/#hash=");
+        webUrlBuilder.append(hash);
+        if (albumId != null && !albumId.isEmpty()) {
+            webUrlBuilder.append("&album_id=").append(albumId);
+        }
+        final String webUrl = webUrlBuilder.toString();
+
+        // 优先尝试酷狗App深度链接
+        String deepLink = "kugou://song/play?hash=" + hash;
+        if (albumId != null && !albumId.isEmpty()) {
+            deepLink += "&album_id=" + albumId;
+        }
+
+        try {
+            Intent kugouIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(deepLink));
+            kugouIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (kugouIntent.resolveActivity(reactContext.getPackageManager()) != null) {
+                reactContext.startActivity(kugouIntent);
+                logToJS("已打开酷狗音乐App: " + deepLink);
+            } else {
+                // 酷狗App未安装，回退到网页版
+                Intent webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl));
+                webIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                reactContext.startActivity(webIntent);
+                logToJS("酷狗App未安装，已打开网页版: " + webUrl);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Open Kugou failed", e);
+            logToJS("打开酷狗音乐失败: " + e.getMessage());
+            // 最终回退：尝试直接打开网页版
+            try {
+                Intent webIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(webUrl));
+                webIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                reactContext.startActivity(webIntent);
+            } catch (Exception ex) {
+                Log.e(TAG, "Open web fallback failed", ex);
+                logToJS("打开网页版也失败: " + ex.getMessage());
+            }
         }
     }
 
@@ -854,49 +1074,96 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                 log("未识别到歌曲 (status != 1)");
                 String errorMsg = obj.optString("msg", "未知错误");
                 log("错误信息: " + errorMsg);
-                mainHandler.post(() -> setStatus("未识别到歌曲: " + errorMsg));
+                mainHandler.post(() -> { setStatus("未识别到歌曲: " + errorMsg); updateStartBtn("开始识别", false); });
                 return;
             }
 
             JSONArray dataArray = obj.optJSONArray("data");
             if (dataArray == null || dataArray.length() == 0) {
                 log("data 数组为空");
-                mainHandler.post(() -> setStatus("未识别到歌曲"));
+                mainHandler.post(() -> { setStatus("未识别到歌曲"); updateStartBtn("开始识别", false); });
                 return;
             }
 
             log("识别到 " + dataArray.length() + " 个结果");
-            // 打印第一条结果的完整字段用于调试
-            if (dataArray.length() > 0) {
-                log("第一条结果完整JSON: " + dataArray.getJSONObject(0).toString());
+            // 打印每条结果的完整JSON用于调试
+            for (int i = 0; i < dataArray.length(); i++) {
+                logToJS("原始结果[" + i + "]: " + dataArray.getJSONObject(i).toString());
             }
             int count = Math.min(dataArray.length(), 5);
-            // [0]=songname, [1]=singername, [2]=album, [3]=dist, [4]=hash, [5]=duration
-            final String[][] songs = new String[count][6];
+            // [0]=songname, [1]=singername, [2]=album, [3]=dist, [4]=hash, [5]=duration, [6]=albumId, [7]=songId
+            final String[][] songs = new String[count][8];
 
             for (int i = 0; i < count; i++) {
                 try {
                     JSONObject item = dataArray.getJSONObject(i);
-                    songs[i][0] = item.optString("songname", "未知");
-                    songs[i][1] = item.optString("singername", "未知歌手");
-                    // dist 可能是 number 或 string
+
+                    // 歌名：songname > filename > name
+                    String songname = pickString(item, "songname", "filename", "name");
+                    songs[i][0] = songname.isEmpty() ? "未知" : songname;
+
+                    // 歌手：singername > author_name > singer
+                    String singername = pickString(item, "singername", "author_name", "singer");
+                    songs[i][1] = singername.isEmpty() ? "未知歌手" : singername;
+
+                    // dist 匹配距离
+                    String dist = "0";
                     try {
-                        double distVal = item.optDouble("dist", 0);
-                        songs[i][3] = String.valueOf(distVal);
+                        double distVal = item.optDouble("dist", -1);
+                        if (distVal >= 0) {
+                            dist = String.valueOf(distVal);
+                        } else {
+                            dist = item.optString("dist", "0");
+                        }
                     } catch (Exception e) {
-                        songs[i][3] = item.optString("dist", "0");
+                        dist = item.optString("dist", "0");
                     }
-                    songs[i][4] = item.optString("hash", "");
-                    songs[i][5] = String.valueOf(item.optLong("timelength_128", 0));
+                    songs[i][3] = dist;
+
+                    // hash：hash > hash_128 > FileHash > hash_320 > hash_flac（多字段兜底）
+                    String hash = pickString(item, "hash", "hash_128", "FileHash", "hash_320", "hash_flac");
+                    songs[i][4] = hash;
+                    logToJS("结果[" + i + "] hash提取: hash=" + item.optString("hash", "")
+                            + " | hash_128=" + item.optString("hash_128", "")
+                            + " | FileHash=" + item.optString("FileHash", "")
+                            + " | hash_320=" + item.optString("hash_320", "")
+                            + " | hash_flac=" + item.optString("hash_flac", "")
+                            + " => 最终=" + hash);
+
+                    // 时长：timelength > timelength_128 > timelength_320 > duration
+                    long timeLength = 0;
+                    String tlField = pickString(item, "timelength", "timelength_128", "timelength_320", "duration");
+                    if (!tlField.isEmpty()) {
+                        try { timeLength = Long.parseLong(tlField); } catch (NumberFormatException e) { timeLength = 0; }
+                    }
+                    if (timeLength == 0) {
+                        timeLength = item.optLong("timelength_128", 0);
+                    }
+                    songs[i][5] = String.valueOf(timeLength);
+
+                    // 专辑信息
                     String album = "";
+                    String albumId = "";
                     JSONArray albumArr = item.optJSONArray("album");
                     if (albumArr != null && albumArr.length() > 0) {
-                        album = albumArr.getJSONObject(0).optString("albumname", "");
+                        JSONObject albumObj = albumArr.getJSONObject(0);
+                        album = pickString(albumObj, "albumname", "album_name");
+                        albumId = pickString(albumObj, "albumid", "album_id");
                     }
+                    // 顶层兜底
+                    if (album.isEmpty()) album = pickString(item, "album_name", "albumname");
+                    if (albumId.isEmpty()) albumId = pickString(item, "album_id", "albumid");
                     songs[i][2] = album;
-                    log("结果 " + (i + 1) + ": " + songs[i][0] + " - " + songs[i][1]
-                            + (album.isEmpty() ? "" : " | " + album)
-                            + " | dist=" + songs[i][3] + " | hash=" + songs[i][4]);
+                    songs[i][6] = albumId;
+
+                    // songId：songid > song_id > audio_id > album_audio_id > mixsongid
+                    String songId = pickString(item, "songid", "song_id", "audio_id", "album_audio_id", "mixsongid");
+                    songs[i][7] = songId;
+
+                    logToJS("结果[" + i + "]: " + songs[i][0] + " - " + songs[i][1]
+                            + " | album=" + album + " | dist=" + dist
+                            + " | hash=" + hash + " | albumId=" + albumId
+                            + " | songId=" + songId + " | duration=" + timeLength);
                 } catch (Exception e) {
                     log("解析第 " + (i + 1) + " 个结果失败: " + e.getMessage());
                     songs[i][0] = "解析失败";
@@ -912,30 +1179,59 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                     if (resultsContainer == null) return;
                     resultsContainer.removeAllViews();
 
+                    // 更新按钮文字（结果数量已在状态文字展示，不重复显示）
+                    if (finalCount > 0) {
+                        setStatus("识别完成，找到 " + finalCount + " 首歌曲");
+                        updateStartBtn("重新识别", false);
+                    } else {
+                        setStatus("未识别到歌曲，请重试");
+                        updateStartBtn("重新识别", false);
+                    }
+
                     for (int i = 0; i < finalCount; i++) {
                         final int idx = i;
 
                         // 横向布局：封面 + 文字信息
                         LinearLayout row = new LinearLayout(reactContext);
                         row.setOrientation(LinearLayout.HORIZONTAL);
-                        row.setPadding(16, 12, 16, 12);
+                        row.setPadding(14, 12, 14, 12);
                         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
                         row.setClickable(true);
                         row.setFocusable(true);
+                        // 小清新行背景：白色圆角卡片
+                        android.graphics.drawable.GradientDrawable rowBg = new android.graphics.drawable.GradientDrawable();
+                        rowBg.setCornerRadius(14);
+                        rowBg.setColor(0x18AAAAAA); // 极浅灰底
+                        row.setBackground(rowBg);
+                        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.MATCH_PARENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                        );
+                        rowParams.topMargin = (i > 0) ? 8 : 0;
+                        row.setLayoutParams(rowParams);
 
-                        // 封面图
+                        // 封面图 - 小巧圆角
                         ImageView cover = new ImageView(reactContext);
-                        LinearLayout.LayoutParams coverParams = new LinearLayout.LayoutParams(120, 120);
-                        coverParams.setMarginEnd(16);
+                        LinearLayout.LayoutParams coverParams = new LinearLayout.LayoutParams(96, 96);
+                        coverParams.setMarginEnd(14);
                         cover.setLayoutParams(coverParams);
                         cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                        cover.setBackgroundColor(0xFFE0E0E0);
-                        // 加载封面
+                        // 小清新封面占位
+                        android.graphics.drawable.GradientDrawable coverBg = new android.graphics.drawable.GradientDrawable();
+                        coverBg.setCornerRadius(10);
+                        coverBg.setColor(0xFFF0F0F0); // 浅灰占位
+                        cover.setBackground(coverBg);
+                        // 加载封面：union_cover > album.sizable_cover > album_sizable_cover > cover
                         String coverUrlRaw = "";
                         try {
                             JSONObject item = dataArray.getJSONObject(i);
-                            coverUrlRaw = item.optString("union_cover", "");
-                            if (coverUrlRaw.isEmpty()) coverUrlRaw = item.optString("image", "");
+                            coverUrlRaw = pickString(item, "union_cover", "album_sizable_cover", "cover", "image");
+                            if (coverUrlRaw.isEmpty()) {
+                                JSONArray albumArr2 = item.optJSONArray("album");
+                                if (albumArr2 != null && albumArr2.length() > 0) {
+                                    coverUrlRaw = pickString(albumArr2.getJSONObject(0), "sizable_cover", "cover");
+                                }
+                            }
                         } catch (Exception ignored) {}
                         final String coverUrl = coverUrlRaw;
                         if (!coverUrl.isEmpty()) {
@@ -959,6 +1255,38 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         }
                         row.addView(cover);
 
+                        // 封面点击事件：在软件内部播放歌曲（与文字区域点击行为一致）
+                        cover.setClickable(true);
+                        cover.setOnClickListener(v -> {
+                            bringAppToForeground();
+                            String hash = songs[idx][4];
+                            String albumIdStr = songs[idx][6];
+                            String songIdStr = songs[idx][7];
+                            logToJS("=== 点击封面，播放歌曲 ===");
+                            logToJS("歌曲: " + songs[idx][0] + " - " + songs[idx][1]
+                                    + " | hash: " + hash + " | albumId: " + albumIdStr
+                                    + " | songId: " + songIdStr + " | cover: " + coverUrl);
+                            try {
+                                WritableMap event = Arguments.createMap();
+                                event.putString("action", "play");
+                                event.putString("songname", songs[idx][0]);
+                                event.putString("singername", songs[idx][1]);
+                                event.putString("album", songs[idx][2]);
+                                event.putString("hash", hash);
+                                event.putString("duration", songs[idx][5]);
+                                event.putString("cover", coverUrl);
+                                event.putString("albumId", albumIdStr);
+                                event.putString("songId", songIdStr);
+                                reactContext
+                                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                    .emit("MusicRecognitionEvent", event);
+                                logToJS("play 事件已发送到 JS");
+                            } catch (Exception e) {
+                                Log.e(TAG, "emit play event failed", e);
+                                logToJS("emit 失败: " + e.getMessage());
+                            }
+                        });
+
                         // 文字区域
                         LinearLayout textArea = new LinearLayout(reactContext);
                         textArea.setOrientation(LinearLayout.VERTICAL);
@@ -967,7 +1295,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         TextView songName = new TextView(reactContext);
                         songName.setText(songs[i][0]);
                         songName.setTextSize(15);
-                        songName.setTextColor(0xFF333333);
+                        songName.setTextColor(0xFF444444);
                         songName.setMaxLines(1);
                         songName.setEllipsize(android.text.TextUtils.TruncateAt.END);
                         textArea.addView(songName);
@@ -976,7 +1304,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         String artistText = songs[i][1] + (songs[i][2].isEmpty() ? "" : " · " + songs[i][2]);
                         artist.setText(artistText);
                         artist.setTextSize(12);
-                        artist.setTextColor(0xFF999999);
+                        artist.setTextColor(0xFFAAAAAA);
                         artist.setMaxLines(1);
                         textArea.addView(artist);
 
@@ -987,18 +1315,30 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                                 TextView distView = new TextView(reactContext);
                                 distView.setText(String.format("%.0f%%", distVal * 100));
                                 distView.setTextSize(11);
-                                distView.setTextColor(0xFF6C8CFF);
+                                distView.setTextColor(0xFF7EB6FF); // 柔和蓝
                                 textArea.addView(distView);
                             }
                         } catch (NumberFormatException e) { /* ignore */ }
 
                         row.addView(textArea);
 
-                        // 点击事件
+                        // 长按复制歌曲名称和作者
+                        row.setOnLongClickListener(v -> {
+                            String copyText = songs[idx][0] + " - " + songs[idx][1];
+                            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) reactContext.getSystemService(Context.CLIPBOARD_SERVICE);
+                            android.content.ClipData clip = android.content.ClipData.newPlainText("歌曲信息", copyText);
+                            clipboard.setPrimaryClip(clip);
+                            android.widget.Toast.makeText(reactContext, "已复制: " + copyText, android.widget.Toast.LENGTH_SHORT).show();
+                            return true;
+                        });
+
+                        // 点击事件（文字区域）
                         row.setOnClickListener(v -> {
-                            logToJS("=== 点击歌曲 ===");
-                            logToJS("歌曲: " + songs[idx][0] + " - " + songs[idx][1]);
-                            logToJS("hash: " + songs[idx][4] + " | 封面: " + coverUrl);
+                            bringAppToForeground();
+                            logToJS("=== 点击歌曲（文字区域）===");
+                            logToJS("歌曲: " + songs[idx][0] + " - " + songs[idx][1]
+                                    + " | hash: " + songs[idx][4] + " | albumId: " + songs[idx][6]
+                                    + " | songId: " + songs[idx][7] + " | cover: " + coverUrl);
                             try {
                                 WritableMap event = Arguments.createMap();
                                 event.putString("action", "play");
@@ -1008,6 +1348,8 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                                 event.putString("hash", songs[idx][4]);
                                 event.putString("duration", songs[idx][5]);
                                 event.putString("cover", coverUrl);
+                                event.putString("albumId", songs[idx][6]);
+                                event.putString("songId", songs[idx][7]);
                                 reactContext
                                     .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                                     .emit("MusicRecognitionEvent", event);
@@ -1020,13 +1362,7 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
 
                         resultsContainer.addView(row);
 
-                        if (i < finalCount - 1) {
-                            View divider = new View(reactContext);
-                            divider.setBackgroundColor(0xFFEEEEEE);
-                            divider.setLayoutParams(new LinearLayout.LayoutParams(
-                                    LinearLayout.LayoutParams.MATCH_PARENT, 1));
-                            resultsContainer.addView(divider);
-                        }
+                        // 不再需要分隔线，行间距由 rowParams.topMargin 控制
                     }
                     setStatus("识别完成，共 " + finalCount + " 个结果");
                 } catch (Exception e) {
@@ -1039,63 +1375,10 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
             Log.e(TAG, "Parse error", e);
             log("解析错误: " + e.getClass().getSimpleName() + ": " + e.getMessage());
             log("原始响应: " + (json != null ? json.substring(0, Math.min(json.length(), 200)) : "null"));
-            mainHandler.post(() -> setStatus("解析结果失败: " + e.getMessage()));
-        }
-    }
-
-    // 波形视图
-    static class WaveformView extends View {
-        private final Paint paint;
-        private final float[] amplitudes = new float[100];
-        private int amplitudeIndex = 0;
-
-        public WaveformView(Context context) {
-            super(context);
-            paint = new Paint();
-            paint.setColor(0xFF6C8CFF);
-            paint.setStrokeWidth(3);
-            paint.setStyle(Paint.Style.FILL);
-        }
-
-        public void addAmplitude(long amplitude) {
-            amplitudes[amplitudeIndex % amplitudes.length] = amplitude;
-            amplitudeIndex++;
-            invalidate();
-        }
-
-        @Override
-        protected void onDraw(Canvas canvas) {
-            super.onDraw(canvas);
-            canvas.drawColor(0xFF0D1117);
-
-            float width = getWidth();
-            float height = getHeight();
-            float barWidth = width / amplitudes.length;
-
-            for (int i = 0; i < amplitudes.length; i++) {
-                int idx = (amplitudeIndex - amplitudes.length + i + amplitudes.length * 2) % amplitudes.length;
-                float amp = amplitudes[idx];
-                float normalizedAmp = Math.min(amp / 32768f, 1f);
-                float barHeight = normalizedAmp * height * 0.8f;
-
-                float x = i * barWidth;
-                float y = (height - barHeight) / 2;
-
-                if (normalizedAmp > 0.8f) {
-                    paint.setColor(0xFFFF4444);
-                } else if (normalizedAmp > 0.5f) {
-                    paint.setColor(0xFFFFAA00);
-                } else {
-                    paint.setColor(0xFF6C8CFF);
-                }
-
-                canvas.drawRect(x + 1, y, x + barWidth - 1, y + barHeight, paint);
-            }
-
-            // 中线
-            paint.setColor(0xFF333355);
-            paint.setStrokeWidth(1);
-            canvas.drawLine(0, height / 2, width, height / 2, paint);
+            mainHandler.post(() -> {
+                setStatus("解析结果失败: " + e.getMessage());
+                updateStartBtn("重新识别", false);
+            });
         }
     }
 }
