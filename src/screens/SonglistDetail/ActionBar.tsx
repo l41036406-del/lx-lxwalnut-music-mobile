@@ -2,7 +2,7 @@ import { memo } from 'react'
 import { View } from 'react-native'
 import Button from '@/components/common/Button'
 
-import { createStyle } from '@/utils/tools'
+import { createStyle, toast } from '@/utils/tools'
 import { useTheme } from '@/store/theme/hook'
 import Text from '@/components/common/Text'
 import { handleCollect, handlePlay } from './listAction'
@@ -16,13 +16,18 @@ export default memo(({ onBack }: { onBack: () => void }) => {
   const info = useListInfo()
 
   const handlePlayAll = () => {
-    if (!songlistState.listDetailInfo.info.name) return
+    if (!songlistState.listDetailInfo.list.length) {
+      toast('歌单加载失败，请返回重试')
+      return
+    }
     void handlePlay(info.id, info.source, songlistState.listDetailInfo.list)
   }
 
   const handleCollection = () => {
-    console.log('[ActionBar] 收藏按钮点击', { id: info.id, source: info.source, name: info.name })
-    void handleCollect(info.id, info.source, info.name || '未命名歌单')
+    // 优先使用 songlistState 中存储的歌单名称，其次使用 info.name，最后使用默认值
+    const name = songlistState.listDetailInfo.info?.name || info.name || '未命名歌单'
+    console.log('[ActionBar] 收藏按钮点击', { id: info.id, source: info.source, name })
+    void handleCollect(info.id, info.source, name)
   }
 
   return (

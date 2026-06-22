@@ -477,29 +477,35 @@ export const removeTask = (id: string) => {
 
 
 /**
- * 批量下载任务 - 使用网易云源和Cookie，并间隔添加
+ * 批量下载任务 - 间隔添加下载任务
  * @param musicInfos 选中的歌曲列表
  */
 export const batchDownload = async (musicInfos: LX.Music.MusicInfo[]) => {
   const cookie = settingState.setting['common.wy_cookie'];
-  if (!cookie) {
-    toast('请先在设置中配置网易云 Cookie');
-    return;
-  }
-
-  const wyMusicInfos = musicInfos.filter(m => m.source === 'wy');
-  if (musicInfos.length > wyMusicInfos.length) {
-    toast('已自动过滤非网易云音源的歌曲');
-  }
-  if (!wyMusicInfos.length) {
-    toast('未选择任何网易云音源的歌曲');
-    return;
+  const hasWyMusic = musicInfos.some(m => m.source === 'wy');
+  
+  // 只有选了网易云歌曲且没配 Cookie 时才提醒
+  if (hasWyMusic && !cookie) {
+    toast('未配置网易云 Cookie，网易云音源将使用普通音质下载');
   }
 
   const quality = settingState.setting['player.playQuality'];
-  toast(`准备添加 ${wyMusicInfos.length} 首歌曲到下载队列...`);
-  for (const musicInfo of wyMusicInfos) {
-    addTask(musicInfo, quality, true);
+  let wyCount = 0;
+  let otherCount = 0;
+  
+  for (const musicInfo of musicInfos) {
+    if (musicInfo.source === 'wy') wyCount++; else otherCount++;
+  }
+
+  const tips = [];
+  if (wyCount > 0) tips.push(`${wyCount}首网易云${cookie ? '(Cookie)' : '(普通)'}`);
+  if (otherCount > 0) tips.push(`${otherCount}首其他音源`);
+  toast(`准备添加 ${musicInfos.length} 首歌曲到下载队列 (${tips.join(', ')})`);
+  
+  for (const musicInfo of musicInfos) {
+    // 有 Cookie 时网易云音源使用 Cookie 下载，否则正常下载
+    const isWyAndHasCookie = musicInfo.source === 'wy' && !!cookie;
+    addTask(musicInfo, quality, isWyAndHasCookie);
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 };

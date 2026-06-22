@@ -621,7 +621,7 @@
   "user_api_import_desc": "选择自定义源文件",
   "user_api_import_failed_tip": "自定义源导入失败：\n{message}",
   "user_api_import_success_tip": "导入成功 🎉",
-  "user_api_max_tip": "最多只能同时存在 20 个源哦🤪\n想要继续导入的话，请先移除一些旧的源腾出位置吧",
+  "user_api_max_tip": "最多只能同时存在 50 个源哦🤪\n想要继续导入的话，请先移除一些旧的源腾出位置吧",
   "user_api_note": "提示：虽然我们已经尽可能地隔离了脚本的运行环境，但导入包含恶意行为的脚本仍可能会影响你的系统，请谨慎导入。",
   "user_api_readme": "源编写说明：",
   "user_api_remove_tip": "你真的要移除「{name}」吗？",
