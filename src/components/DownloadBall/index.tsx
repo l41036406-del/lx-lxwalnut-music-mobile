@@ -23,13 +23,11 @@ export default memo(() => {
     }
     const totalProgress = currentProgress / activeTasks.size;
 
-    // 检查是否所有活动任务都已完成/失败
     const allFinished = Array.from(activeTasks.values()).every(t => t.status === 'completed' || t.status === 'error');
 
     return { totalProgress, isCompleted: allFinished };
   }, [activeTasks]);
 
-  // 监听任务状态和进度变化
   useEffect(() => {
     const handleTaskAdd = (task: LX.Download.DownloadTask) => {
       if (!isVisible) {
@@ -70,7 +68,6 @@ export default memo(() => {
     };
   }, [isVisible, scaleAnim]);
 
-  // 完成动画
   useEffect(() => {
     if(isVisible && isCompleted && activeTasks.size > 0) {
       Animated.sequence([
@@ -89,7 +86,7 @@ export default memo(() => {
       useNativeDriver: true,
     }).start(() => {
       setIsVisible(false);
-      setActiveTasks(new Map()); // 清空状态以便下次出现
+      setActiveTasks(new Map());
     });
     navigations.pushDownloadManagerScreen(commonState.componentIds[commonState.componentIds.length - 1]?.id!);
   };

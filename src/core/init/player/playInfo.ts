@@ -9,7 +9,6 @@ export default async (setting: LX.AppSetting) => {
   global.lx.restorePlayInfo = null
   if (!info?.listId || info.index < 0) return
 
-  // 如果恢复的是临时列表，并且有元数据，则恢复元数据
   if (info.listId === LIST_IDS.TEMP && info.tempMeta) {
     listAction.setTempListMeta(info.tempMeta)
   }
@@ -20,30 +19,4 @@ export default async (setting: LX.AppSetting) => {
   await playList(info.listId, info.index)
 
   if (setting['player.startupAutoPlay']) setTimeout(play)
-
-  // if (!info.list || !info.list[info.index]) {
-  //   const info2 = { ...info }
-  //   if (info2.list) {
-  //     info2.music = info2.list[info2.index]?.name
-  //     info2.list = info2.list.length
-  //   }
-  //   toast('恢复播放数据失败，请去错误日志查看', 'long')
-  //   log.warn('Restore Play Info failed: ', JSON.stringify(info2, null, 2))
-
-  //   return
-  // }
-
-  // let setting = store.getState().common.setting
-  // global.restorePlayInfo = {
-  //   info,
-  //   startupAutoPlay: setting.startupAutoPlay,
-  // }
-
-  // store.dispatch(playerAction.setList({
-  //   list: {
-  //     list: info.list,
-  //     id: info.listId,
-  //   },
-  //   index: info.index,
-  // }))
 }

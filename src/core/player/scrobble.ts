@@ -51,18 +51,14 @@ export const updateScrobbleInfo = () => {
 export const updateScrobblePlayTime = (currentTime: number) => {
   if (!scrobbleInfo || !playerState.isPlay) return
 
-  // 计算自上次更新以来的时间差
   const deltaTime = currentTime - scrobbleInfo.lastReportedTime
 
-  // 只在连续播放时（时间差较小）累加时间
-  // 允许2秒的误差，以应对可能的计时器延迟
   if (deltaTime > 0 && deltaTime < 2) {
     scrobbleInfo.accumulatedPlayedTime += deltaTime
   }
 
   scrobbleInfo.lastReportedTime = currentTime
   
-  // 实时判断是否满足打卡条件，如果满足而且未打过卡，直接上报
   if (!scrobbleInfo.isScrobbled) {
     const playedTime = Math.floor(scrobbleInfo.accumulatedPlayedTime)
     const { totalTime } = scrobbleInfo

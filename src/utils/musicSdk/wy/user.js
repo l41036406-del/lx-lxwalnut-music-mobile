@@ -114,7 +114,7 @@ export default {
           cookie,
         },
         form: weapi({
-          uid: String(uid), // 确保uid是字符串
+          uid: String(uid),
           csrf_token: csrfToken || '',
         }),
       });
@@ -174,7 +174,7 @@ export default {
     try {
       const data = {
         name,
-        privacy, // 0 普通歌单,默认 10 隐私歌单
+        privacy,
         type: 'NORMAL',
       };
       const cookie = settingState.setting['common.wy_cookie'];
@@ -295,7 +295,6 @@ export default {
 
     try {
       const { body } = await doRequest(data).catch(error => {
-        // 网易云返回512代码时，表示歌曲已存在，此时重发一次请求（将歌曲id发两次）可以解决这个问题
         if (error.body && error.body.code === 512) {
           const doubleTrackIdsData = { ...data, trackIds: JSON.stringify([...trackIds, ...trackIds]) }
           return doRequest(doubleTrackIdsData)
@@ -318,7 +317,7 @@ export default {
   },
 
   /**
-   * 获取关注的歌手列表
+   * Get followed artist list
    * @param {number} limit
    * @param {number} offset
    */
@@ -375,7 +374,7 @@ export default {
   },
 
   /**
-   * 获取所有关注的歌手（自动分页）
+   * Get all followed artists (auto-pagination)
    */
   async getAllSublist() {
     let allArtists = [];
@@ -391,7 +390,7 @@ export default {
   },
 
   /**
-   * 获取所有收藏的专辑（自动分页）
+   * Get all collected albums (auto-pagination)
    */
   async getAllSubAlbumList() {
     let allAlbums = [];
@@ -407,9 +406,9 @@ export default {
   },
 
   /**
-   * 关注/取消关注歌手
-   * @param {string} id 歌手ID
-   * @param {boolean} isFollow true为关注, false为取消关注
+   * Follow/unfollow an artist
+   * @param {string} id Artist ID
+   * @param {boolean} isFollow true to follow, false to unfollow
    */
   async followSinger(id, isFollow, retryNum = 0) {
     const maxRetries = 3
@@ -540,8 +539,8 @@ export default {
           id: songId,
           download: 0,
           type: 'song',
-          sourceId: String(sourceId), // 歌单或专辑 id
-          time: Math.floor(duration), // 播放时长（秒）
+          sourceId: String(sourceId),
+          time: Math.floor(duration),
           end: 'playend',
           wifi: 0,
         },

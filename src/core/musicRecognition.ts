@@ -67,13 +67,10 @@ const handleRecognitionEvent = (event: RecognitionResult) => {
 
 const playRecognizedSong = async (info: RecognitionResult) => {
   try {
-    // 优先使用 hash 作为 id，其次 songId，最后时间戳兜底
     const songId = info.hash || info.songId || `kg_${Date.now()}`
-    // 替换封面URL中的 {size} 占位符为实际尺寸
     const coverUrl = info.cover ? info.cover.replace(/\{size\}/g, '400') : null
     console.log('[MusicRecognition] 构建音乐信息: hash=' + info.hash + ' | songId=' + info.songId + ' | albumId=' + info.albumId + ' | cover=' + coverUrl)
 
-    // 构建完整的酷狗音乐信息对象
     const musicInfo = {
       id: songId,
       name: info.songname || '未知歌曲',
@@ -102,23 +99,19 @@ const playRecognizedSong = async (info: RecognitionResult) => {
 
     console.log('[MusicRecognition] playing:', musicInfo.name, '- hash:', musicInfo.hash)
 
-    // 添加到默认播放列表
     await addListMusics(
       LIST_IDS.DEFAULT,
       [musicInfo as any],
       settingState.setting['list.addMusicLocationType']
     )
 
-    // 查找刚添加的歌曲索引
     const list = getListMusicSync(LIST_IDS.DEFAULT)
     const index = list.findIndex((m: any) => m.id === musicInfo.id)
 
     if (index >= 0) {
-      // 开始播放
       await playList(LIST_IDS.DEFAULT, index)
       console.log('[MusicRecognition] playList called, index:', index)
 
-      // 先关闭已有的 PlayDetail 页面，避免重叠
       const existingPlayDetail = commonState.componentIds.find(c => c.name === COMPONENT_IDS.playDetail)
       if (existingPlayDetail) {
         try {
@@ -130,7 +123,6 @@ const playRecognizedSong = async (info: RecognitionResult) => {
         }
       }
 
-      // 跳转到播放详情页
       const componentId = commonState.componentIds[commonState.componentIds.length - 1]?.id
       if (componentId) {
         navigations.pushPlayDetailScreen(componentId)

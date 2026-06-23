@@ -39,7 +39,6 @@ export const isTempId = (trackId = global.lx.playerTrackId) => !trackId || tempI
 //   }
 // }
 
-// 解决快速切歌导致的通知栏歌曲信息与当前播放歌曲对不上的问题
 // const debouncePlayMusicTools = {
 //   prevPlayMusicPromise: Promise.resolve(),
 //   trackInfo: {},

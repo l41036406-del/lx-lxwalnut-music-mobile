@@ -13,9 +13,9 @@ import { getLyricInfo, getPicUrl } from '@/core/music/local'
 import settingState from '@/store/setting/state'
 
 export interface Metadata {
-  name: string // 歌曲名
-  singer: string // 艺术家名
-  albumName: string // 歌曲专辑名称
+  name: string
+  singer: string
+  albumName: string
   pic: string
   lyric: string
   interval: string

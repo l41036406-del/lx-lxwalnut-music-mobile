@@ -1,18 +1,16 @@
 /**
  * Created by qianxin on 17/6/1.
- * 屏幕工具类
- * ui设计基准,iphone 6
+ * Screen utility class
+ * UI design baseline, iPhone 6
  * width:375
  * height:667
  */
 import { PixelRatio } from 'react-native'
 import { windowSizeTools } from './windowSizeTools'
 
-// 高保真的宽度和高度
 const designWidth = 375.0
 const designHeight = 667.0
 
-// 获取屏幕的dp
 const size = windowSizeTools.getSize()
 // console.log('size', size)
 let screenW = size.width
@@ -24,7 +22,6 @@ if (screenW > screenH) {
 }
 let fontScale = PixelRatio.getFontScale()
 let pixelRatio = PixelRatio.get()
-// 根据dp获取屏幕的px
 let screenPxW = PixelRatio.getPixelSizeForLayoutSize(screenW)
 let screenPxH = PixelRatio.getPixelSizeForLayoutSize(screenH)
 // console.log(screenPxW, screenPxH)

@@ -11,40 +11,33 @@ export default {
     }
 
     try {
-      // 缓存5分钟，避免频繁读取
       const now = Date.now()
       if (this._cacheData && now - this._cacheTime < 5 * 60 * 1000) {
         return this._cacheData
       }
 
-      // 从数据库获取热搜词
       const database = await loadDatabase()
       if (!database || database.length === 0) {
         console.log('[Hotword] 数据库为空')
         return { source: 'git', list: [] }
       }
 
-      // 统计所有歌曲和歌手，生成热搜词
       const hotWords = new Set()
 
-      // 随机选择一些歌曲作为热搜
       const shuffled = [...database].sort(() => Math.random() - 0.5)
       const selectedSongs = shuffled.slice(0, 15)
 
       selectedSongs.forEach((item) => {
-        // 添加歌曲名
         const title = item.title || extractNameFromFile(item.filename)
         if (title && title.length > 1) {
           hotWords.add(title)
         }
 
-        // 添加歌手名
         if (item.artist && item.artist !== '未知歌手' && item.artist.length > 1) {
           hotWords.add(item.artist)
         }
       })
 
-      // 转换为数组并限制数量
       const hotWordsList = Array.from(hotWords).slice(0, 20)
 
       console.log(`[Hotword] 生成 ${hotWordsList.length} 个热搜词`)
@@ -54,7 +47,6 @@ export default {
         list: hotWordsList,
       }
 
-      // 更新缓存
       this._cacheData = result
       this._cacheTime = now
 
@@ -62,7 +54,6 @@ export default {
     } catch (error) {
       console.error('[Hotword] 获取热搜出错:', error)
 
-      // 重试
       if (
         error.message &&
         (error.message.includes('ECONNREFUSED') || error.message.includes('ETIMEDOUT'))
@@ -71,12 +62,10 @@ export default {
         return this.getList(retryNum + 1)
       }
 
-      // 返回空结果
       return { source: 'git', list: [] }
     }
   },
 
-  // 兼容旧接口
   filterList(rawList) {
     return rawList.map((item) => item.key || item)
   },

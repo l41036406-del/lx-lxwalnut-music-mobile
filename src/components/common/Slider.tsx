@@ -28,7 +28,6 @@ export default memo(
     const theme = useTheme()
 
     const handleValueChange = (value: number) => {
-      // 修复当value小于等于minimumValue时，首次调用会传入0的问题
       if (onValueChange && minimumValue != null) onValueChange(Math.max(value, minimumValue))
     }
 

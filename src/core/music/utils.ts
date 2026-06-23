@@ -240,11 +240,9 @@ export const buildLyricInfo = async (
 export const getCachedLyricInfo = async (
   musicInfo: LX.Music.MusicInfo
 ): Promise<LX.Player.LyricInfo | null> => {
-  // 优先检查编辑过的歌词
   const playerLyricInfo = await getPlayerLyric(musicInfo)
   if (playerLyricInfo?.lyric && playerLyricInfo.rawlrcInfo?.lyric !== playerLyricInfo.lyric) {
-    // 如果编辑过的歌词和原始歌词不同，说明是用户编辑过的，优先使用
-    return playerLyricInfo
+  return playerLyricInfo
   }
   
   let lrcInfo = await getStoreLyric(musicInfo)
@@ -416,30 +414,23 @@ export const getPlayQuality = (
   preferredQuality: LX.Quality,
   musicInfo: LX.Music.MusicInfoOnline
 ): LX.Quality => {
-  // 获取这首歌实际支持的所有音质
   const availableQualities = musicInfo.meta._qualitys;
 
-  // 确保 preferredQuality 有效，如果无效则使用默认音质 '128k'
   const validPreferredQuality = QUALITY_RANK.includes(preferredQuality)
     ? preferredQuality
     : '128k';
 
-  // 找到用户偏好音质在排行榜中的位置
   const startIndex = QUALITY_RANK.indexOf(validPreferredQuality);
 
-  // 如果用户的偏好设置不在我们的榜单里（例如设置了无效值），就从最高音质开始找
   const searchIndex = startIndex === -1 ? 0 : startIndex;
 
-  // 从用户偏好的音质开始，向下遍历排行榜
   for (let i = searchIndex; i < QUALITY_RANK.length; i++) {
     const quality = QUALITY_RANK[i];
-    // 如果当前歌曲支持这个音质，那么它就是我们要找的最佳音质
     if (availableQualities[quality]) {
       return quality;
     }
   }
 
-  // 如果遍历完都找不到（极不可能发生，因为歌曲至少有128k），则返回最低音质
   return '128k';
 }
 
@@ -614,7 +605,7 @@ export const getOnlineOtherSourceMusicUrl = async ({
 }
 
 /**
- * 获取在线音乐URL
+ * Get online music URL
  */
 export const handleGetOnlineMusicUrl = async ({
   musicInfo,
@@ -645,7 +636,6 @@ export const handleGetOnlineMusicUrl = async ({
   userApiLog.info(`[在线播放] 音乐ID: "${musicInfo.id}"`)
   userApiLog.info(`[在线播放] 时长: ${musicInfo.interval || '未知'}`)
   
-  // 修复 TX 音源的 songmid 问题
   if (musicInfo.source === 'tx') {
     if (!musicInfo.meta.songmid || musicInfo.meta.songmid === undefined) {
       const fallbackSongmid = musicInfo.songmid || musicInfo.meta.songId || musicInfo.meta.id || musicInfo.id
@@ -661,7 +651,6 @@ export const handleGetOnlineMusicUrl = async ({
     }
   }
 
-  // 详细的meta信息日志
   userApiLog.info(`[在线播放] === 音乐元信息诊断 ===`)
   userApiLog.info(`[在线播放]   songId: ${musicInfo.meta.songId}`)
   userApiLog.info(`[在线播放]   songmid: ${musicInfo.meta.songmid}`)
@@ -699,7 +688,6 @@ export const handleGetOnlineMusicUrl = async ({
     const currentQuality = qualities[0]
     userApiLog.info(`[在线播放]   尝试音质: ${currentQuality}`)
 
-    // 记录转换后的旧格式数据
     const oldMusicInfo = toOldMusicInfo(musicInfo)
     userApiLog.info(`[在线播放]   转换后的旧格式数据: songmid=${oldMusicInfo.songmid}, strMediaMid=${oldMusicInfo.strMediaMid}, vid=${oldMusicInfo.vid || '(空)'}`)
 
@@ -721,7 +709,6 @@ export const handleGetOnlineMusicUrl = async ({
         userApiLog.info(`[在线播放]   播放地址: ${result.url}`)
         userApiLog.info(`[在线播放]   实际音质: ${result.type}`)
         
-        // 验证URL有效性
         if (!result.url || result.url.length < 10) {
           userApiLog.warn(`[在线播放]   警告: 播放地址可能无效`)
         }
@@ -854,7 +841,7 @@ export const getOnlineOtherSourcePicUrl = async ({
 }
 
 /**
- * 获取在线歌曲封面
+ * Get online song cover
  */
 export const handleGetOnlinePicUrl = async ({
   musicInfo,
@@ -965,7 +952,7 @@ export const getOnlineOtherSourceLyricInfo = async ({
 }
 
 /**
- * 获取在线歌词信息
+ * Get online lyric info
  */
 export const handleGetOnlineLyricInfo = async ({
   musicInfo,

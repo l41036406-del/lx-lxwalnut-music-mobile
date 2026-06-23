@@ -5,7 +5,7 @@ import { isActive } from '@/utils/tools'
 import BackgroundTimer from 'react-native-background-timer'
 import playerState from '@/store/player/state'
 import { setNowPlayTime } from '@/core/player/progress'
-import { updateScrobbleInfo } from '@/core/player/scrobble' // [修改] 从新模块导入
+import { updateScrobbleInfo } from '@/core/player/scrobble'
 
 export default () => {
   let retryNum = 0
@@ -16,13 +16,6 @@ export default () => {
   const startLoadingTimeout = () => {
     clearLoadingTimeout()
     loadingTimeout = BackgroundTimer.setTimeout(() => {
-      // if (global.lx.isPlayedStop) {
-      //   prevTimeoutId = null
-      //   setStatusText('')
-      //   return
-      // }
-
-      // 如果加载超时，则尝试刷新URL
       if (prevTimeoutId == playerState.musicInfo.id) {
         prevTimeoutId = null
         void playNext(true)
@@ -64,14 +57,6 @@ export default () => {
     setStatusText(global.i18n.t('player__loading'))
   }
 
-  // const handleLoadeddata = () => {
-  //   setStatusText(global.i18n.t('player__loading'))
-  // }
-
-  // const handleCanplay = () => {
-  //   setStatusText('')
-  // }
-
   const handlePlaying = () => {
     setStatusText('')
     clearLoadingTimeout()
@@ -91,7 +76,6 @@ export default () => {
     clearLoadingTimeout()
     if (global.lx.isPlayedStop) return
     if (playerState.playMusicInfo.musicInfo && retryNum < 2) {
-      // 若音频URL无效则尝试刷新2次URL
       let musicInfo = playerState.playMusicInfo.musicInfo
       void getPosition()
         .then((position) => {
@@ -109,15 +93,7 @@ export default () => {
     global.lx.playerError = true
     if (!isEmpty()) void setStop()
 
-    // 设置错误状态文本，但不自动播放下一首
     setStatusText(global.i18n.t('player__error'))
-    // if (isActive()) {
-    //   setStatusText(global.i18n.t('player__error'))
-    //   setTimeout(addDelayNextTimeout)
-    // } else {
-    //   console.warn('error skip to next')
-    //   void playNext(true)
-    // }
   }
 
   const handleSetPlayInfo = () => {
@@ -132,8 +108,6 @@ export default () => {
   }
 
   global.app_event.on('playerLoadstart', handleLoadstart)
-  // global.app_event.on('playerLoadeddata', handleLoadeddata)
-  // global.app_event.on('playerCanplay', handleCanplay)
   global.app_event.on('playerPlaying', handlePlaying)
   global.app_event.on('playerWaiting', handleWating)
   global.app_event.on('playerEmptied', handleEmpied)

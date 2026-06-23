@@ -35,18 +35,14 @@ export default () => {
   useEffect(() => {
     const onBackPress = () => {
       if (selectedListRef.current) {
-        // 获取状态管理中记录的最后一个（即最顶层）屏幕信息
         const lastScreen = commonState.componentIds[commonState.componentIds.length - 1]
 
-        // 如果最顶层的屏幕不是 Home 屏幕，则意味着有其他屏幕（如歌手详情页）被 push 到栈顶
-        // 此时不应处理返回事件，应交由 react-native-navigation 默认处理（即 pop 顶层屏幕）
         if (lastScreen && lastScreen.name !== COMPONENT_IDS.home) {
           return false
         }
 
-        // 否则，处理返回事件，关闭当前的歌单详情浮层
         setSelectedList(null)
-        return true // 消费事件，防止退出应用
+        return true
       }
       return false
     }
@@ -72,7 +68,7 @@ export default () => {
   const handleSearch: HeaderBarProps['onSearch'] = useCallback((text) => {
     handleHideTipList()
     setSelectedList(null)
-    setSearchState(text) // 更新全局状态
+    setSearchState(text)
     searchTipListRef.current?.search(text, layoutHeightRef.current)
     headerBarRef.current?.setText(text)
     headerBarRef.current?.blur()

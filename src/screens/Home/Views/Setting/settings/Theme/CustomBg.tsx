@@ -49,7 +49,6 @@ export default memo(() => {
   };
 
   const handleClearPath = async() => {
-    // 清除设置的同时，也删除已保存的背景图文件
     if (customBgPath && customBgPath.startsWith('file://' + BG_PIC_DIR)) {
       try {
         if (await existsFile(customBgPath.replace('file://', ''))) {

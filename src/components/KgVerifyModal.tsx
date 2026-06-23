@@ -1,5 +1,5 @@
 /**
- * 酷狗人机验证 Modal
+ * KuGou CAPTCHA Verification Modal
  */
 
 import { forwardRef, useImperativeHandle, useRef, useCallback, useState } from 'react';
@@ -56,7 +56,6 @@ body{background:#f5f5f5;display:flex;justify-content:center;align-items:center;m
 var appid='${txappid}';
 var code='${ssaCode}';
 
-// 修复触摸事件 - 让滑块能正常工作
 (function() {
   var lastTouchEnd = 0;
   document.addEventListener('touchend', function(event) {
@@ -112,7 +111,6 @@ const KgVerifyModal = forwardRef<KgVerifyModalType, object>((props, ref) => {
       const result = await getVerifyInfo(ssaCode);
       console.log('[Verify] getVerifyInfo 返回:', JSON.stringify(result));
       if (result.success && result.data?.txappid) {
-        // 保存 sessionid 用于后续 verifyUserInfo 调用
         sessionidRef.current = result.data.sessionid || ssaCode;
         console.log('[Verify] 保存 sessionid:', sessionidRef.current);
         console.log('[Verify] 生成验证页面HTML, txappid:', result.data.txappid);
@@ -140,7 +138,6 @@ const KgVerifyModal = forwardRef<KgVerifyModalType, object>((props, ref) => {
         const code = 'KGCodeTX|' + JSON.stringify({ticket: data.ticket, randstr: data.randstr, txappid: data.appid});
         console.log('[Verify] 验证码:', code.substring(0, 100) + '...');
         console.log('[Verify] 开始调用 verifyUserInfo...');
-        // 使用 sessionid 作为 eventid，而不是原始的 ssa-code
         const eventid = sessionidRef.current || data.code;
         console.log('[Verify] 参数: eventid=' + eventid + ', vType=23');
         const r = await verifyUserInfo(eventid, 23, code, '', '');

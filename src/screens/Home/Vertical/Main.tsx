@@ -583,12 +583,10 @@ const SettingPage = () => {
 const Main = () => {
   const pagerViewRef = useRef<ComponentRef<typeof PagerView>>(null);
   const [activeNavId, setActiveNavIdState] = useState(commonState.navActiveId)
-  const navStatus = useSettingValue('common.navStatus'); // 获取菜单显示状态
-  const navOrder = useSettingValue('common.navOrder'); // 获取菜单排序
+  const navStatus = useSettingValue('common.navStatus');
+  const navOrder = useSettingValue('common.navOrder');
 
-  // 根据 navOrder 和 navStatus 动态生成可见的菜单项
   const visibleNavs = useMemo(() => {
-    // 从 navOrder 中筛选，然后关联到 NAV_MENUS 中的信息
     return navOrder.filter(id => isMenuVisible(id, navStatus)).map(id => {
       const menuInfo = NAV_MENUS.find(menu => menu.id === id);
       return menuInfo || { id, icon: 'unknown' };
@@ -605,7 +603,6 @@ const Main = () => {
     return { viewMap, indexMap };
   }, [visibleNavs]);
 
-  // 获取初始索引，如果当前 activeNavId 不在可见菜单中，则使用第一个可见菜单的索引
   const getInitialIndex = () => {
     let idx = viewMap[commonState.navActiveId];
     if (idx == null && visibleNavs.length > 0) {
@@ -634,7 +631,6 @@ const Main = () => {
     []
   );
 
-  // 当可见菜单改变时，确保当前页索引是有效的
   useEffect(() => {
     let index = viewMap[commonState.navActiveId];
     if (index == null && visibleNavs.length > 0) {
@@ -649,14 +645,11 @@ const Main = () => {
     }
   }, [viewMap, visibleNavs]);
 
-  // 当菜单显示状态改变时，检查当前活跃菜单是否仍可见
   useEffect(() => {
     const handleConfigUpdated = (keys: Array<keyof LX.AppSetting>) => {
       if (keys.includes('common.navStatus')) {
-        // 检查当前活跃菜单是否可见
         const isActiveVisible = isMenuVisible(commonState.navActiveId, navStatus);
         if (!isActiveVisible && visibleNavs.length > 0) {
-          // 如果不可见，切换到第一个可见菜单
           setNavActiveId(visibleNavs[0].id);
         }
       }
@@ -696,7 +689,6 @@ const Main = () => {
     };
   }, [viewMap, visibleNavs]);
 
-  // 根据 visibleNavs 动态渲染 PagerView 的子组件
   const pages = useMemo(() => {
     const pageComponents: Partial<Record<NAV_ID_Type, ReactNode>> = {
       nav_search: <SearchPage />,

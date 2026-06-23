@@ -22,7 +22,6 @@ let retryGetUrlId: string | null = null
 let retryGetUrlNum = 0
 const MAX_RETRY_NUM = 3
 
-// 销毁播放器并退出
 const handleExitApp = async (reason: string) => {
   global.lx.isPlayedStop = false
   exitApp(reason)
@@ -105,7 +104,6 @@ const registerPlaybackService = async () => {
   // })
 
   TrackPlayer.addEventListener(TPEvent.PlaybackError, async (err: any) => {
-    // 播放源错误 - 通常是URL过期（403），我们会自动处理
     log.info('[Player] Playback issue detected, starting recovery process...')
     log.info('[Player] Error info:', err?.message || err?.code || 'Unknown')
 
@@ -118,7 +116,6 @@ const registerPlaybackService = async () => {
 
       const currentId = currentMusicInfo.id
       
-      // 检查是否是同一首歌在重试
       if (retryGetUrlId === currentId) {
         retryGetUrlNum++
       } else {
@@ -126,7 +123,6 @@ const registerPlaybackService = async () => {
         retryGetUrlNum = 1
       }
 
-      // 超过最大重试次数，停止重试
       if (retryGetUrlNum > MAX_RETRY_NUM) {
         log.error('[Player] Max retry attempts reached, stopping playback recovery')
         log.error('[Player] Playback failed for:', currentMusicInfo.name, currentMusicInfo.id)
@@ -138,11 +134,9 @@ const registerPlaybackService = async () => {
       log.info(`[Player] Retry attempt ${retryGetUrlNum}/${MAX_RETRY_NUM} for:`, currentMusicInfo.name)
 
       log.info('[Player] Clearing music URL cache for:', currentMusicInfo.name, currentMusicInfo.id)
-      // 获取所有缓存键 - 使用直接的字符串常量避免模块加载问题
       const allKeys = await getAllKeys()
       const prefix = '@music_url__'
       const musicId = currentMusicInfo.id
-      // 找到该音乐的所有音质缓存
       const cacheKeys = allKeys.filter(key => key.startsWith(prefix + musicId))
       if (cacheKeys.length > 0) {
         log.info('[Player] Found cached keys:', cacheKeys)
@@ -152,20 +146,16 @@ const registerPlaybackService = async () => {
         log.info('[Player] No cached URL found for this music')
       }
 
-      // 尝试重新获取播放地址
       global.lx.playerError = true
       log.info('[Player] Attempting to re-fetch music URL')
-      // 等待一段时间再重试，避免立即重试
       setTimeout(() => {
         log.info('[Player] Re-fetching music URL...')
-        setMusicUrl(currentMusicInfo, true) // true 表示刷新缓存
+        setMusicUrl(currentMusicInfo, true)
       }, 1000)
     } catch (clearErr) {
       log.warn('[Player] Cache clearing had an issue, but will still retry:', clearErr)
     }
 
-    // 我们会自动处理这个问题，所以不需要记录详细的错误日志
-    // 只在开发阶段保留一些关键信息
     if (process.env.NODE_ENV !== 'production') {
       try {
         const currentTrack = await TrackPlayer.getCurrentTrack()
@@ -173,12 +163,9 @@ const registerPlaybackService = async () => {
           const track = await TrackPlayer.getTrack(currentTrack)
           log.debug('[Player] Track URL:', track?.url)
         }
-      } catch (e) {
-        // 忽略
-      }
+      } catch (e) { }
     }
 
-    // 触发事件，但这现在是预期的业务流程
     global.app_event.error()
     global.app_event.playerError()
   })
@@ -247,10 +234,8 @@ const registerPlaybackService = async () => {
       global.app_event.playerPause()
       global.app_event.pause()
       if (global.lx.playerError) {
-        // 如果是因错误导致的切换，则重置标志位，不触发播放结束事件
         global.lx.playerError = false
       } else {
-        // 否则，认为是正常播放结束
         global.app_event.playerEnded()
       }
       global.app_event.playerEmptied()

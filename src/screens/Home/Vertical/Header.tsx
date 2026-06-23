@@ -41,12 +41,10 @@ const LeftHeader = () => {
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // 仅在水平滑动时捕获手势
         const { dx, dy } = gestureState;
         return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
       },
       onPanResponderRelease: (evt, gestureState) => {
-        // 向右滑动超过40像素时打开菜单
         if (gestureState.dx > 40) {
           global.app_event.changeMenuVisible(true);
         }
@@ -100,12 +98,10 @@ const RightHeader = () => {
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
-        // 仅在水平滑动时捕获手势
         const { dx, dy } = gestureState;
         return Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10;
       },
       onPanResponderRelease: (evt, gestureState) => {
-        // 向左滑动超过40像素时打开菜单
         if (gestureState.dx < -40) {
           global.app_event.changeMenuVisible(true);
         }

@@ -4,7 +4,6 @@ import { toMD5 } from '@/utils/tools';
 
 const ORIGIN = "https://www.youtube.com";
 
-// 从 InnerTube.kt 翻译过来的 SAPISIDHASH 算法
 const generateSapisidHash = (sapisid: string): string => {
   const timestamp = Math.floor(Date.now() / 1000);
   const hash = toMD5(`${timestamp} ${sapisid} ${ORIGIN}`);

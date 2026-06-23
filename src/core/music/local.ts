@@ -126,7 +126,6 @@ const getOtherSourceByLocal = async <T>(
     }
   }
 
-  // 模糊匹配：如果所有精确匹配都失败，尝试仅用歌名搜索
   const fuzzyResults = await searchMusic({ 
     name: musicInfo.name, 
     singer: '', 
@@ -139,7 +138,6 @@ const getOtherSourceByLocal = async <T>(
       allOnlineResults.push(...source.list.map(s => toNewMusicInfo(s) as LX.Music.MusicInfoOnline))
     }
     
-    // 按匹配度排序：优先匹配歌名包含关键词的
     const sortedResults = allOnlineResults.sort((a, b) => {
       const name = musicInfo.name.toLowerCase()
       const aMatch = a.name.toLowerCase().includes(name) || name.includes(a.name.toLowerCase())
@@ -162,7 +160,6 @@ const downloadWebDAVMusic = async (musicInfo: LX.WebDAV.MusicInfo): Promise<stri
   const { downloadFile } = await import('@/utils/fs')
   const { readMetadata } = await import('@/utils/localMediaMetadata')
   
-  // 请求存储权限
   const hasPermission = await requestStoragePermission()
   if (!hasPermission) {
     throw new Error('没有存储权限，无法下载音乐')
@@ -170,13 +167,11 @@ const downloadWebDAVMusic = async (musicInfo: LX.WebDAV.MusicInfo): Promise<stri
   
   const downloadUrl = getWebDAVDownloadUrl(musicInfo)
   
-  // 优先使用 WebDAV 专用路径配置，默认使用私有目录
   const webdavPath = settingState.setting['webdav.downloadPath']
   let downloadDir = ''
   if (webdavPath && typeof webdavPath === 'string' && webdavPath.trim()) {
     downloadDir = webdavPath.trim()
   } else {
-    // 使用私有目录作为默认路径
     const { getWebDAVPrivateDirectory } = await import('@/utils/fs')
     downloadDir = getWebDAVPrivateDirectory()
   }
@@ -211,12 +206,10 @@ const downloadWebDAVMusic = async (musicInfo: LX.WebDAV.MusicInfo): Promise<stri
 
       webDAVLog?.info('downloadWebDAVMusic: download completed successfully', { musicId: musicInfo.id, fileName })
 
-      // 读取文件元数据（包括专辑名称等信息）
       const fileMetadata = await readMetadata(filePath).catch(() => null)
       
       const updates: Record<string, any> = { filePath }
       
-      // 如果文件中有专辑信息，更新到配置
       if (fileMetadata) {
         if (fileMetadata.albumName) {
           updates.albumName = fileMetadata.albumName
@@ -229,13 +222,10 @@ const downloadWebDAVMusic = async (musicInfo: LX.WebDAV.MusicInfo): Promise<stri
         }
       }
       
-      // 更新配置中的文件路径和元数据
       await updateWebDAVMusicMeta(musicInfo.id, updates)
 
-      // 提取并保存内嵌封面
       await readEmbeddedCoverAndSave(musicInfo, filePath, updateWebDAVMusicMeta)
 
-      // 更新播放器状态中的音乐信息
       if (playerState.playMusicInfo.musicInfo?.id === musicInfo.id) {
         const playerAction = await import('@/store/player/action')
         const updatedMusicInfo = { ...playerState.playMusicInfo.musicInfo }
@@ -354,7 +344,6 @@ export const getPicUrl = async ({
     if (isWebDAVMusic) {
       const { picCachePath, readPic: extractPic } = await import('@/utils/localMediaMetadata')
       
-      // 第1步：优先检查 local-media-covers 目录下是否有同名图片
       const audioFileName = musicInfo.meta.fileName?.replace(/\.[^/.]+$/, '') || musicInfo.name
       const coverExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
       let foundPicUrl = ''
@@ -375,12 +364,10 @@ export const getPicUrl = async ({
         webDAVLog?.warn('getPicUrl: failed to read cover cache dir', { err })
       }
       
-      // 如果找到封面，直接返回
       if (foundPicUrl) {
         return foundPicUrl
       }
       
-      // 第2步：如果没有找到，检查 WebDAV 下载路径下是否有 MP3 文件
       const webdavPath = settingState.setting['webdav.downloadPath']
       let downloadDir = ''
       if (webdavPath && typeof webdavPath === 'string' && webdavPath.trim()) {
@@ -392,7 +379,6 @@ export const getPicUrl = async ({
       const audioFilePath = musicInfo.meta.filePath
       let targetFilePath = audioFilePath
       
-      // 如果音频文件路径不存在，尝试在下载目录查找
       if (audioFilePath) {
         const audioExists = await existsFile(audioFilePath).catch(() => false)
         if (!audioExists) {
@@ -402,7 +388,6 @@ export const getPicUrl = async ({
         targetFilePath = `${downloadDir}/${musicInfo.meta.fileName}`
       }
       
-      // 第3步：检查目标文件是否存在，如果存在则提取封面
       const targetExists = await existsFile(targetFilePath).catch(() => false)
       if (targetExists) {
         try {
@@ -411,11 +396,9 @@ export const getPicUrl = async ({
             const picUrl = pic.startsWith('/') ? `file://${pic}` : pic
             webDAVLog?.info('getPicUrl: extracted cover from audio', { picUrl })
             
-            // 保存封面路径到配置
             const module = await loadWebDAVModule()
             void module.updateWebDAVMusicMeta(musicInfo.id, { picUrl })
             
-            // 触发全局事件通知列表页和详情页更新
             appEvent.webdavPicUpdated(musicInfo.id, picUrl)
             
             return picUrl
@@ -427,7 +410,6 @@ export const getPicUrl = async ({
         webDAVLog?.warn('getPicUrl: audio file not found in download dir', { targetFilePath })
       }
       
-      // 第4步：尝试使用配置中的 picUrl
       if (musicInfo.meta.picUrl) {
         if (musicInfo.meta.picUrl.startsWith('file://')) {
           const picFilePath = musicInfo.meta.picUrl.replace('file://', '')
@@ -442,12 +424,10 @@ export const getPicUrl = async ({
         }
       }
       
-      // 第5步：都没有，返回空
       webDAVLog?.info('getPicUrl: no cover found, return empty')
       return ''
     }
 
-    // 非 WebDAV 音乐的封面获取逻辑保持不变
     let pic = await readPic(musicInfo.meta.filePath).catch(() => null)        
     if (pic) {
       if (pic.startsWith('/')) pic = `file://${pic}`
@@ -503,24 +483,19 @@ export const getLyricInfo = async ({
   const isWebDAVMusic = 'webdav' in musicInfo.meta && (musicInfo.meta as any).webdav === true
 
   if (!isRefresh && !skipFileLyric) {
-    // WebDAV 音乐特殊处理
     if (isWebDAVMusic) {
-      // 第0步：优先检查编辑过的歌词
       const playerLyricInfo = await getPlayerLyric(musicInfo)
       if (playerLyricInfo?.lyric && playerLyricInfo.rawlrcInfo?.lyric !== playerLyricInfo.lyric) {
-        // 如果编辑过的歌词和原始歌词不同，说明是用户编辑过的，优先使用
-        webDAVLog?.info('getLyricInfo: WebDAV music using edited lyric', { musicId: musicInfo.id })
+      webDAVLog?.info('getLyricInfo: WebDAV music using edited lyric', { musicId: musicInfo.id })
         return buildLyricInfo(playerLyricInfo)
       }
       
-      // 第1步：检查缓存歌词
       const lyricInfo = await getCachedLyricInfo(musicInfo)
       if (lyricInfo?.lyric) {
         webDAVLog?.info('getLyricInfo: WebDAV music using cached lyric', { musicId: musicInfo.id })
         return buildLyricInfo(lyricInfo)
       }
 
-      // 第2步：检查本地下载的文件是否有内嵌歌词
       const webdavPath = settingState.setting['webdav.downloadPath']
       let downloadDir = ''
       if (webdavPath && typeof webdavPath === 'string' && webdavPath.trim()) {
@@ -551,7 +526,6 @@ export const getLyricInfo = async ({
         }
       }
 
-      // 第3步：尝试在线获取歌词（AI识别）
       webDAVLog?.info('getLyricInfo: WebDAV music fetching lyric from online source', { musicId: musicInfo.id })
       try {
         return await getOnlineOtherSourceLyricByLocal(musicInfo, isRefresh).then(
@@ -565,7 +539,6 @@ export const getLyricInfo = async ({
         webDAVLog?.warn('getLyricInfo: WebDAV music online lyric fetch failed', { err })
       }
 
-      // 第4步：尝试其他来源
       onToggleSource()
       return getOtherSourceByLocal(musicInfo, async (otherSource) => {
         return getOnlineOtherSourceLyricInfo({
@@ -580,12 +553,9 @@ export const getLyricInfo = async ({
       })
     }
 
-    // 非 WebDAV 音乐的歌词获取逻辑
-    // 第0步：优先检查编辑过的歌词
     const playerLyricInfo = await getPlayerLyric(musicInfo)
     if (playerLyricInfo?.lyric && playerLyricInfo.rawlrcInfo?.lyric !== playerLyricInfo.lyric) {
-      // 如果编辑过的歌词和原始歌词不同，说明是用户编辑过的，优先使用
-      return buildLyricInfo(playerLyricInfo)
+    return buildLyricInfo(playerLyricInfo)
     }
     
     const rawlrcInfo = await getMusicFileLyric(musicInfo.meta.filePath)

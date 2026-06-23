@@ -41,11 +41,9 @@ const DrawerLayoutFixed = forwardRef<DrawerLayoutFixedType, Props>(
     }, [])
 
     useEffect(() => {
-      // 当背景图片或动态背景设置改变时，重新渲染以修复原生 DrawerLayoutAndroid 背景丢失/黑屏的问题
       fixDrawerWidth()
     }, [bgPic, dynamicBg, sidebarDynamicBg, fixDrawerWidth])
 
-    // 修复 DrawerLayoutAndroid 在导航到其他屏幕再返回后无法打开的问题
     usePageVisible(
       visibleNavNames,
       useCallback(
@@ -85,12 +83,10 @@ const DrawerLayoutFixed = forwardRef<DrawerLayoutFixedType, Props>(
           if (changedRef.current.width == width) return
           changedRef.current.width = width
 
-          // 重新设置面板宽度
           const wp = Math.floor(width * widthPercentage)
           // console.log(wp, widthPercentageMax)
           setDrawerWidth(widthPercentageMax ? Math.min(wp, widthPercentageMax) : wp)
 
-          // 强制触发渲染以应用更改
           changedRef.current.changed = true
           setW(width - 1)
         }

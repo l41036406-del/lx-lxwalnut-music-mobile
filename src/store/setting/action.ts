@@ -11,7 +11,6 @@ export default {
     const result = mergeSetting(newSetting)
     state.setting = result.setting
     global.state_event.configUpdated(result.updatedSettingKeys, result.updatedSetting)
-    // 立即保存设置，确保退出应用前数据不会丢失
     void saveData(storageDataPrefix.setting, state.setting)
   },
 }

@@ -15,7 +15,7 @@ const defaultHeaders = {
 // var proxiedRequest = request.defaults({'proxy': proxyUrl});
 
 /**
- * 请求超时自动重试
+ * Automatic retry on request timeout
  * @param {*} url
  * @param {*} options
  */
@@ -42,11 +42,11 @@ export const httpFetch = (url, options = { method: 'get' }) => {
 }
 
 /**
- * http get 请求
- * @param {*} url 地址
- * @param {*} options 选项
- * @param {*} callback 回调
- * @return {Number} index 用于取消请求
+ * HTTP GET request
+ * @param {*} url URL address
+ * @param {*} options options
+ * @param {*} callback callback
+ * @return {Number} index for canceling request
  */
 export const httpGet = (url, options, callback) => {
   if (typeof options === 'function') {
@@ -125,7 +125,6 @@ const handleRequestData = async (
   }
   options.cache = cache
   
-  // 处理查询参数
   if (params && Object.keys(params).length > 0) {
     const searchParams = new URLSearchParams()
     for (const [key, value] of Object.entries(params)) {
@@ -264,7 +263,6 @@ const fetchData = (url, { timeout = 15000, ...options }) => {
               resp.body = parsedBody;
             } catch (e) {
               if (e.message.startsWith('登录状态已过期')) throw e;
-              // 非JSON响应或非登录错误，保持原始body
             }
             return resp;
           }

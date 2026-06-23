@@ -10,14 +10,14 @@ export interface Artist {
 }
 
 export interface ArtistSelectorModalType {
-  show: (artists: Artist[], onSelect: (artist: Artist) => void) => void; // <-- 修改 onSelect 签名
+  show: (artists: Artist[], onSelect: (artist: Artist) => void) => void;
 }
 
 export default forwardRef<ArtistSelectorModalType, {}>((props, ref) => {
   const dialogRef = useRef<DialogType>(null)
   const [visible, setVisible] = useState(false)
   const [artists, setArtists] = useState<Artist[]>([])
-  const onSelectRef = useRef<(artist: Artist) => void>(() => {}) // <-- 修改 onSelectRef 类型
+  const onSelectRef = useRef<(artist: Artist) => void>(() => {})
 
   useImperativeHandle(ref, () => ({
     show(artists, onSelect) {
@@ -31,7 +31,7 @@ export default forwardRef<ArtistSelectorModalType, {}>((props, ref) => {
     },
   }))
 
-  const handleSelect = (artist: Artist) => { // <-- 修改 handleSelect 签名
+  const handleSelect = (artist: Artist) => {
     dialogRef.current?.setVisible(false)
     onSelectRef.current(artist)
   }

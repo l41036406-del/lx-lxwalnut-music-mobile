@@ -23,12 +23,11 @@ export const handlePlay = async (list: LX.Music.MusicInfoOnline[], index = 0) =>
 }
 
 /**
- * 获取基于早上7点为分界的逻辑日期
- * @returns {Date} 计算后的日期对象
+ * Get logical date based on 7 AM boundary
+ * @returns {Date} Calculated date object
  */
 const getLogicalDateForPlaylist = (): Date => {
   const now = new Date();
-  // 如果当前时间在早上7点之前，则认为是前一天的日期
   if (now.getHours() < 7) {
     now.setDate(now.getDate() - 1);
   }
@@ -36,8 +35,8 @@ const getLogicalDateForPlaylist = (): Date => {
 };
 
 /**
- * 自动保存每日推荐到我的列表
- * @param songList 每日推荐的歌曲列表
+ * Auto-save daily recommendations to my list
+ * @param songList Daily recommendation song list
  */
 export const autoSaveDailyPlaylist = async(songList: LX.Music.MusicInfoOnline[]) => {
   if (!settingState.setting['list.isAutoSaveDailyRec']) return;

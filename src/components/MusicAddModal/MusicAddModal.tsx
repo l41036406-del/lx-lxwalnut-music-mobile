@@ -87,15 +87,13 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
       } : null,
     })
     
-    // 网易云歌单
     if (playlistType === 'wy') {
       if (!musicInfo) {
         log.error('[MusicAddModal] 网易歌单添加失败: musicInfo 为空')
         return;
       }
       
-      // 检查 songId 格式 - 网易云音乐需要纯数字 ID
-      const songId = String(musicInfo.meta.songId);  // 转为字符串
+      const songId = String(musicInfo.meta.songId);
       if (!songId || !/^\d+$/.test(songId)) {
         log.error('[MusicAddModal] 网易歌单添加失败: songId 格式不正确', {
           songId,
@@ -108,7 +106,6 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
       }
       
       const toListId = String(listInfo.id);
-      // 检查目标歌单 ID 格式
       if (toListId.startsWith('tx__')) {
         log.error('[MusicAddModal] 网易歌单添加失败: 目标歌单 ID 格式错误', {
           toListId,
@@ -173,14 +170,12 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
       return;
     }
     
-    // QQ音乐歌单
     if (playlistType === 'tx') {
       if (!musicInfo) {
         log.error('[MusicAddModal] QQ歌单添加失败: musicInfo 为空')
         return;
       }
       
-      // 检查歌曲来源 - QQ 歌单只能添加 QQ 音乐的歌曲
       if (musicInfo.source !== 'tx') {
         log.error('[MusicAddModal] QQ歌单添加失败: 歌曲来源不是QQ音乐', {
           musicSource: musicInfo.source,
@@ -191,7 +186,6 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
         return;
       }
       
-      // 检查歌曲 mid 格式 - QQ 音乐需要歌曲的 mid（media id）
       const songMid = musicInfo.meta.mid || musicInfo.meta.songId;
       if (!songMid) {
         log.error('[MusicAddModal] QQ歌单添加失败: 歌曲 mid 为空', {
@@ -202,7 +196,6 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
         return;
       }
       
-      // 获取真实的 QQ 歌单 ID（去掉 tx__ 前缀）
       const toListId = String(listInfo.id).replace('tx__', '');
       if (!toListId || toListId === String(listInfo.id)) {
         log.error('[MusicAddModal] QQ歌单添加失败: 目标歌单 ID 格式错误', {
@@ -221,8 +214,6 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
       })
       
       txApi.addSongToPlaylist(toListId, [String(songMid)]).then(() => {
-        // 如果添加到"我喜欢"歌单（dirid=201），同步更新本地喜欢状态
-        // 统一使用 songId（meta.id）作为喜欢状态的键
         if (listInfo.dirid === 201) {
           const txSongId = (musicInfo.meta as any).id
           const isNumericId = txSongId && /^\d+$/.test(String(txSongId))
@@ -245,14 +236,12 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
       return;
     }
 
-    // 酷狗音乐歌单
     if (playlistType === 'kg') {
       if (!musicInfo) {
         log.error('[MusicAddModal] 酷狗歌单操作失败: musicInfo 为空')
         return;
       }
 
-      // 获取酷狗数字ID（listid）
       const toListId = (listInfo as any).listid || Number(String(listInfo.id).replace('kg__', ''));
       if (!toListId || isNaN(toListId)) {
         log.error('[MusicAddModal] 酷狗歌单操作失败: 无法获取歌单数字ID', {
@@ -263,20 +252,17 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
         return;
       }
 
-      // 获取酷狗 cookie
       if (!kgCookie) {
         toast('请先登录酷狗音乐，Cookie可能已失效')
         return;
       }
 
-      // 获取歌曲信息
       const songName = musicInfo.name || '';
       const songHash = (musicInfo.meta as any)?.hash || '';
       const albumId = (musicInfo.meta as any)?.albumId || 0;
       const mixsongid = Number((musicInfo.meta as any)?.mixSongId) || Number(musicInfo.meta?.songId) || 0;
 
       if (isMove) {
-        // 移动：添加到目标歌单
         addKgSongToPlaylist(kgCookie, toListId, {
           name: songName,
           hash: songHash,
@@ -293,7 +279,6 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
           toast(err.message || t('list_edit_action_tip_move_failed'))
         })
       } else {
-        // 添加
         log.info('[MusicAddModal] 酷狗歌单添加开始', {
           toListId,
           songName,
@@ -310,10 +295,8 @@ export default forwardRef<MusicAddModalType, MusicAddModalProps>(({ onAdded }, r
             onAdded?.()
             toast(t('list_edit_action_tip_add_success'))
             log.info('[MusicAddModal] 酷狗歌单添加成功', { toListId, songName })
-            // 使用 collection_* 格式的 ID（与 SonglistDetail 匹配）
             const globalCollectionId = String(listInfo.id).replace('kg__', '')
             clearListDetailCache('kg', globalCollectionId)
-            // 传递添加的歌曲信息用于乐观更新（包含封面）
             const newCover = result.song?.cover ? result.song.cover.replace('{size}', '400') : undefined
             global.app_event.playlist_updated({ source: 'kg', listId: globalCollectionId, addedSong: result.song, newCover })
           } else {

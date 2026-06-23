@@ -19,7 +19,7 @@ export const useIsWyLiked = (songId: string | number) => {
     return () => {
       global.state_event.off('wyLikedListChanged', handleUpdate)
     }
-  }, [strId]) // 依赖项数组保持不变，仅当 songId 变化时才重新设置 effect
+  }, [strId])
 
   return isLiked
 }
@@ -43,12 +43,11 @@ export const useIsTxLiked = (songMid: string | number) => {
   return isLiked
 }
 
-export const useIsWyArtistFollowed = (artistId: string | number | undefined) => { // 允许传入 undefined
+export const useIsWyArtistFollowed = (artistId: string | number | undefined) => {
   const strId = String(artistId)
   const [isFollowed, setIsFollowed] = useState(() => artistId === undefined || artistId === null ? false : state.wy_followed_artists.some(a => String(a.id) === strId))
 
   useEffect(() => {
-    // 当 artistId 无效时，确保状态为 false
     if (artistId === undefined || artistId === null) {
       setIsFollowed(false)
       return
@@ -60,12 +59,12 @@ export const useIsWyArtistFollowed = (artistId: string | number | undefined) => 
     }
 
     global.state_event.on('wyFollowedListChanged', handleUpdate)
-    handleUpdate() // 首次加载或 artistId 变化时，立即检查并更新状态
+    handleUpdate()
 
     return () => {
       global.state_event.off('wyFollowedListChanged', handleUpdate)
     }
-  }, [strId, artistId]) // 同时依赖 strId 和 artistId
+  }, [strId, artistId])
 
   return isFollowed
 }

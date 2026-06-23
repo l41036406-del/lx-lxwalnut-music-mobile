@@ -104,7 +104,6 @@ export default forwardRef<PlayerPlaylistType, {}>((props, ref) => {
   }, [playerInfo.playerListId]);
 
   const handleShowMenu = useCallback((musicInfo: LX.Music.MusicInfo, index: number, position: Position) => {
-    // 菜单需要 MusicInfoOnline 类型适配
     const adaptedMusicInfo = {
       ...musicInfo,
       source: musicInfo.source as LX.OnlineSource,
@@ -128,7 +127,6 @@ export default forwardRef<PlayerPlaylistType, {}>((props, ref) => {
     const originalMusicInfo = ('progress' in item ? item.metadata.musicInfo : item);
     const isOneDrive = isOneDriveMusicInfo(originalMusicInfo);
 
-    // 将所有类型的 musicInfo 转换为 OnlineListItem 能安全渲染的结构
     const renderableMusicInfo: LX.Music.MusicInfoOnline = {
       ...originalMusicInfo,
       id: originalMusicInfo.id,
@@ -143,7 +141,6 @@ export default forwardRef<PlayerPlaylistType, {}>((props, ref) => {
         songId: originalMusicInfo.meta.songId,
         picUrl: originalMusicInfo.meta.picUrl,
         albumName: originalMusicInfo.meta.albumName,
-        // 提供安全的默认值以防止崩溃
         qualitys: (originalMusicInfo as LX.Music.MusicInfoOnline).meta.qualitys || [],
         _qualitys: (originalMusicInfo as LX.Music.MusicInfoOnline).meta._qualitys || {},
         fee: (originalMusicInfo as LX.Music.MusicInfoOnline).meta.fee ?? 0,
@@ -160,7 +157,7 @@ export default forwardRef<PlayerPlaylistType, {}>((props, ref) => {
         onPress={() => handlePlay(index)}
         onLongPress={() => {}}
         onShowMenu={(musicInfo, index, position) => {
-          handleShowMenu(originalMusicInfo, index, position); // 菜单使用原始数据
+          handleShowMenu(originalMusicInfo, index, position);
         }}
         selectedList={[]}
         playingId={playerMusicInfo.id}

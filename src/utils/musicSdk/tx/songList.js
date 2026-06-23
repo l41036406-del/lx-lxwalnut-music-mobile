@@ -76,7 +76,6 @@ export default {
   },
 
   // http://nplserver.kuwo.cn/pl.svc?op=getlistinfo&pid=2849349915&pn=0&rn=100&encode=utf8&keyset=pl2012&identity=kuwo&pcmp4=1&vipver=MUSIC_9.0.5.0_W1&newver=1
-  // 获取标签
   getTag(tryNum = 0) {
     if (this._requestObj_tags) this._requestObj_tags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -86,7 +85,6 @@ export default {
       return this.filterTagInfo(body.tags.data.v_group)
     })
   },
-  // 获取标签
   getHotTag(tryNum = 0) {
     if (this._requestObj_hotTags) this._requestObj_hotTags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -125,7 +123,6 @@ export default {
     }))
   },
 
-  // 获取列表数据
   getList(sortId, tagId, page, tryNum = 0) {
     if (this._requestObj_list) this._requestObj_list.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -210,7 +207,6 @@ export default {
     }
     return id
   },
-  // 获取歌曲列表内的音乐 - 使用新的签名API（支持官方歌单）
   async getListDetailNew(id, tryNum = 0) {
     log.info(`[TX SongList] getListDetailNew 开始`, { id, tryNum })
     
@@ -241,12 +237,10 @@ export default {
 
     log.info(`[TX SongList] getListDetailNew 构建payload完成`, { disstid: payload.req_0.param.disstid })
 
-    // 使用 musicu.fcg 不需要签名
     const url = `https://u.y.qq.com/cgi-bin/musicu.fcg?loginUin=0&hostUin=0&format=json&inCharset=utf-8&outCharset=utf-8&notice=0&platform=wk_v15.json&needNewCode=0&data=${encodeURIComponent(JSON.stringify(payload))}`
 
     log.info(`[TX SongList] getListDetailNew URL:`, url.substring(0, 200))
 
-    // 获取Cookie
     const cookie = settingState.setting['common.tx_cookie']
     log.info(`[TX SongList] getListDetailNew Cookie状态:`, cookie ? `已设置 (长度:${cookie.length})` : '未设置')
 
@@ -269,7 +263,6 @@ export default {
     const retCode = body.req_0.data?.retCode
     log.info(`[TX SongList] getListDetailNew retCode`, { retCode })
     
-    // retCode 为 undefined 或 0 表示成功，否则失败
     if (retCode !== undefined && retCode !== 0 && tryNum < 2) {
       log.warn(`[TX SongList] getListDetailNew retCode非0，重试`, { retCode, tryNum })
       return this.getListDetailNew(id, ++tryNum)
@@ -283,7 +276,6 @@ export default {
 
     log.info(`[TX SongList] getListDetailNew 成功`, { songCount: data.songlist.length, dissname: data.dissinfo?.dissname })
 
-    // 打印第一条歌曲结构
     if (data.songlist.length > 0) {
       const firstSong = data.songlist[0]
       log.info(`[TX SongList] 第一条歌曲结构`, {
@@ -298,13 +290,11 @@ export default {
       })
     }
 
-    // 打印新接口 dissinfo 完整结构，方便排查
     log.info(`[TX SongList] 新接口 dissinfo 完整数据`, {
       dissinfoKeys: data.dissinfo ? Object.keys(data.dissinfo) : [],
       dissinfo: data.dissinfo,
     })
 
-    // 优先使用旧接口获取歌单信息，失败则用新接口的 dissinfo 补充
     let dissname = ''
     let logo = ''
     let desc = ''
@@ -318,7 +308,6 @@ export default {
         headers: { Origin: 'https://y.qq.com', Referer: `https://y.qq.com/n/yqq/playsquare/${id}.html` },
       }).promise
       log.info(`[TX SongList] 旧接口响应`, { statusCode, bodyCode: oldBody?.code, cdlistLength: oldBody?.cdlist?.length })
-      // 打印旧接口完整返回
       log.info(`[TX SongList] 旧接口完整返回`, { oldBodyKeys: oldBody ? Object.keys(oldBody) : [], oldBody })
 
       if (oldBody?.cdlist?.[0]) {
@@ -384,7 +373,7 @@ export default {
     }
 
     const result = rawList
-      .filter((item) => item.mid) // 过滤掉 mid 为空的歌曲，避免 toNewMusicInfo 抛出异常
+      .filter((item) => item.mid)
       .map((item) => {
       const { types = [], _types = {} } = qualityInfoMap[item.id] || {}
 
@@ -417,7 +406,6 @@ export default {
     return result
   },
 
-  // 获取歌曲列表内的音乐
   async getListDetail(id, tryNum = 0) {
     log.info(`[TX SongList] getListDetail 开始`, { id, tryNum })
     
@@ -429,11 +417,9 @@ export default {
     id = await this.getListId(id)
     log.info(`[TX SongList] getListDetail 获取到真实ID`, { id })
 
-    // 特殊处理：猜你喜欢（id: 99）
     if (id === '99') {
       log.info(`[TX SongList] getListDetail 检测到猜你喜欢，使用特殊接口`)
       try {
-        // 直接调用原始API获取tracks
         const cookie = settingState.setting['common.tx_cookie']
         const payload = {
           comm: { cv: 1602, ct: 20 },
@@ -458,7 +444,6 @@ export default {
           throw new Error('猜你喜欢返回歌曲列表为空')
         }
         
-        // 使用与 filterListDetailNew 相同的格式
         const list = await this.filterListDetailNew(tracks)
         log.info(`[TX SongList] getListDetail 猜你喜欢格式化完成`, { songCount: list.length })
         
@@ -482,7 +467,6 @@ export default {
       }
     }
 
-    // 使用 musicu.fcg 接口
     log.info(`[TX SongList] getListDetail 使用 musicu.fcg 接口`)
     try {
       const result = await this.getListDetailNew(id)
@@ -504,7 +488,7 @@ export default {
     }
 
     return rawList
-      .filter((item) => item.mid) // 过滤掉 mid 为空的歌曲
+      .filter((item) => item.mid)
       .map((item) => {
       const { types = [], _types = {} } = qualityInfoMap[item.id] || {}
 

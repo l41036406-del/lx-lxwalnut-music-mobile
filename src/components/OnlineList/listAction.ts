@@ -203,19 +203,14 @@ export const handleTxLikeMusic = async (musicInfo: LX.Music.MusicInfoOnline) => 
     return
   }
 
-  // 安全提取元数据
   const rawSongMid = (musicInfo.meta as any).songmid || (musicInfo.meta as any).strMediaMid || musicInfo.id
-  // 兼容 musicInfo.id 带有 "tx_" 前缀的情况
   const songMid = typeof rawSongMid === 'string' && rawSongMid.startsWith('tx_') ? rawSongMid.slice(3) : rawSongMid
   const songId = (musicInfo.meta as any).id
 
-  // 严格的纯数字 ID 校验（使用正则，完全避开 parseInt 截断问题）
   const isNumericId = songId && /^\d+$/.test(String(songId))
 
-  // 统一使用 songId 作为喜欢状态的键（如果存在），否则使用 songMid
   const likeKey = isNumericId ? String(songId) : songMid
 
-  // 决定传递给底层的标识符：如果是纯数字 songId，使用它；否则使用 songMid
   const songIdentifier = isNumericId ? String(songId) : songMid
 
   const isLiked = userState.tx_liked_song_ids.has(likeKey)
@@ -246,18 +241,15 @@ export const handleKgLikeMusic = async (musicInfo: LX.Music.MusicInfoOnline) => 
     return
   }
 
-  // 使用 hash 作为喜欢的唯一标识（audio_id 可能为 0 导致多首歌共享同一 ID）
   const meta = musicInfo.meta as any
   const songHash = meta.hash || ''
   const songId = musicInfo.meta.songId
-  // 优先使用 hash 作为 liked 状态的 key，因为 hash 是每首歌唯一的
   const likeKey = songHash || String(songId)
   const isLiked = userState.kg_liked_song_ids.has(likeKey)
   const like = !isLiked
 
   try {
     if (like) {
-      // 获取用户的歌单列表，找到"我喜欢"歌单（is_def === 2）
       const { getUserPlaylists, getPlaylistSongs } = await import('@/utils/musicSdk/kg/utils/api')
       const playlistsResult = await getUserPlaylists(cookie)
       if (!playlistsResult.success || !playlistsResult.data) {
@@ -271,7 +263,6 @@ export const handleKgLikeMusic = async (musicInfo: LX.Music.MusicInfoOnline) => 
         return
       }
       
-      // 提取歌曲信息
       const meta = musicInfo.meta as any
       const songInfo = {
         name: musicInfo.name || '',
@@ -288,7 +279,6 @@ export const handleKgLikeMusic = async (musicInfo: LX.Music.MusicInfoOnline) => 
         toast(`操作失败: ${result.message}，可能是Cookie已失效，请重新登录`)
       }
     } else {
-      // 取消喜欢 - 获取"我喜欢"歌单的歌曲列表，找到对应的歌曲并移除
       const { getUserPlaylists, getPlaylistSongs } = await import('@/utils/musicSdk/kg/utils/api')
       const playlistsResult = await getUserPlaylists(cookie)
       if (!playlistsResult.success || !playlistsResult.data) {
@@ -302,7 +292,6 @@ export const handleKgLikeMusic = async (musicInfo: LX.Music.MusicInfoOnline) => 
         return
       }
       
-      // 获取歌单中的歌曲，找到对应的fileid
       const songsResult = await getPlaylistSongs(cookie, favoritesPlaylist.id, 1, 500)
       if (!songsResult.success || !songsResult.data?.list) {
         toast('获取歌单歌曲失败')
@@ -378,7 +367,6 @@ export const handleShowMusicSourceDetail = async (minfo: LX.Music.MusicInfoOnlin
 }
 
 export const handleDislikeMusic = async(musicInfo: LX.Music.MusicInfoOnline, listId?: string) => {
-  // 如果是每日推荐列表，则执行新的API逻辑
   if (listId === 'dailyrec_wy') {
     const cookie = settingState.setting['common.wy_cookie']
     if (!cookie) {
@@ -386,7 +374,6 @@ export const handleDislikeMusic = async(musicInfo: LX.Music.MusicInfoOnline, lis
       return
     }
 
-    // 网易云API需要的是纯数字ID
     const songId = musicInfo.id.replace('wy_', '')
 
     try {
@@ -406,11 +393,9 @@ export const handleDislikeMusic = async(musicInfo: LX.Music.MusicInfoOnline, lis
       }).promise;
 
       if (statusCode == 200 && body.code === 200) {
-        // 将返回的新歌曲数据转换为应用内部格式
         const newMusicResult = await musicDetailApi.filterList({ songs: [body.data], privileges: [] })
         if (newMusicResult.length) {
           const newMusicInfo = newMusicResult[0]
-          // 发送事件，通知UI更新
           global.list_event.daily_rec_music_replace(musicInfo.id, newMusicInfo as LX.Music.MusicInfoOnline)
           toast('操作成功！')
         } else {
@@ -426,7 +411,7 @@ export const handleDislikeMusic = async(musicInfo: LX.Music.MusicInfoOnline, lis
     return
   }
 
-  // --- 对于其他列表，保留原有的本地“不喜欢”逻辑 ---
+  // --- For other lists, keep the original local "dislike" logic ---
   const confirm = await confirmDialog({
     message: musicInfo.singer
       ? global.i18n.t('lists_dislike_music_singer_tip', {

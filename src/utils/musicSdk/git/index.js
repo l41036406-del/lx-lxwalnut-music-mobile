@@ -32,11 +32,7 @@ const git = {
     return requestObj
   },
 
-  /**
-   * 获取歌曲详情页URL
-   */
   getMusicDetailPageUrl(songInfo) {
-    // 返回Gitcode仓库页面
     return `https://gitcode.com/${GITCODE_CONFIG.owner}/${GITCODE_CONFIG.repo}`
   },
 }

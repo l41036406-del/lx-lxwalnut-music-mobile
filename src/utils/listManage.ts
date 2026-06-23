@@ -199,7 +199,7 @@ export const getListMusicSync = (id: string | null) => {
 };
 
 /**
- * 获取列表内的歌曲
+ * Get songs in list
  * @param listId
  */
 export const getListMusics = async (listId: string): Promise<LX.Music.MusicInfo[]> => {
@@ -317,7 +317,6 @@ export const listMusicClear = async (ids: string[]): Promise<string[]> => {
   return changedIds;
 };
 
-// 应用单个操作的完整函数
 export async function applyListOperation(
   currentData: LX.List.ListDataFull,
   operation: ListOperation

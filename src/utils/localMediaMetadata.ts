@@ -17,7 +17,6 @@ export const getPicCachePath = () => picCachePath;
 
 export const scanAudioFiles = async (dirPath: string) => {
   const files = await readDir(dirPath)
-  // 支持的音频扩展名列表
   const supportedAudioExts = [
     '.mp3', '.m4a', '.flac', '.wav', '.ogg', '.aac', '.wma', '.m4b', '.mp4', '.opus'
   ]

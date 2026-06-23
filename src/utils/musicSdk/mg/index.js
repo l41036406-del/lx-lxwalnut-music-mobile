@@ -17,7 +17,7 @@ const mg = {
   hotSearch,
   comment,
   getMusicUrl(songInfo, type) {
-    const qualityToRequest = resolveQualityAlias('mg', type); // 2. 解析音质
+    const qualityToRequest = resolveQualityAlias('mg', type);
     return apis('mg').getMusicUrl(songInfo, qualityToRequest);
   },
   getLyric(songInfo) {

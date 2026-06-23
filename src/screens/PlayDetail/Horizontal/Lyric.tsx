@@ -8,7 +8,6 @@ import {
   type LayoutChangeEvent, TouchableOpacity,
   PanResponder,
 } from 'react-native'
-// import { useLayout } from '@/utils/hooks'
 import { type Line, useLrcPlay, useLrcSet } from '@/plugins/lyric'
 import { createStyle } from '@/utils/tools'
 import { updateSetting } from '@/core/common'
@@ -20,9 +19,6 @@ import settingState from '@/store/setting/state'
 import playerState from '@/store/player/state'
 import { scrollTo } from '@/utils/scroll'
 import PlayLine, { type PlayLineType } from '../components/PlayLine'
-// import { screenkeepAwake } from '@/utils/nativeModules/utils'
-// import { log } from '@/utils/log'
-// import { toast } from '@/utils/tools'
 
 type FlatListType = FlatListProps<Line>
 
@@ -54,8 +50,6 @@ const LrcLine = memo(
     const handlePress = useCallback(() => {
       onPress(lineNum);
     }, [onPress, lineNum]);
-    // textBreakStrategy="simple" 用于解决某些设备上字体被截断的问题
-    // https://stackoverflow.com/a/72822360
     return (
       <TouchableOpacity activeOpacity={0.7} onPress={handlePress}>
         <View style={styles.line} onLayout={handleLayout}>
@@ -332,7 +326,6 @@ export default () => {
   }, [])
   const handleLinePress = useCallback((index: number) => {
     if (!isShowLyricProgressSetting) return;
-    // 清除可能存在的滚动暂停定时器
     if (scrollTimoutRef.current) {
       clearTimeout(scrollTimoutRef.current);
       scrollTimoutRef.current = null;
@@ -341,20 +334,17 @@ export default () => {
       scrollCancelRef.current();
       scrollCancelRef.current = null;
     }
-    // 允许列表滚动
     isPauseScrollRef.current = false;
-    // 跳转播放
     const line = lyricLines[index];
     if (line) {
       global.app_event.setProgress(line.time / 1000);
     }
 
-    // 滚动到点击的行
     handleScrollToActive(index);
   }, [isShowLyricProgressSetting, lyricLines]);
 
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => {
-    return <LrcLine line={item} lineNum={index} activeLine={line} onLayout={handleLineLayout} onPress={handleLinePress} />; // 传入 onPress
+    return <LrcLine line={item} lineNum={index} activeLine={line} onLayout={handleLineLayout} onPress={handleLinePress} />;
   }
   const getkey: FlatListType['keyExtractor'] = (item, index) => `${index}${item.text}`
 
@@ -393,7 +383,6 @@ const styles = createStyle({
     flex: 1,
     paddingLeft: 20,
     paddingRight: 20,
-    // backgroundColor: 'rgba(0,0,0,0.1)',
   },
   space: {
     paddingTop: '100%',
@@ -401,21 +390,12 @@ const styles = createStyle({
   line: {
     paddingTop: 10,
     paddingBottom: 10,
-    // opacity: 0,
   },
   lineText: {
     textAlign: 'center',
-    // fontSize: 16,
-    // lineHeight: 20,
-    // paddingTop: 5,
-    // paddingBottom: 5,
-    // opacity: 0,
   },
   lineTranslationText: {
     textAlign: 'center',
-    // fontSize: 13,
-    // lineHeight: 17,
     paddingTop: 5,
-    // paddingBottom: 5,
   },
 })

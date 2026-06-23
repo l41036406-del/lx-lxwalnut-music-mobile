@@ -32,7 +32,7 @@ export class AppEvent extends Event {
   }
 
   /**
-   * 我的列表更新
+   * My list updated
    */
   mylistUpdated(
     lists: Array<LX.List.MyDefaultListInfo | LX.List.MyLoveListInfo | LX.List.UserListInfo>,
@@ -41,44 +41,43 @@ export class AppEvent extends Event {
   }
 
   /**
-   * 我的列表切换
+   * My list toggled
    */
   mylistToggled(id: string) {
     this.emit('listToggled', id)
   }
 
   /**
-   * 音乐信息切换
+   * Music info toggled
    */
   musicToggled() {
     this.emit('musicToggled')
   }
 
   /**
-   * 手动改变进度
-   * @param progress 进度
+   * Manually change progress
+   * @param progress progress
    */
   setProgress(progress: number, maxPlayTime?: number) {
     this.emit('setProgress', progress, maxPlayTime)
   }
 
   /**
-   * 设置音量大小
-   * @param volume 音量大小
+   * Set volume level
+   * @param volume volume level
    */
   setVolume(volume: number) {
     this.emit('setVolume', volume)
   }
 
   /**
-   * 设置是否静音
-   * @param isMute 是否静音
+   * Set whether to mute
+   * @param isMute whether to mute
    */
   setVolumeIsMute(isMute: boolean) {
     this.emit('setVolumeIsMute', isMute)
   }
 
-  // 播放器事件
   play() {
     this.emit('play')
   }
@@ -95,7 +94,6 @@ export class AppEvent extends Event {
     this.emit('error')
   }
 
-  // 播放器原始事件
   playerPlaying() {
     this.emit('playerPlaying')
   }
@@ -136,38 +134,31 @@ export class AppEvent extends Event {
     this.emit('playerWaiting')
   }
 
-  // 更新图片事件
   picUpdated() {
     this.emit('picUpdated')
   }
 
-  // WebDAV 音乐封面更新事件
   webdavPicUpdated(musicId: string, picUrl: string) {
     this.emit('webdavPicUpdated', musicId, picUrl)
   }
 
-  // 更新歌词事件
   lyricUpdated() {
     this.emit('lyricUpdated')
   }
 
-  // 更新歌词偏移
   lyricOffsetUpdate() {
     this.emit('lyricOffsetUpdate')
   }
 
-  // 我的列表内歌曲改变事件
   myListMusicUpdate(ids: string[]) {
     if (!ids.length) return
     this.emit('myListMusicUpdate', ids)
   }
 
-  // 下载列表改变事件
   downloadListUpdate() {
     this.emit('downloadListUpdate')
   }
 
-  // 列表里的音乐信息改变事件
   musicInfoUpdate(musicInfo: LX.Music.MusicInfo) {
     this.emit('musicInfoUpdate', musicInfo)
   }
@@ -181,7 +172,7 @@ export class AppEvent extends Event {
   }
 
   /**
-   * 搜索类型改变事件
+   * Search type changed event
    * @param type
    */
   searchTypeChanged(type: SearchType) {
@@ -235,7 +226,7 @@ export class AppEvent extends Event {
         navigations.pushAlbumDetailScreen(currentComponentId, { id: albumId, name: musicInfo.meta.albumName, source: musicInfo.source as LX.OnlineSource })
         navigatedToDetail = true
       }
-    } else if (listId.includes('__')) { // 处理歌单和排行榜
+    } else if (listId.includes('__')) {
       const [source, sourceId] = listId.split('__')
       const isSubscribed = userState.wy_subscribed_playlists.some(p => String(p.id) === sourceId)
       const targetNavId: NAV_ID_Type = isSubscribed ? 'nav_my_playlist' : 'nav_songlist'
@@ -245,7 +236,6 @@ export class AppEvent extends Event {
         setNavActiveId(targetNavId)
       }
     } else if (listId.startsWith('dailyrec_wy')) {
-      // 每日推荐，切换到对应 tab
       setNavActiveId('nav_daily_rec')
     } else if (listId === 'similar_songs_list') {
       if (currentComponent?.name !== COMPONENT_IDS.SIMILAR_SONGS_SCREEN) {
@@ -260,7 +250,6 @@ export class AppEvent extends Event {
         navigatedToDetail = true;
       }
     } else {
-      // 默认处理“我的列表”
       const targetNavId: NAV_ID_Type = 'nav_love'
       if (commonState.navActiveId !== targetNavId) {
         global.lx.jumpMyListPosition = true
@@ -270,7 +259,7 @@ export class AppEvent extends Event {
 
     setTimeout(() => {
       this.emit('jumpListPosition')
-    }, navigatedToDetail ? 500 : 200) // PUSH 页面需要更长延时等待动画
+    }, navigatedToDetail ? 500 : 200)
   }
 
   changeLoveListVisible(visible: boolean) {

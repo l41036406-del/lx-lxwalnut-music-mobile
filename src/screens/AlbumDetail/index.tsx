@@ -18,7 +18,6 @@ import listState from '@/store/list/state'
 import {usePlayerMusicInfo} from "@/store/player/hook.ts";
 import { log } from '@/utils/log'
 
-// 获取对应源的API
 const getApi = (source) => {
   if (source === 'tx') return txApi
   if (source === 'kg') return kgApi

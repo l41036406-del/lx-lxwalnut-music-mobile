@@ -1,6 +1,6 @@
 /**
- * 酷狗音乐每日推荐 API
- * 包含：歌曲推荐、每日推荐、历史推荐、风格推荐
+ * KuGou Music daily recommendation API
+ * Includes: song recommendations, daily recommendations, history recommendations, style recommendations
  */
 import { httpFetch } from '../../request'
 import settingState from '@/store/setting/state'
@@ -9,7 +9,7 @@ import { stringMd5 } from 'react-native-quick-md5'
 
 const SIGN_SALT = 'OIlwieks28dk2k092lksi2UIkp'
 
-// 签名函数
+// Signing function
 function signAndroidParams(params, data = '') {
   const sortedKeys = Object.keys(params).sort()
   const paramsString = sortedKeys.map(key => {
@@ -20,7 +20,7 @@ function signAndroidParams(params, data = '') {
   return stringMd5(signStr)
 }
 
-// 通用请求头
+// Common request headers
 const buildHeaders = () => ({
   'User-Agent': 'Android15-1070-11083-46-0-DiscoveryDRADProtocol-wifi',
   'kg-rc': '1',
@@ -29,7 +29,7 @@ const buildHeaders = () => ({
   'kg-rf': 'B9EDA08A64250DEFFBCADDEE00F8F25F',
 })
 
-// 获取认证 Cookie 中的设备信息
+// Get device info from authentication Cookie
 const getDeviceInfo = () => {
   const cookie = settingState.setting['common.kg_cookie'] || ''
   log.info('[KG DailyRec] Cookie状态:', cookie ? `已设置 (长度:${cookie.length})` : '未设置')
@@ -49,7 +49,7 @@ const getDeviceInfo = () => {
   return device
 }
 
-// 转换歌曲为应用格式
+// Transform song to app format
 const transformSong = (item, index) => {
   try {
     const hash = item.hash || item.audio_info?.hash || ''
@@ -59,11 +59,9 @@ const transformSong = (item, index) => {
     const albumName = item.album_name || item.audio_info?.album_name || ''
     const albumId = item.album_id || item.audio_info?.album_id || ''
     const duration = item.timelength || item.duration || item.audio_info?.duration || 0
-    // 尝试多种封面字段
     let img = item.sizable_cover || item.image || item.audio_info?.image || 
               item.album_sizable_cover || item.album_info?.sizable_cover ||
               item.trans_param?.union_cover || ''
-    // 如果没有封面，用 hash 生成占位图 URL
     if (!img && hash) {
       img = `https://imge.kugou.com/stdmusic/{size}/${hash.substring(0, 8)}.jpg`
     }
@@ -109,7 +107,7 @@ const transformSongList = (rawList, sourceName = 'unknown') => {
 
 export default {
   /**
-   * 歌曲推荐（个性化推荐）
+   * Song recommendations (personalized)
    */
   async getRecommendSongs(retryNum = 0) {
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
@@ -164,7 +162,7 @@ export default {
   },
 
   /**
-   * 每日推荐
+   * Daily recommendations
    */
   async getEverydayRecommend(retryNum = 0) {
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
@@ -219,10 +217,10 @@ export default {
   },
 
   /**
-   * 历史推荐
-   * @param {string} mode - 'list' 返回列表, 'song' 返回歌曲详情
-   * @param {string} date - 日期筛选
-   * @param {string} historyName - 历史推荐名称筛选
+   * History recommendations
+   * @param {string} mode - 'list' returns list, 'song' returns song details
+   * @param {string} date - date filter
+   * @param {string} historyName - history recommendation name filter
    */
   async getHistoryRecommend(mode = 'list', date = '', historyName = '', retryNum = 0) {
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
@@ -269,12 +267,10 @@ export default {
       }
 
       if (mode === 'list') {
-        // 返回历史推荐列表（日期列表）
         const list = body?.data?.list || body?.data?.history_list || []
         log.info('[KG DailyRec] getHistoryRecommend 列表成功', { count: list.length })
         return { type: 'list', list }
       } else {
-        // 返回歌曲详情
         const songs = body?.data?.song_list || body?.data?.songs || body?.data?.list || []
         log.info('[KG DailyRec] getHistoryRecommend 歌曲成功', { count: songs.length })
         return { type: 'songs', songs: transformSongList(songs, 'history') }
@@ -287,8 +283,8 @@ export default {
   },
 
   /**
-   * 风格推荐
-   * @param {string} tagIds - 风格标签 ID（逗号分隔）
+   * Style recommendations
+   * @param {string} tagIds - style tag IDs (comma-separated)
    */
   async getStyleRecommend(tagIds = '', retryNum = 0) {
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
@@ -343,7 +339,7 @@ export default {
   },
 
   /**
-   * 新歌速递
+   * New song express
    */
   async getNewSongs(retryNum = 0) {
     if (retryNum > 2) return Promise.reject(new Error('try max num'))
@@ -390,7 +386,6 @@ export default {
         throw new Error(`API错误: ${body?.error_code} ${body?.error || ''}`)
       }
 
-      // 新歌速递的数据是数组格式
       const songs = Array.isArray(body?.data) ? body.data : (body?.data?.songs || body?.data?.song_list || [])
       log.info('[KG DailyRec] getNewSongs 成功', { count: songs.length })
       return transformSongList(songs, 'newsong')

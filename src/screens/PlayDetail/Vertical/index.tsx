@@ -44,7 +44,6 @@ export default memo(({ componentId }: { componentId: string }) => {
   const velocityThreshold = 800;
   const isAnimating = useRef(false);
   
-  // 使用 ref 存储最新的值
   const isEnableSlideSwitchSongRef = useRef(isEnableSlideSwitchSong)
   const pageIndexRef = useRef(pageIndex)
   useEffect(() => {

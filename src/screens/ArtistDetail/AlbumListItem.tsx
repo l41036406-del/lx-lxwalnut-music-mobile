@@ -20,7 +20,6 @@ export default memo(({ componentId, item, width, viewMode }: { componentId: stri
   const handlePress = () => {
     const author = item.artist?.name || item.artistName || ''
     const source = item.source || 'wy'
-    // QQ音乐需要使用 albumMid 来获取专辑详情
     const albumId = source === 'tx' ? (item.mid || item.id) : item.id
     
     const albumInfo = {
@@ -64,7 +63,6 @@ export default memo(({ componentId, item, width, viewMode }: { componentId: stri
     })
   }
 
-  // 列表视图模式
   if (viewMode === 'list') {
     return (
       <TouchableOpacity style={[listStyles.container, { width }]} onPress={handlePress}>
@@ -84,7 +82,6 @@ export default memo(({ componentId, item, width, viewMode }: { componentId: stri
     )
   }
 
-  // 默认（网格）视图模式
   return (
     <TouchableOpacity style={{ ...gridStyles.container, width }} onPress={handlePress}>
       <Image url={item.picUrl} style={{ ...gridStyles.artwork, width, height: width }} />

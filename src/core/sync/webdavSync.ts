@@ -34,12 +34,10 @@ interface ListsSyncExtraData {
   downloadTasks: LX.Download.DownloadTask[]
 }
 
-// 初始化时加载操作队列
 void loadOperationQueue();
 
 const debouncedSync = debounce(() => {
   if (!settingState.setting['sync.webdav.enable'] || !settingState.setting['sync.webdav.syncLists']) return;
-  // 自动同步只处理列表
   if (listsChanged) {
     void triggerWebDAVSync(false).finally(() => {
       listsChanged = false;
@@ -273,7 +271,6 @@ export async function manualDownloadSettingsAndApis() {
     const remoteSettingsPath = getRemoteSettingsFilePath();
     const remoteUserApisPath = getRemoteUserApisFilePath();
 
-    // 下载并应用设置
     const remoteSettingsContent = await webdav.downloadFile(remoteSettingsPath);
     if (remoteSettingsContent) {
       const remoteSettingsData = JSON.parse(remoteSettingsContent);
@@ -282,7 +279,6 @@ export async function manualDownloadSettingsAndApis() {
       toast('云端未找到设置文件，跳过设置同步');
     }
 
-    // 下载并应用自定义音源
     const remoteUserApisContent = await webdav.downloadFile(remoteUserApisPath);
     if (remoteUserApisContent) {
       const remoteApisData = JSON.parse(remoteUserApisContent);
@@ -403,7 +399,6 @@ export async function triggerWebDAVSync(isManual = false) {
       const remoteTimestamp = remoteData.lastModified;
       const localTimestamp = settingState.setting['sync.webdav.lastSyncTimeLists'] ?? 0;
 
-      // 首次同步逻辑：检测到本地无同步记录但云端有数据，询问用户
       if (localTimestamp === 0) {
         webDAVLog.info('[Sync] First sync detected with existing remote data. Prompting user.');
         const userChoice = await confirmDialog({
@@ -413,14 +408,14 @@ export async function triggerWebDAVSync(isManual = false) {
           confirmButtonText: '上传本地并覆盖云端',
         });
 
-        if (userChoice === true) { // 上传本地
+        if (userChoice === true) {
           webDAVLog.info('[Sync] User chose to upload local state during first sync.');
           const { lists: currentLocalLists } = await getAllDataForSync();
           await uploadLists(remoteListsPath, currentLocalLists);
           await clearOperationQueue();
           toast('本地歌单已上传覆盖云端！');
           return;
-        } else if (userChoice === false) { // 下载云端数据
+        } else if (userChoice === false) {
           webDAVLog.info('[Sync] User chose to download remote state during first sync.');
           await overwriteListFull(remoteData.data);
           await applySyncedExtraData(remoteData);
@@ -465,28 +460,28 @@ export async function triggerWebDAVSync(isManual = false) {
             cancelButtonText: '云端覆盖本地',
             confirmButtonText: '本地覆盖云端',
           });
-          if (userChoice === true) { // 用户选择 "本地覆盖云端"
+          if (userChoice === true) {
             webDAVLog.info('[Sync] Conflict resolved by user: Force pushing local state.');
             const { lists: currentLocalLists } = await getAllDataForSync();
             await uploadLists(remoteListsPath, currentLocalLists);
             await clearOperationQueue();
             toast('已强制使用本地歌单覆盖云端！');
-          } else if (userChoice === false) { // 用户选择 "云端覆盖本地"
+          } else if (userChoice === false) {
             webDAVLog.info('[Sync] Conflict resolved by user: Force pulling remote state.');
             await overwriteListFull(remoteData.data);
             await applySyncedExtraData(remoteData);
             await clearOperationQueue();
             updateSetting({ 'sync.webdav.lastSyncTimeLists': remoteTimestamp });
             toast('已从云端同步歌单，本地更改已放弃！');
-          } else { // 用户关闭了对话框 (userChoice === null)
+          } else {
             webDAVLog.info('[Sync] Conflict resolution cancelled by user.');
             toast('操作已取消');
           }
         } else {
           webDAVLog.info('[Sync] Merge successful or only remote changes detected.');
-          await overwriteListFull(mergedData); // 应用合并后的数据到本地
+          await overwriteListFull(mergedData);
           if (hasLocalChanges) {
-            await uploadLists(remoteListsPath, mergedData); // 将合并后的结果上传
+            await uploadLists(remoteListsPath, mergedData);
             await applyMergedExtraData(remoteData);
             if (isManual) toast('歌单合并同步成功！');
           } else {
@@ -494,7 +489,7 @@ export async function triggerWebDAVSync(isManual = false) {
             updateSetting({ 'sync.webdav.lastSyncTimeLists': remoteTimestamp });
             if (isManual) toast('歌单已从云端同步！');
           }
-          await clearOperationQueue(); // 成功后清空队列
+          await clearOperationQueue();
         }
       } else if (hasLocalChanges) {
         webDAVLog.info('[Sync] Local has unsynced changes. Uploading.');

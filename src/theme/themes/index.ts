@@ -94,9 +94,8 @@ export const buildActiveThemeColors = (theme: LX.Theme): LX.ActiveTheme => {
     'bg-image': bgImg,
   };
 
-  // 如果是黑暗主题，我们覆盖掉 'c-primary-font-active'
   if (theme.isDark) {
-    activeTheme['c-primary-font-active'] = activeTheme['c-000']; // 使用纯白色 (rgb(255,255,255))
+    activeTheme['c-primary-font-active'] = activeTheme['c-000'];
   }
 
   return activeTheme as const;

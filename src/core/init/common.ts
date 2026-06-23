@@ -1,5 +1,3 @@
-// import musicSdk from '@/utils/musicSdk'
-// import commonActions from '@/store/common/action'
 import playerState from '@/store/player/state'
 import { prefetch } from '@/components/common/ImageBackground'
 import { setBgPic } from '@/core/common'
@@ -9,33 +7,11 @@ import { setWyFollowedArtists, setWyLikedSongs, setWySubscribedAlbums, setTxLike
 import { getUserPlaylists, getPlaylistSongs } from '@/utils/musicSdk/kg/utils/api';
 import { toast } from '@/utils/tools';
 
-// const handleUpdateSourceNmaes = () => {
-//   const prefix = settingState.setting['common.sourceNameType'] == 'real' ? 'source_' : 'source_alias_'
-//   const sourceNames: Record<LX.OnlineSource | 'all', string> = {
-//     kw: 'kw',
-//     tx: 'tx',
-//     kg: 'kg',
-//     mg: 'mg',
-//     wy: 'wy',
-//
-//     all: global.i18n.t(prefix + 'all' as any),
-//   }
-//   for (const { id } of musicSdk.sources) {
-//
-//     sourceNames[id as LX.OnlineSource] = global.i18n.t(prefix + id as any)
-//   }
-//   commonActions.setSourceNames(sourceNames)
-// }
 const formatUri = <T extends string | null>(url: T) => {
   return typeof url == 'string' && url.startsWith('/') ? `file://${url}` : url
 }
 
 export default async (setting: LX.AppSetting) => {
-  // const handleConfigUpdated = (keys: Array<keyof LX.AppSetting>, setting: Partial<LX.AppSetting>) => {
-  //   // if (keys.includes('common.sourceNameType')) handleUpdateSourceNmaes()
-  //   handleConfigUpdate(keys, setting)
-  // }
-
   let pic = playerState.musicInfo.pic
   let isDynamicBg = setting['theme.dynamicBg']
   const handleUpdatePic = (pic: string) => {
@@ -48,19 +24,10 @@ export default async (setting: LX.AppSetting) => {
   }
   const handlePicUpdate = () => {
     if (playerState.musicInfo.pic && playerState.musicInfo.pic != playerState.loadErrorPicUrl) {
-      // if (playerState.musicInfo.pic != playerState.loadErrorPicUrl) {
       pic = playerState.musicInfo.pic
       if (!isDynamicBg) return
       handleUpdatePic(pic)
-      // .catch(() => {
-      //   if (pic != playerState.musicInfo.pic) return
-      //   setBgPic(null)
-      // })
     }
-    // } else {
-    //   if (!isDynamicBg) return
-    //   setPic(null)
-    // }
   }
   const handleConfigUpdate = (
     keys: Array<keyof LX.AppSetting>,
@@ -102,7 +69,6 @@ export default async (setting: LX.AppSetting) => {
     if (cookie) {
       console.log('正在刷新QQ音乐数据...');
       try {
-        // 获取所有喜欢的歌曲（分页获取）
         const allLikedMids: string[] = [];
         let page = 1;
         const pageSize = 100;
@@ -133,7 +99,6 @@ export default async (setting: LX.AppSetting) => {
     if (cookie) {
       console.log('正在刷新酷狗音乐数据...');
       try {
-        // 获取用户歌单列表，找到"我喜欢"歌单
         const playlistsResult = await getUserPlaylists(cookie);
         if (!playlistsResult.success || !playlistsResult.data) {
           console.log('酷狗歌单获取失败');
@@ -147,7 +112,6 @@ export default async (setting: LX.AppSetting) => {
           return;
         }
 
-        // 获取"我喜欢"歌单中的所有歌曲
         const allLikedIds: string[] = [];
         let page = 1;
         const pageSize = 500;
@@ -157,7 +121,6 @@ export default async (setting: LX.AppSetting) => {
           const songsResult = await getPlaylistSongs(cookie, favoritesPlaylist.id, page, pageSize);
           if (songsResult.success && songsResult.data?.list?.length) {
             for (const song of songsResult.data.list) {
-              // 优先使用 hash 作为唯一标识（audio_id/songmid 可能为 0 导致多首歌共享同一 ID）
               const songId = song.hash || song.songmid || song.audio_id;
               if (songId) {
                 allLikedIds.push(String(songId));

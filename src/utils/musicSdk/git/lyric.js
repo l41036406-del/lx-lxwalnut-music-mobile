@@ -1,11 +1,7 @@
 import { generateSongId, loadDatabase } from './util'
 
 export default {
-  /**
-   * 获取歌词
-   */
   async getLyric(songInfo) {
-    // 从搜索结果中恢复原始数据
     let gitcodeData = songInfo._gitcodeData
 
     if (!gitcodeData) {
@@ -13,16 +9,14 @@ export default {
       gitcodeData = database.find((item) => generateSongId(item.relative_path) === songInfo.songmid)
     }
 
-    // 如果元数据中有歌词
     if (gitcodeData?.lyrics) {
       return {
         lyric: gitcodeData.lyrics,
-        tlyric: '', // 翻译歌词
-        lxlyric: '', // 逐字歌词
+        tlyric: '',
+        lxlyric: '',
       }
     }
 
-    // 返回默认歌词
     return {
       lyric: '[00:00.00]暂无歌词',
       tlyric: '',

@@ -6,8 +6,6 @@ import settingState from '@/store/setting/state'
 import { migrateMetaData, migrateListData } from './migrate'
 import { exitApp, tipDialog } from '@/utils/tools'
 
-// 业务相关工具方法
-
 const primitiveType = ['string', 'boolean', 'number']
 const checkPrimitiveType = (val: any): boolean => val === null || primitiveType.includes(typeof val)
 
@@ -40,38 +38,27 @@ const mergeSetting = (
       const isPrimitive = checkPrimitiveType(targetValue)
       let shouldSkip = false
       
-      // 非基本类型且不是 navStatus、navOrder 或 sectionExpandedStatus，跳过
       if (!isPrimitive && key !== 'common.navStatus' && key !== 'common.navOrder' && key !== 'common.sectionExpandedStatus') {
         shouldSkip = true
       } 
-      // 如果是 navStatus、navOrder 或 sectionExpandedStatus
       else if (key === 'common.navStatus' || key === 'common.navOrder' || key === 'common.sectionExpandedStatus') {
-        // 如果目标值和原始值都是数组
         if (Array.isArray(targetValue) && Array.isArray(originSettingCopy[key])) {
-          // 比较数组内容
           if (arraysEqual(targetValue, originSettingCopy[key])) {
             shouldSkip = true
           }
         } 
-        // 如果都是对象类型（用于 sectionExpandedStatus）
         else if (typeof targetValue === 'object' && typeof originSettingCopy[key] === 'object' && targetValue !== null && originSettingCopy[key] !== null) {
-          // 比较对象内容
           if (JSON.stringify(targetValue) === JSON.stringify(originSettingCopy[key])) {
             shouldSkip = true
           }
         }
-        // 如果其中一个不是数组/对象，使用原始相等比较
         else if (targetValue == originSettingCopy[key]) {
           shouldSkip = true
         }
       } 
-      // 基本类型的比较
       else if (targetValue == originSettingCopy[key]) {
         shouldSkip = true
       }
-      
-      // 如果原始值是 undefined 但目标值不是，我们不应该跳过，应该添加这个键
-      // 只有当两个值都是 undefined 或者相等时才跳过
 
       if (!shouldSkip) {
         updatedSettingKeys.push(key)
@@ -139,7 +126,6 @@ export const initSetting = async () => {
     }
   }
 
-  // console.log(setting)
   const updatedSetting = updateSetting(setting, true)
   void saveData(storageDataPrefix.setting, updatedSetting.setting)
 

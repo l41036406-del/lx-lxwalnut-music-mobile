@@ -25,7 +25,6 @@ const handlePushedHomeScreen = async () => {
   if (settingState.setting['common.isAgreePact']) {
     if (isFirstPush) {
       isFirstPush = false
-      // void checkUpdate()
       void initDeeplink()
     }
   } else {
@@ -63,9 +62,7 @@ export default async () => {
   bootLog('Search Log inited.')
   playerLog.init()
   bootLog('Player Log inited.')
-  // console.log(setting)
 
-  // 将没有相互依赖的初始化任务并行化
   await Promise.all([
     initTheme(setting),
     initI18n(setting),

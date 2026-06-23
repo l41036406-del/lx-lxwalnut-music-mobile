@@ -258,7 +258,6 @@ export default memo(() => {
       setSongs(songs)
       setScannedAt(config.scannedAt)
       setFilterPath(config.filterPath ?? null)
-      // 加载完成后立即同步封面
       void syncSongsCover(songs)
     })
   }, [syncSongsCover])
@@ -330,7 +329,6 @@ export default memo(() => {
             const config = await getWebDAVConfig()
             const updatedSongs = config.songs ?? []
             setSongs(updatedSongs)
-            // 播放后同步封面
             void syncSongsCover(updatedSongs)
           })()
         })
@@ -490,7 +488,6 @@ export default memo(() => {
     loadFolders(currentFolder)
   }, [hasConfig, currentFolder, loadFolders])
 
-  // 监听 WebDAV 封面更新事件
   useEffect(() => {
     const handleWebdavPicUpdated = (musicId: string, picUrl: string) => {
       setSongs(prevSongs => prevSongs.map(song =>

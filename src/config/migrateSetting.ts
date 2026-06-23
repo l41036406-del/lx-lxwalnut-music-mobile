@@ -3,7 +3,6 @@ import { compareVer } from '@/utils'
 export default (setting: any): Partial<LX.AppSetting> => {
   setting = { ...setting }
 
-  // 迁移 v1 之前的配置
   if (compareVer(setting.version as string, '2.0') < 0) {
     setting['player.startupAutoPlay'] = setting.startupAutoPlay
     setting['player.togglePlayMethod'] = setting.player?.togglePlayMethod

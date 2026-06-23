@@ -142,7 +142,6 @@ export default memo(() => {
   const blur = useSettingValue('theme.blur');
   const picOpacity = useSettingValue('theme.picOpacity');
 
-  // 只有当全局动态背景和侧边栏动态背景都启用时，才使用透明背景
   const showSidebarBg = isDynamicBg && isSidebarDynamicBg && pic;
 
   const handlePress = (id: IdType) => {
@@ -202,7 +201,7 @@ export default memo(() => {
       <Header />
       <ScrollView style={styles.menus}>
         <View style={styles.list}>
-          {filteredNavMenus.map((menu) => ( // 使用过滤后的菜单
+          {filteredNavMenus.map((menu) => (
             <MenuItem key={menu.id} id={menu.id} icon={menu.icon} onPress={handlePress} />
           ))}
         </View>

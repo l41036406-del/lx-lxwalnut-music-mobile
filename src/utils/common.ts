@@ -1,7 +1,5 @@
-// 非业务工具方法
-
 /**
- * 获取两个数之间的随机整数，大于等于min，小于max
+ * Get a random integer between two numbers, greater than or equal to min, less than max
  * @param {*} min
  * @param {*} max
  */
@@ -17,9 +15,9 @@ export const sizeFormate = (size: number): string => {
 }
 
 /**
- * 将字符串、时间戳等格式转成时间对象
- * @param date 时间
- * @returns 时间对象或空字符串
+ * Convert string, timestamp, etc. to date object
+ * @param date Date
+ * @returns Date object or empty string
  */
 export const toDateObj = (date?: number | string | Date): Date | '' => {
   if (!date) return ''
@@ -47,9 +45,9 @@ export const toDateObj = (date?: number | string | Date): Date | '' => {
 
 const numFix = (n: number): string => (n < 10 ? `0${n}` : n.toString())
 /**
- * 时间格式化
- * @param _date 时间
- * @param format Y-M-D h:m:s Y年 M月 D日 h时 m分 s秒
+ * Date formatting
+ * @param _date Date
+ * @param format Y-M-D h:m:s
  */
 export const dateFormat = (_date: number | string | Date, format = 'Y-M-D h:m:s') => {
   // console.log(date)
@@ -78,7 +76,6 @@ export const formatPlayTime2 = (time: number) => {
 
 export const isUrl = (path: string) => /https?:\/\//.test(path)
 
-// 解析URL参数为对象
 export const parseUrlParams = (str: string): Record<string, string> => {
   const params: Record<string, string> = {}
   if (typeof str !== 'string') return params
@@ -91,9 +88,9 @@ export const parseUrlParams = (str: string): Record<string, string> => {
 }
 
 /**
- * 生成节流函数
- * @param fn 回调
- * @param delay 延迟
+ * Generate a throttle function
+ * @param fn Callback
+ * @param delay Delay
  * @returns
  */
 export function throttle<Args extends any[]>(
@@ -113,9 +110,9 @@ export function throttle<Args extends any[]>(
 }
 
 /**
- * 生成防抖函数
- * @param fn 回调
- * @param delay 延迟
+ * Generate a debounce function
+ * @param fn Callback
+ * @param delay Delay
  * @returns
  */
 export function debounce<Args extends any[]>(
@@ -146,15 +143,14 @@ export const filterFileName = (name: string): string => name.replace(fileNameRxp
 export const similar = (a: string, b: string) => {
   if (!a || !b) return 0
   if (a.length > b.length) {
-    // 保证 a <= b
     let t = b
     b = a
     a = t
   }
   let al = a.length
   let bl = b.length
-  let mp = [] // 一个表
-  let i, j, ai, lt, tmp // ai：字符串a的第i个字符。 lt：左上角的值。 tmp：暂存新的值。
+  let mp = []
+  let i, j, ai, lt, tmp
   for (i = 0; i <= bl; i++) mp[i] = i
   for (i = 1; i <= al; i++) {
     ai = a.charAt(i - 1)
@@ -170,7 +166,7 @@ export const similar = (a: string, b: string) => {
 }
 
 /**
- * 排序字符串
+ * Sorted insertion
  * @param arr
  * @param data
  */

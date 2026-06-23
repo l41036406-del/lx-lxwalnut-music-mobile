@@ -2,7 +2,6 @@ import { LIST_IDS } from '@/config/constant'
 import { getListMusics } from '@/core/list'
 import { userLists } from '@/utils/listManage'
 
-// 构建列表信息对象，用于统一字段位置顺序
 export const buildUserListInfoFull = ({
   id,
   name,
@@ -161,8 +160,6 @@ export const registerListActionEvent = (
 }
 
 export const handleRemoteListAction = async ({ action, data }: LX.Sync.List.ActionList) => {
-  // console.log('handleRemoteListAction', action)
-
   switch (action) {
     case 'list_data_overwrite':
       await global.list_event.list_data_overwrite(data, true)

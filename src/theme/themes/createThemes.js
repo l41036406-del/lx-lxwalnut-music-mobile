@@ -1,5 +1,3 @@
-//! 更新默认主题配置后，需要执行 npm run build:theme 重新构建index.json
-
 const fs = require('fs')
 const path = require('path')
 const { createThemeColors } = require('./utils')

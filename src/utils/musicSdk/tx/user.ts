@@ -1,7 +1,7 @@
 /**
- * QQ音乐用户API模块
- * 基于 QQMusicApi-source 项目实现
- * 用于获取用户歌单、收藏歌单、收藏音乐等信息
+ * QQ Music user API module
+ * Based on QQMusicApi-source project implementation
+ * Used to fetch user playlists, collected playlists, collected music, etc.
  */
 
 import { httpFetch } from '../../request'
@@ -16,21 +16,18 @@ const TX_MUSIC_U_FCG = 'https://u.y.qq.com/cgi-bin/musics.fcg'
 
 export default {
   /**
-   * 从Cookie中提取uin
+   * Extract uin from Cookie
    */
   extractUin(cookie: string): string | null {
     if (!cookie) return null;
     
-    // 尝试匹配 uin= 或 oAq- 格式
     const uinMatch = cookie.match(/(?:^|;)\s*uin=(\d+|o[A-Za-z0-9_-]+)/);
     if (uinMatch) {
       return uinMatch[1];
     }
 
-    // 尝试从伪装的uin中提取
     const fakeUinMatch = cookie.match(/euin=([A-Za-z0-9_*]+)/);
     if (fakeUinMatch) {
-      // 这是伪装uin，需要找真正的uin
       const realUinMatch = cookie.match(/(?:^|;)\s*uin=(\d+)/);
       if (realUinMatch) {
         return realUinMatch[1];
@@ -42,7 +39,7 @@ export default {
   },
 
   /**
-   * 获取用户信息
+   * Get user info
    */
   async getUserInfo(retryNum = 0): Promise<any> {
     const maxRetries = 3;
@@ -106,8 +103,8 @@ export default {
   },
 
   /**
-   * 获取用户创建的歌单
-   * 包括自建歌单和"我喜欢"收藏音乐
+   * Get user-created playlists
+   * Including self-created playlists and "My Favorites" collection
    */
   async getUserPlaylists(retryNum = 0): Promise<any> {
     const maxRetries = 3;
@@ -127,7 +124,6 @@ export default {
         throw new Error('Cookie中未找到uin');
       }
 
-      // 构建请求体
       const bodyData = `hostUin=0&hostuin=${uin}&sin=0&size=200&g_tk=5381&loginUin=${uin}&format=json&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq.json&needNewCode=0`;
 
       const requestObj = httpFetch(`https://${TX_API_HOST}/rsc/fcgi-bin/fcg_user_created_diss`, {
@@ -150,11 +146,9 @@ export default {
         throw new Error('QQ音乐Cookie已过期，请重新获取')
       }
 
-      // 检查是否有 diss_list
       let dissList = body.data?.diss_list || body.data?.disslist;
 
       if (!dissList) {
-        // 如果返回的是用户主页信息格式（只有 hostname）
         if (body.data?.hostname) {
           txLog.warn('获取歌单返回用户主页格式, 用户没有创建歌单');
           dissList = [];
@@ -165,17 +159,13 @@ export default {
 
       txLog.info('获取自建歌单成功, 数量:', dissList.length);
 
-      // 需要过滤的歌单类型
-      // dirid: 201 = 我喜欢(保留显示), 202 = 本地歌单, 205 = QZone背景音乐, 206 = 本地上传
       const excludeDirids = [202, 205, 206];
       const filteredCreatedList = dissList.filter((diss: any) => !excludeDirids.includes(diss.dirid));
 
       txLog.info('过滤后的自建歌单数量:', filteredCreatedList.length);
 
-      // 转换自建歌单为统一格式
       const createdPlaylists = filteredCreatedList.map((diss: any) => {
         let cover = diss.disslogo || diss.diss_cover || diss.cover || '';
-        // 修复"我喜欢"歌单封面问题
         if (diss.dirid === 201) {
           cover = cover && cover !== '?n=1' ? cover : 'https://y.gtimg.cn/mediastyle/yqq/img/icon_favorite.png';
         }
@@ -208,7 +198,7 @@ export default {
   },
 
   /**
-   * 获取歌单详情（包含歌曲列表）
+   * Get playlist detail (including song list)
    */
   async getPlaylistDetail(disstid: string, retryNum = 0): Promise<any> {
     const maxRetries = 3;
@@ -251,7 +241,6 @@ export default {
         songCount: playlist.songlist?.length || 0,
       });
 
-      // 转换为统一格式
       return {
         id: playlist.dissid || disstid,
         name: playlist.dissname || playlist.title || '未知歌单',
@@ -290,9 +279,8 @@ export default {
   },
 
   /**
-   * 向歌单添加歌曲
-   * 使用新的 zzc 签名 API
-   * dirid: 201=我喜欢, 202=本地歌单, 205=QZone背景音乐, 206=本地上传, 0=用户自建歌单
+   * Add songs to playlist
+   * Using new zzc signed API
    */
   async addSongToPlaylist(listId: string, songMids: string[], retryNum = 0): Promise<any> {
     const maxRetries = 3
@@ -310,7 +298,6 @@ export default {
       throw new Error('未设置QQ音乐Cookie，请先在设置中配置QQ Cookie')
     }
 
-    // 检查歌曲 mid 格式
     const invalidMids = songMids.filter(mid => !mid)
     if (invalidMids.length > 0) {
       txLog.error('部分歌曲 mid 为空', {
@@ -326,8 +313,7 @@ export default {
         throw new Error('Cookie中未找到uin，请检查Cookie是否正确')
       }
 
-      // 获取歌单列表来确定 dirid
-      let dirid = 0 // 默认使用 0（用户自建歌单的 dirid）
+      let dirid = 0
       let tid = parseInt(listId) || 0
 
       try {
@@ -336,9 +322,6 @@ export default {
           (p: any) => String(p.id) === String(listId) || String(p.tid) === String(listId),
         )
         if (targetPlaylist) {
-          // 使用歌单自己的 dirid
-          // 用户自建歌单: dirid = 0 或 undefined
-          // 系统目录歌单: dirid = 201(我喜欢)
           dirid = targetPlaylist.dirid || 0
           tid = targetPlaylist.tid || parseInt(listId) || 0
           txLog.info('找到目标歌单，确定 dirid', {
@@ -355,34 +338,21 @@ export default {
         txLog.warn('获取歌单列表失败，使用默认 dirid=0', err)
       }
 
-      // 构建歌曲信息列表 (song_id, song_type)
-      // songMids 可能是字符串 mid (如 "0039MnYb0qxYhV")，需要获取正确的数字 songId
-      // song_type: 13 = 歌曲
-      txLog.info('开始获取歌曲详情以获取正确的 songId', { songMids })
-
       const songInfo: { songId: number; songType: number }[] = []
       const failedMids: string[] = []
 
       for (const mid of songMids) {
         try {
-          // 使用正则判断是否为纯数字 songId（避免 parseInt 截断问题）
           if (/^\d+$/.test(mid.trim())) {
-            // 传入的是数字 songId，直接使用
             const parsedId = parseInt(mid)
             songInfo.push({ songId: parsedId, songType: 13 })
-            txLog.info('使用传入的 songId', { mid, songId: parsedId })
           } else {
-            // 传入的是字符串 mid，需要获取 songId
-            txLog.info('传入的是 mid，需要获取 songId', { mid })
             const musicInfo = await getMusicInfo(mid)
             if (musicInfo && musicInfo.songId) {
               songInfo.push({ songId: musicInfo.songId, songType: 13 })
               txLog.info('从 mid 获取到 songId', { mid, songId: musicInfo.songId, name: musicInfo.name })
             } else {
-              // 如果 getMusicInfo 返回 null，尝试使用备用方法
-              // 某些歌曲可能没有 media_mid，但仍然可以通过其他方式获取
               txLog.warn('getMusicInfo 返回空，尝试备用方法', { mid })
-              // 尝试使用搜索 API 获取歌曲信息
               try {
                 const searchResult = await this.searchSong(mid)
                 if (searchResult && searchResult.length > 0) {
@@ -422,7 +392,6 @@ export default {
         txLog.warn('部分歌曲获取 songId 失败', { failedMids, successCount: songInfo.length })
       }
 
-      // 构建请求体（按照QQMusicApi-new的格式）
       const payload = {
         comm: {
           ct: 24,
@@ -440,7 +409,6 @@ export default {
         },
       }
 
-      // 计算签名
       const sign = await zzcSign(JSON.stringify(payload))
 
       txLog.info('请求参数', {
@@ -453,7 +421,6 @@ export default {
         signLength: sign.length,
       })
 
-      // 使用新的签名 API (与 utils/index.js 中的 signRequest 保持一致)
       const requestObj = httpFetch(
         `${TX_MUSIC_U_FCG}?sign=${sign}`,
         {
@@ -482,7 +449,6 @@ export default {
         throw new Error(`HTTP请求失败，状态码: ${statusCode}`)
       }
 
-      // 检查响应中的 retCode
       const retCode = body?.req_0?.data?.retCode
       if (retCode === 1000 || retCode === 1001) {
         txLog.error('未登录或登录已过期')
@@ -541,7 +507,7 @@ export default {
   },
 
   /**
-   * 获取"我喜欢"收藏音乐
+   * Get "My Favorites" collected music
    */
   async getFavoritesMusic(page = 1, pageSize = 30, retryNum = 0): Promise<any> {
     const maxRetries = 3;
@@ -561,7 +527,6 @@ export default {
         throw new Error('Cookie中未找到uin');
       }
 
-      // 先获取歌单列表找到"我喜欢"的歌单ID
       const playlists = await this.getUserPlaylists();
       const favoritesPlaylist = playlists.find((p: any) => p.isFavorites);
 
@@ -576,10 +541,8 @@ export default {
         };
       }
 
-      // 获取"我喜欢"歌单的详情
       const detail = await this.getPlaylistDetail(favoritesPlaylist.id);
 
-      // 分页处理
       const startIndex = (page - 1) * pageSize;
       const endIndex = startIndex + pageSize;
       const pagedList = detail.songs.slice(startIndex, endIndex);
@@ -604,7 +567,7 @@ export default {
   },
 
   /**
-   * 从Cookie中提取euin（加密UIN）
+   * Extract euin (encrypted UIN) from Cookie
    */
   extractEuin(cookie: string): string | null {
     if (!cookie) return null
@@ -613,7 +576,7 @@ export default {
   },
 
   /**
-   * 发送签名请求
+   * Send signed request
    */
   async sendSignedRequest(payload: any): Promise<any> {
     const cookie = settingState.setting['common.tx_cookie']
@@ -646,9 +609,7 @@ export default {
   },
 
   /**
-   * 获取用户自建歌单（使用新API）
-   * module: music.musicasset.PlaylistBaseRead
-   * method: GetPlaylistByUin
+   * Get user-created playlists (using new API)
    */
   async getCreatedPlaylists(retryNum = 0): Promise<any> {
     const maxRetries = 3
@@ -686,7 +647,6 @@ export default {
 
       txLog.info('获取用户自建歌单成功', { count: playlists.length })
 
-      // 过滤不需要的歌单类型
       const excludeDirids = [202, 205, 206]
       const filteredPlaylists = playlists.filter((p: any) => !excludeDirids.includes(p.dirId))
 
@@ -713,9 +673,7 @@ export default {
   },
 
   /**
-   * 获取用户收藏的歌曲（我喜欢）
-   * module: music.srfDissInfo.DissInfo
-   * method: CgiGetDiss
+   * Get user's favorited songs (My Favorites)
    */
   async getFavSongs(page = 1, pageSize = 30, retryNum = 0): Promise<any> {
     const maxRetries = 3
@@ -767,7 +725,6 @@ export default {
       return {
         list: songs.map((song: any) => ({
           id: song.id,
-          // 统一使用 songId 作为 mid（与 likeKey 一致）
           mid: String(song.id),
           songmid: song.songmid || song.mid,
           name: song.title || song.name,
@@ -797,9 +754,7 @@ export default {
   },
 
   /**
-   * 获取用户收藏的歌单
-   * module: music.musicasset.PlaylistFavRead
-   * method: CgiGetPlaylistFavInfo
+   * Get user's collected playlists
    */
   async getFavPlaylists(page = 1, pageSize = 30, retryNum = 0): Promise<any> {
     const maxRetries = 3
@@ -873,9 +828,7 @@ export default {
   },
 
   /**
-   * 获取用户收藏的专辑
-   * module: music.musicasset.AlbumFavRead
-   * method: CgiGetAlbumFavInfo
+   * Get user's collected albums
    */
   async getFavAlbums(page = 1, pageSize = 30, retryNum = 0): Promise<any> {
     const maxRetries = 3
@@ -944,11 +897,9 @@ export default {
   },
 
   /**
-   * 从歌单删除歌曲
-   * module: music.musicasset.PlaylistDetailWrite
-   * method: DelSonglist
-   * @param listId 歌单 ID
-   * @param songMids 歌曲 mid 列表
+   * Remove songs from playlist
+   * @param listId Playlist ID
+   * @param songMids Song mid list
    */
   async removeSongFromPlaylist(listId: string, songMids: string[], retryNum = 0): Promise<any> {
     const maxRetries = 3
@@ -967,7 +918,6 @@ export default {
         throw new Error('Cookie中未找到uin')
       }
 
-      // 获取歌单列表来确定 dirid
       let dirid = 0
       let tid = parseInt(listId) || 0
 
@@ -985,13 +935,11 @@ export default {
         txLog.warn('获取歌单列表失败，使用默认 dirid=0', err)
       }
 
-      // 构建歌曲信息列表
       const songInfo: { songId: number; songType: number }[] = []
       const failedMids: string[] = []
 
       for (const mid of songMids) {
         try {
-          // 使用正则判断是否为纯数字 songId（避免 parseInt 截断问题）
           if (/^\d+$/.test(mid.trim())) {
             const parsedId = parseInt(mid)
             songInfo.push({ songId: parsedId, songType: 13 })
@@ -1000,7 +948,6 @@ export default {
             if (musicInfo && musicInfo.songId) {
               songInfo.push({ songId: musicInfo.songId, songType: 13 })
             } else {
-              // 备用方法：使用 searchSong
               try {
                 const searchResult = await this.searchSong(mid)
                 if (searchResult && searchResult.length > 0 && searchResult[0].songId) {
@@ -1023,7 +970,6 @@ export default {
         throw new Error('没有有效的歌曲可以删除')
       }
 
-      // 构建请求体
       const payload = {
         comm: { ct: 24, cv: 1800 },
         req_0: {
@@ -1070,10 +1016,7 @@ export default {
   },
 
   /**
-   * 删除歌单
-   * module: music.musicasset.PlaylistBaseWrite
-   * method: DelPlaylist
-   * @param dirid 歌单目录 ID
+   * Delete playlist
    */
   async deletePlaylist(dirid: number, retryNum = 0): Promise<any> {
     const maxRetries = 3
@@ -1086,7 +1029,6 @@ export default {
       throw new Error('未设置QQ音乐Cookie')
     }
 
-    // 不能删除"我喜欢"歌单
     if (dirid === 201) {
       throw new Error('不能删除"我喜欢"歌单')
     }
@@ -1136,10 +1078,8 @@ export default {
   },
 
   /**
-   * 创建歌单
-   * module: music.musicasset.PlaylistBaseWrite
-   * method: AddPlaylist
-   * @param name 歌单名称
+   * Create playlist
+   * @param name Playlist name
    */
   async createPlaylist(name: string, retryNum = 0): Promise<any> {
     const maxRetries = 3
@@ -1195,8 +1135,7 @@ export default {
   },
 
   /**
-   * 获取"我喜欢"歌单ID
-   * dirid: 201 = 我喜欢
+   * Get "My Favorites" playlist ID
    */
   async getLikedListId(): Promise<string | null> {
     try {
@@ -1210,14 +1149,13 @@ export default {
   },
 
   /**
-   * 通过 songmid 获取歌曲详情
-   * 备用方法，当 getMusicInfo 失败时使用
+   * Get song detail by songmid
+   * Fallback method when getMusicInfo fails
    */
   async searchSong(songmid: string): Promise<any[]> {
     txLog.info('=== searchSong 开始 ===', { songmid })
 
     try {
-      // 使用歌曲详情API获取歌曲信息
       const payload = {
         comm: { ct: 24, cv: 1800 },
         req: {
@@ -1235,13 +1173,11 @@ export default {
 
       txLog.info('searchSong: 原始响应', { body: JSON.stringify(body) })
 
-      // 检查响应
       if (!body || body.code !== 0) {
         txLog.warn('searchSong: 获取歌曲详情失败', { songmid, code: body?.code })
         return []
       }
 
-      // 获取歌曲详情
       const trackInfo = body.req?.data?.track_info
       if (!trackInfo) {
         txLog.warn('searchSong: 未找到歌曲信息', { songmid })
@@ -1269,9 +1205,9 @@ export default {
   },
 
   /**
-   * 喜欢/取消喜欢歌曲
-   * @param songMid 歌曲 mid
-   * @param like true=喜欢, false=取消喜欢
+   * Like/unlike a song
+   * @param songMid Song mid
+   * @param like true=like, false=unlike
    */
   async likeSong(songMid: string, like: boolean): Promise<boolean> {
     const likedListId = await this.getLikedListId()

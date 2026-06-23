@@ -4,7 +4,6 @@ import { log } from '@/utils/log'
 import { formatPlayTime, sizeFormate } from '../../index'
 import { formatSingerName } from '@/utils/musicSdk/utils'
 
-// 构建comm参数（使用wk_v15.json平台）
 const buildComm = () => {
   return {
     cv: 1602,
@@ -12,7 +11,6 @@ const buildComm = () => {
   }
 }
 
-// 转换歌曲数据为应用内部格式（新格式，包含meta字段）
 const transformSong = (item, index) => {
   try {
     const singer = formatSingerName(item.singer, 'name')
@@ -26,11 +24,9 @@ const transformSong = (item, index) => {
       img = `https://y.gtimg.cn/music/photo_new/T001R500x500M000${item.singer[0].mid}.jpg`
     }
     
-    // 构建音质信息（默认假设128k可用，实际播放时会通过API获取）
     const qualitys = [{ type: '128k', size: null }]
     const _qualitys = { '128k': { size: null } }
-    
-    // 如果有文件信息，尝试解析音质
+
     const file = item.file
     if (file) {
       if (file.size_128mp3 !== 0) {
@@ -75,7 +71,6 @@ const transformSong = (item, index) => {
   }
 }
 
-// 转换歌曲列表
 const transformSongList = (rawList, sourceName = 'unknown') => {
   log.info(`[TX DailyRec] transformSongList 开始转换 ${sourceName}`, { rawListLength: rawList?.length || 0 })
   
@@ -89,7 +84,6 @@ const transformSongList = (rawList, sourceName = 'unknown') => {
     return []
   }
   
-  // 打印第一个元素的结构用于调试
   if (rawList.length > 0) {
     const firstItem = rawList[0]
     log.info(`[TX DailyRec] transformSongList ${sourceName} 第一个元素结构:`, {
@@ -141,7 +135,6 @@ export default {
       log.info('[TX DailyRec] getHomeFeed URL:', url.substring(0, 200))
       log.info('[TX DailyRec] getHomeFeed payload:', JSON.stringify(payload))
       
-      // 获取Cookie
       const cookie = settingState.setting['common.tx_cookie']
       log.info('[TX DailyRec] getHomeFeed Cookie状态:', cookie ? `已设置 (长度:${cookie.length})` : '未设置')
       
@@ -176,7 +169,6 @@ export default {
       
       log.info('[TX DailyRec] getHomeFeed 解析成功', { dataKeys: Object.keys(data) })
       
-      // 解析 v_shelf 中的歌单卡片
       const vShelf = data.v_shelf || []
       const playlists = []
       
@@ -191,8 +183,6 @@ export default {
         vNiche.forEach((niche, nicheIndex) => {
           const vCard = niche.v_card || []
           vCard.forEach((card, cardIndex) => {
-            // type: 500 是真正的歌单（每日30首、百万收藏、新歌推荐等）
-            // type: 700 是"猜你喜欢"入口，也作为特殊歌单处理
             if (card.type === 500 || card.type === 700) {
               const playlist = {
                 id: String(card.id),
@@ -200,7 +190,7 @@ export default {
                 cover: card.cover || 'https://y.gtimg.cn/mediastyle/y/img/cover_qzone_130.jpg',
                 playCount: card.cnt || 0,
                 source: 'tx',
-                cardType: card.type, // 保留卡片类型用于区分
+                cardType: card.type,
               }
               playlists.push(playlist)
               log.info(`[TX DailyRec] getHomeFeed 发现歌单`, { 
@@ -283,7 +273,6 @@ export default {
       
       if (tracks.length === 0) {
         log.warn('[TX DailyRec] getGuessRecommend tracks为空，尝试其他字段...')
-        // 尝试其他可能的字段
         const altTracks = reqData?.songlist || reqData?.songs || reqData?.list || []
         log.info('[TX DailyRec] getGuessRecommend 备选字段tracks数量:', altTracks.length)
         if (altTracks.length > 0) {
@@ -349,7 +338,6 @@ export default {
         dataKeys: Object.keys(reqData || {})
       })
       
-      // 尝试不同的数据路径
       let songs = []
       if (reqData?.VecSongs?.length) {
         songs = reqData.VecSongs.map(item => item.Track)
@@ -428,10 +416,8 @@ export default {
         dataKeys: Object.keys(data)
       })
       
-      // 尝试解析新的数据格式
       let songlists = []
-      
-      // 格式1: 新版格式
+
       if (data.List?.length) {
         log.info('[TX DailyRec] getRecommendSonglist 使用格式1 (List)')
         songlists = data.List.map((item, index) => {
@@ -456,7 +442,6 @@ export default {
         }).filter(Boolean)
       }
       
-      // 格式2: 旧版格式
       if (!songlists.length && data.v_playlist?.length) {
         log.info('[TX DailyRec] getRecommendSonglist 使用格式2 (v_playlist)')
         songlists = data.v_playlist.map(item => ({
@@ -530,7 +515,6 @@ export default {
         dataKeys: Object.keys(reqData || {})
       })
       
-      // 尝试不同的数据路径
       let songlist = reqData?.songlist || []
       if (!songlist.length && reqData?.songs?.length) {
         songlist = reqData.songs
@@ -544,7 +528,6 @@ export default {
         throw new Error('返回歌曲列表为空')
       }
       
-      // 打印第一个元素的结构
       log.info('[TX DailyRec] getRecommendNewsong 第一个元素:', JSON.stringify(songlist[0])?.substring(0, 300))
       
       const list = transformSongList(songlist, 'getRecommendNewsong')
@@ -614,20 +597,17 @@ export default {
         dataKeys: Object.keys(reqData || {})
       })
       
-      // 尝试不同的数据路径
       let songlist = reqData?.songlist || []
       if (!songlist.length && reqData?.songs?.length) {
         songlist = reqData.songs
         log.info('[TX DailyRec] getSimilarSongs 使用songs字段')
       }
-      
-      // QQ音乐API返回的是嵌套结构: data.song[].song[]
+
       if (!songlist.length && reqData?.song?.length) {
         songlist = reqData.song.flatMap(item => item.song || [])
         log.info('[TX DailyRec] getSimilarSongs 使用嵌套song字段')
       }
       
-      // QQ音乐GetSimilarSongs API返回的是 vecSong[].track 结构
       if (!songlist.length && reqData?.vecSong?.length) {
         songlist = reqData.vecSong.map(item => item.track || item)
         log.info('[TX DailyRec] getSimilarSongs 使用vecSong字段')

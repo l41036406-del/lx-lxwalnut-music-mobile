@@ -184,7 +184,6 @@ const defaultSetting: LX.AppSetting = {
   'theme.subContainerOpacity': 50,
 }
 
-// 使用新年皮肤
 if (new Date().getMonth() < 2) {
   defaultSetting['theme.id'] = 'happy_new_year'
   defaultSetting['desktopLyric.style.lyricPlayedColor'] = 'rgba(255, 18, 34, 1)'

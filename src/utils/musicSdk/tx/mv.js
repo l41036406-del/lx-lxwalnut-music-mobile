@@ -63,7 +63,6 @@ export const getMvUrl = async (vid, retryNum = 0) => {
       return Promise.reject(new Error('获取MV链接失败'))
     }
 
-    // 从 mp4 列表中找到可用的最高清晰度链接
     const mp4List = mvData.mp4 || []
     let targetMp4 = null
     for (let i = mp4List.length - 1; i >= 0; i--) {
@@ -77,7 +76,6 @@ export const getMvUrl = async (vid, retryNum = 0) => {
       return Promise.reject(new Error('该MV暂无可用链接'))
     }
 
-    // 返回第一个可用链接（通常是 https）
     const url = targetMp4.freeflow_url.find(u => u.startsWith('https')) || targetMp4.freeflow_url[0]
     return { url }
   }).catch(err => {

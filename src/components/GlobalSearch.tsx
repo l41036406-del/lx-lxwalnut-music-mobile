@@ -14,7 +14,6 @@ const GlobalSearch = () => {
     const searchText = text.trim()
     if (!searchText) return
 
-    // 触发全局搜索事件
     global.app_event.triggerSearch(searchText)
     setText('')
     inputRef.current?.blur()
@@ -44,11 +43,11 @@ const styles = createStyle({
     alignItems: 'center',
     justifyContent: 'flex-end',
     paddingRight: 10,
-    maxWidth: 220, // 限制最大宽度
+    maxWidth: 220,
   },
   input: {
     height: 32,
-    paddingRight: 30, // 为按钮留出空间
+    paddingRight: 30,
   },
   searchBtn: {
     position: 'absolute',

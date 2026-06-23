@@ -19,7 +19,6 @@ export default memo(({ value, label, onChanged, ...props }: InputItemProps) => {
   const inputRef = useRef<InputType>(null)
   const theme = useTheme()
 
-  // 使用 useCallback 稳定 onChanged 引用
   const stableOnChanged = useCallback((text: string, callback: (vlaue: string) => void) => {
     onChanged?.(text, callback)
   }, [onChanged])

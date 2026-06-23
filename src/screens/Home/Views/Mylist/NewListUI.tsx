@@ -46,7 +46,6 @@ const createAnim = (): DragAnim => ({
 
 type MenuPosition = { x: number; y: number; w: number; h: number }
 
-// 固定列表卡片组件
 const FixedPlaylistCard = memo(({
   item,
   onPress,
@@ -292,27 +291,22 @@ export default memo(() => {
   const [showMusicList, setShowMusicList] = useState(false)
   const [isTouchingDragHandle, setIsTouchingDragHandle] = useState(false)
 
-  // 追踪 showMusicList 的最新状态
   const showMusicListRef = useRef(false)
   useEffect(() => {
     showMusicListRef.current = showMusicList
   }, [showMusicList])
 
-  // 返回卡片列表的处理函数
   const handleBackToList = useCallback(() => {
     setShowMusicList(false)
     setActiveList(LIST_IDS.DEFAULT)
   }, [])
 
-  // 处理物理返回键
   useEffect(() => {
     const onBackPress = () => {
       if (showMusicListRef.current) {
-        // 检查是否有其他原生屏幕在 Home 屏幕之上
         if (commonState.componentIds.length > 1) {
           return false
         }
-        // 返回卡片列表
         handleBackToList()
         return true
       }
@@ -323,7 +317,6 @@ export default memo(() => {
     return () => subscription.remove()
   }, [handleBackToList])
 
-  // 拖动排序相关状态
   const heightsRef = useRef<number[]>([])
   const animsRef = useRef<DragAnim[]>([])
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
@@ -331,17 +324,14 @@ export default memo(() => {
   const targetIndexRef = useRef<number | null>(null)
   const lastTargetRef = useRef<number | null>(null)
 
-  // 菜单相关ref
   const listMenuRef = useRef<ListMenuType>(null)
   const listNameEditRef = useRef<ListNameEditType>(null)
   const listMusicSortRef = useRef<ListMusicSortType>(null)
   const duplicateMusicRef = useRef<DuplicateMusicType>(null)
   const listImportExportRef = useRef<ListImportExportType>(null)
 
-  // 用户列表（排除固定列表）
   const userLists = useMemo(() => allList.filter(l => l.id !== LIST_IDS.DEFAULT && l.id !== LIST_IDS.LOVE), [allList])
 
-  // 初始化动画数组
   if (animsRef.current.length !== userLists.length) {
     if (animsRef.current.length < userLists.length) {
       for (let i = animsRef.current.length; i < userLists.length; i++) {
@@ -384,14 +374,11 @@ export default memo(() => {
     void refreshListInfo()
   }, [refreshListInfo])
 
-  // 组件挂载时重置所有动画状态
   useEffect(() => {
     resetAllAnims()
   }, [resetAllAnims])
 
-  // 列表数据变化时重置动画状态
   useEffect(() => {
-    // 确保动画引用数组与列表同步
     const userListCount = userLists.length
     while (animsRef.current.length < userListCount) {
       animsRef.current.push(createAnim())
@@ -402,16 +389,12 @@ export default memo(() => {
     resetAllAnims()
   }, [allList, userLists, resetAllAnims])
 
-  // 恢复之前选中的列表
   useEffect(() => {
-    // 只有当 activeListId 不是默认列表时，才恢复详细列表
-    // 如果 activeListId 是默认列表（LIST_IDS.DEFAULT），说明用户在卡片列表视图，不需要恢复
     if (activeListId && activeListId !== LIST_IDS.DEFAULT) {
       setShowMusicList(true)
     }
   }, [activeListId])
 
-  // 点击进入列表详情
   const handleItemPress = useCallback((item: ListItemInfo) => {
     setActiveList(item.id)
     setShowMusicList(true)
@@ -430,7 +413,6 @@ export default memo(() => {
     })
   }, [allList, listInfoMap])
 
-  // 拖动排序相关函数
   const handleLayoutHeight = useCallback((index: number, height: number) => {
     heightsRef.current[index] = height
   }, [])
@@ -567,7 +549,6 @@ export default memo(() => {
     setIsTouchingDragHandle(false)
   }, [])
 
-  // 菜单相关函数
   const showMenu = useCallback((item: ListItemInfo, index: number, position: Position) => {
     const listInfo = allList.find(l => l.id === item.id)
     if (listInfo) {
@@ -575,12 +556,10 @@ export default memo(() => {
     }
   }, [allList])
 
-  // 显示音乐列表
   if (showMusicList) {
     return <MusicList onBack={handleBackToList} />
   }
 
-  // 显示错误
   if (hasError) {
     return (
       <View style={styles.errorContainer}>
@@ -592,7 +571,6 @@ export default memo(() => {
     )
   }
 
-  // 显示卡片列表
   const renderItem = ({ item }: { item: ListItemInfo }) => {
     const userListIndex = userLists.findIndex(l => l.id === item.id)
 

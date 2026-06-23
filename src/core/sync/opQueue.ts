@@ -1,14 +1,13 @@
 import { saveData, getData } from '@/plugins/storage';
 import { storageDataPrefix } from '@/config/constant';
 
-// 定义一个操作可以是任何一种列表事件
 export type ListOperation = LX.Sync.List.ActionList;
 
 let operationQueue: ListOperation[] = [];
-const STORAGE_KEY = storageDataPrefix.sync + 'op_queue_v2'; // 使用新key以避免旧数据干扰
+const STORAGE_KEY = storageDataPrefix.sync + 'op_queue_v2';
 
 /**
- * 加载本地未同步的操作队列
+ * Load local unsynced operation queue
  */
 export async function loadOperationQueue(): Promise<void> {
   const storedQueue = await getData<ListOperation[]>(STORAGE_KEY);
@@ -17,8 +16,8 @@ export async function loadOperationQueue(): Promise<void> {
 }
 
 /**
- * 记录一个新的操作到队列
- * @param operation 具体的操作对象
+ * Log a new operation to the queue
+ * @param operation the operation object
  */
 export async function logOperation(operation: ListOperation): Promise<void> {
   operationQueue.push(operation);
@@ -26,14 +25,14 @@ export async function logOperation(operation: ListOperation): Promise<void> {
 }
 
 /**
- * 获取当前所有的操作队列
+ * Get all current operation queue
  */
 export function getOperationQueue(): ListOperation[] {
   return [...operationQueue];
 }
 
 /**
- * 清空操作队列
+ * Clear operation queue
  */
 export async function clearOperationQueue(): Promise<void> {
   operationQueue = [];

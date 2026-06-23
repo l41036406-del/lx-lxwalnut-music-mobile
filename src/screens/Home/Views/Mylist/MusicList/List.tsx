@@ -271,22 +271,20 @@ const List = forwardRef<ListType, ListProps>(
     }
 
     const renderItem: FlatListType['renderItem'] = ({ item, index }) => {
-      // 判断歌曲来源
       if (item.source === 'wy') {
-        // 如果是在线音乐wy，使用 OnlineList 的 ListItem
         return (
           <OnlineListItem
-            item={item as LX.Music.MusicInfoOnline} // 类型断言为在线音乐
+            item={item as LX.Music.MusicInfoOnline}
             index={index}
             onPress={handlePress}
             onLongPress={handleLongPress}
             onShowMenu={onShowMenu}
             selectedList={selectedList as LX.Music.MusicInfoOnline[]}
-            playingId={playerState.playMusicInfo.musicInfo?.id ?? ''} // 传入当前播放ID
+            playingId={playerState.playMusicInfo.musicInfo?.id ?? ''}
             rowInfo={rowInfo.current}
             isShowAlbumName={isShowAlbumName}
             isShowInterval={isShowInterval}
-            listId='dailyrec_wy' // 传入当前列表ID以显示爱心图标
+            listId='dailyrec_wy'
             showSource={isShowSource}
             showCover={showCover}
           />

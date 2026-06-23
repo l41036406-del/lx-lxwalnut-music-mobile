@@ -58,13 +58,11 @@ export default {
   },
 
   async getListDetail(rawId, page, tryNum = 0) {
-    // 获取歌曲列表内的音乐
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
 
     const { id, cookie } = await this.getListId(rawId)
     if (cookie) this.cookie = cookie
 
-    // 将 linuxapi 调用替换为 weapi 调用
     const requestObj_listDetail = httpFetch('https://music.163.com/weapi/v3/playlist/detail', {
       method: 'post',
       headers: {
@@ -252,15 +250,14 @@ export default {
     return list
   },
 
-  // 获取列表数据
   getList(sortId, tagId, page, tryNum = 0) {
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
     if (this._requestObj_list) this._requestObj_list.cancelHttp()
     this._requestObj_list = httpFetch('https://music.163.com/weapi/playlist/list', {
       method: 'post',
       form: weapi({
-        cat: tagId || '全部', // 全部,华语,欧美,日语,韩语,粤语,小语种,流行,摇滚,民谣,电子,舞曲,说唱,轻音乐,爵士,乡村,R&B/Soul,古典,民族,英伦,金属,朋克,蓝调,雷鬼,世界音乐,拉丁,另类/独立,New Age,古风,后摇,Bossa Nova,清晨,夜晚,学习,工作,午休,下午茶,地铁,驾车,运动,旅行,散步,酒吧,怀旧,清新,浪漫,性感,伤感,治愈,放松,孤独,感动,兴奋,快乐,安静,思念,影视原声,ACG,儿童,校园,游戏,70后,80后,90后,网络歌曲,KTV,经典,翻唱,吉他,钢琴,器乐,榜单,00后
-        order: sortId, // hot,new
+        cat: tagId || '全部',
+        order: sortId,
         limit: this.limit_list,
         offset: this.limit_list * (page - 1),
         total: true,
@@ -295,7 +292,6 @@ export default {
     }))
   },
 
-  // 获取标签
   getTag(tryNum = 0) {
     if (this._requestObj_tags) this._requestObj_tags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -333,7 +329,6 @@ export default {
     return list
   },
 
-  // 获取热门标签
   getHotTag(tryNum = 0) {
     if (this._requestObj_hotTags) this._requestObj_hotTags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -371,7 +366,7 @@ export default {
   search(text, page, limit = 20) {
     return eapiRequest('/api/cloudsearch/pc', {
       s: text,
-      type: 1000, // 1: 单曲, 10: 专辑, 100: 歌手, 1000: 歌单, 1002: 用户, 1004: MV, 1006: 歌词, 1009: 电台, 1014: 视频
+      type: 1000,
       limit,
       total: page == 1,
       offset: limit * (page - 1),

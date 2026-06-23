@@ -13,19 +13,12 @@ export default {
   total: 0,
   page: 0,
   allPage: 1,
-  // cancelFn: null,
   musicSearch(str, page, limit) {
     const musicSearchRequestObj = httpFetch(
       `http://search.kuwo.cn/r.s?client=kt&all=${encodeURIComponent(str)}&pn=${page - 1}&rn=${limit}&uid=794762570&ver=kwplayer_ar_9.2.2.1&vipver=1&show_copyright_off=1&newver=1&ft=music&cluster=0&strategy=2012&encoding=utf8&rformat=json&vermerge=1&mobi=1&issubtitle=1`
     )
     return musicSearchRequestObj.promise
   },
-  // getImg(songId) {
-  //   return httpGet(`http://player.kuwo.cn/webmusic/sj/dtflagdate?flag=6&rid=MUSIC_${songId}`)
-  // },
-  // getLrc(songId) {
-  //   return httpGet(`http://mobile.kuwo.cn/mpage/html5/songinfoandlrc?mid=${songId}&flag=0`)
-  // },
   handleResult(rawData) {
     const result = []
     if (!rawData) return result
@@ -47,7 +40,7 @@ export default {
       for (let info of infoArr) {
         info = info.match(this.regExps.mInfo)
         if (info) {
-          const size = info[4] ? info[4].toLocaleUpperCase() : null // <-- 核心修改在这里
+          const size = info[4] ? info[4].toLocaleUpperCase() : null
           switch (info[2]) {
             case '20900':
               types.push({ type: 'master', size })
@@ -88,9 +81,6 @@ export default {
         name: decodeName(info.SONGNAME),
         singer: formatSinger(decodeName(info.ARTIST)),
         source: 'kw',
-        // img = (info.album.name === '' || info.album.name === '空')
-        //   ? `http://player.kuwo.cn/webmusic/sj/dtflagdate?flag=6&rid=MUSIC_160911.jpg`
-        //   : `https://y.gtimg.cn/music/photo_new/T002R500x500M000${info.album.mid}.jpg`
         songmid: songId,
         albumId: decodeName(info.ALBUMID || ''),
         interval: Number.isNaN(interval) ? 0 : formatPlayTime(interval),

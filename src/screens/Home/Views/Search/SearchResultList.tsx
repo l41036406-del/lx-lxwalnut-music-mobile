@@ -52,7 +52,6 @@ export default forwardRef(({ searchType, source }: SearchResultListProps, ref) =
     }
     setLoading(true)
 
-    // 歌手/专辑搜索支持网易云、QQ音乐和酷狗平台
     if (source !== 'wy' && source !== 'tx' && source !== 'kg') {
       toast('当前音源平台暂不支持歌手/专辑搜索')
       setLoading(false)

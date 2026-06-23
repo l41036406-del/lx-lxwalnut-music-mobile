@@ -56,12 +56,9 @@ export default ({ title, children, sectionId }: Props) => {
   const sectionOpacity = useSettingValue('theme.sectionOpacity')
   const expandedStatus = useSettingValue('common.sectionExpandedStatus')
   
-  // 先获取初始展开状态
   const initialExpanded = expandedStatus[sectionId] ?? true
   
-  // 使用 useRef 保存动画值，根据初始状态设置正确的初始值
   const rotateAnimRef = useRef(new Animated.Value(initialExpanded ? 0 : 1))
-  // 使用 useMemo 缓存 interpolate 结果
   const rotateInterpolate = useMemo(() => 
     rotateAnimRef.current.interpolate({
       inputRange: [0, 1],
@@ -70,12 +67,10 @@ export default ({ title, children, sectionId }: Props) => {
   []
   )
   
-  // 使用 useRef 标记是否已经初始化，避免 useEffect 覆盖用户操作
   const isInitializedRef = useRef(false)
   
   const [expanded, setExpanded] = useState(initialExpanded)
   
-  // 只在首次渲染时同步状态（记忆功能）
   useEffect(() => {
     if (isInitializedRef.current) return
     isInitializedRef.current = true
@@ -83,9 +78,8 @@ export default ({ title, children, sectionId }: Props) => {
     if (storedValue !== expanded) {
       setExpanded(storedValue)
     }
-  }, []) // 空依赖，只执行一次
+  }, [])
 
-  // 动画效果 - 使用 spring 动画更流畅
   useEffect(() => {
     Animated.spring(rotateAnimRef.current, {
       toValue: expanded ? 0 : 1,

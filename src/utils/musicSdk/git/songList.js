@@ -22,8 +22,6 @@ export default {
   ],
   regExps: {
     mInfo: /level:(\w+),bitrate:(\d+),format:(\w+),size:([\w.]+)/,
-    // http://www.kuwo.cn/playlist_detail/2886046289
-    // https://m.kuwo.cn/h5app/playlist/2736267853?t=qqfriend
     listDetailLink: /^.+\/playlist(?:_detail)?\/(\d+)(?:\?.*|&.*$|#.*$|$)/,
   },
   tagsUrl:
@@ -39,18 +37,13 @@ export default {
       case '43':
         return `http://mobileinterfaces.kuwo.cn/er.s?type=get_pc_qz_data&f=web&id=${id}&prod=pc`
     }
-    // http://wapi.kuwo.cn/api/pc/classify/playlist/getTagPlayList?loginUid=0&loginSid=0&appUid=76039576&id=173&pn=1&rn=100
   },
   getListDetailUrl(id, page) {
-    // http://nplserver.kuwo.cn/pl.svc?op=getlistinfo&pid=2858093057&pn=0&rn=100&encode=utf8&keyset=pl2012&identity=kuwo&pcmp4=1&vipver=MUSIC_9.0.5.0_W1&newver=1
     return `http://nplserver.kuwo.cn/pl.svc?op=getlistinfo&pid=${id}&pn=${page - 1}&rn=${
       this.limit_song
     }&encode=utf8&keyset=pl2012&identity=kuwo&pcmp4=1&vipver=MUSIC_9.0.5.0_W1&newver=1`
-    // http://mobileinterfaces.kuwo.cn/er.s?type=get_pc_qz_data&f=web&id=140&prod=pc
   },
 
-  // http://nplserver.kuwo.cn/pl.svc?op=getlistinfo&pid=2849349915&pn=0&rn=100&encode=utf8&keyset=pl2012&identity=kuwo&pcmp4=1&vipver=MUSIC_9.0.5.0_W1&newver=1
-  // 获取标签
   getTag(tryNum = 0) {
     if (this._requestObj_tags) this._requestObj_tags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -60,7 +53,6 @@ export default {
       return this.filterTagInfo(body.data)
     })
   },
-  // 获取标签
   getHotTag(tryNum = 0) {
     if (this._requestObj_hotTags) this._requestObj_hotTags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -90,7 +82,6 @@ export default {
     }))
   },
 
-  // 获取列表数据
   getList(sortId, tagId, page, tryNum = 0) {
     if (this._requestObj_list) this._requestObj_list.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -127,10 +118,6 @@ export default {
     })
   },
 
-  /**
-   * 格式化播放数量
-   * @param {*} num
-   */
   formatPlayCount(num) {
     if (num > 100000000) return parseInt(num / 10000000) / 10 + '亿'
     if (num > 10000) return parseInt(num / 1000) / 10 + '万'
@@ -142,7 +129,6 @@ export default {
       id: `digest-${item.digest}__${item.id}`,
       author: item.uname,
       name: item.name,
-      // time: item.publish_time,
       total: item.total,
       img: item.img,
       grade: item.favorcnt / 10,
@@ -151,7 +137,6 @@ export default {
     }))
   },
   filterList2(rawData) {
-    // console.log(rawData)
     const list = []
     rawData.forEach((item) => {
       if (!item.label) return
@@ -162,7 +147,6 @@ export default {
           author: item.uname,
           name: item.name,
           total: item.total,
-          // time: item.publish_time,
           img: item.img,
           grade: item.favorcnt && item.favorcnt / 10,
           desc: item.desc,
@@ -202,7 +186,6 @@ export default {
     )
     return requestObj.promise.then(({ statusCode, body }) => {
       if (statusCode != 200 || !body.child) return this.getListDetail(id, ++tryNum)
-      // console.log(body)
       return body.child.length ? body.child[0].sourceid : null
     })
   },
@@ -214,7 +197,6 @@ export default {
       }&encode=utf-8&keyset=pl2012&identity=kuwo&pcmp4=1`
     )
     return requestObj.promise.then(({ body }) => {
-      // console.log(body)
       if (body.result !== 'ok') return this.getListDetail(id, page, ++tryNum)
       return {
         list: this.filterListDetail(body.musiclist),
@@ -332,7 +314,6 @@ export default {
 
     if (infoData.code != 200) return null
 
-    // console.log(infoData)
     return {
       name: infoData.data.userInfo.nickname + '喜欢的音乐',
       img: infoData.data.userInfo.headImg,
@@ -391,15 +372,10 @@ export default {
       author: '',
       play_count: '',
     }
-    // console.log(listData)
     return listData
   },
 
-  // 获取歌曲列表内的音乐
   getListDetail(id, page, retryNum = 0) {
-    // console.log(id)
-    // https://h5app.kuwo.cn/m/bodian/collection.html?uid=000&playlistId=000&source=5&ownerId=000
-    // https://h5app.kuwo.cn/m/bodian/collection.html?uid=000&playlistId=000&source=4&ownerId=
     if (/\/bodian\//.test(id)) return this.getListDetailMusicListByBD(id, page)
     if (/[?&:/]/.test(id)) id = id.replace(this.regExps.listDetailLink, '$1')
     else if (/^digest-/.test(id)) {
@@ -419,7 +395,6 @@ export default {
     return this.getListDetailDigest8(id, page, retryNum)
   },
   filterListDetail(rawData) {
-    // console.log(rawData)
     return rawData.map((item) => {
       let infoArr = item.N_MINFO.split(';')
       let types = []
@@ -515,7 +490,6 @@ export default {
       }&rn=${limit}&rformat=json&encoding=utf8&ver=mbox&vipver=MUSIC_8.7.7.0_BCS37&plat=pc&devid=28156413&ft=playlist&pay=0&needliveshow=0`
     ).promise.then(({ body }) => {
       body = objStr2JSON(body)
-      // console.log(body)
       return {
         list: body.abslist.map((item) => {
           return {
@@ -524,7 +498,6 @@ export default {
             author: decodeName(item.nickname),
             name: decodeName(item.name),
             total: item.songnum,
-            // time: item.publish_time,
             img: item.pic,
             desc: decodeName(item.intro),
             source: 'kw',
@@ -537,7 +510,3 @@ export default {
     })
   },
 }
-
-// getList
-// getTags
-// getListDetail

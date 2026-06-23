@@ -17,9 +17,7 @@ export const webDAVLog = {
 }
 
 export const initWebDAVLog = async () => {
-  // 现在使用统一的日志系统，不需要单独初始化
 }
 
 export const clearWebDAVLogs = async () => {
-  // 现在使用统一的日志系统，不需要单独清理
 }

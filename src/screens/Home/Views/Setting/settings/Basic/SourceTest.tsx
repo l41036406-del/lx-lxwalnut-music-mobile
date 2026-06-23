@@ -11,7 +11,6 @@ import { log, getSourceTestLogs, clearSourceTestLogs, sourceTestLog } from '@/ut
 import { createStyle, toast } from '@/utils/tools'
 import LogConfirmAlert, { type LogConfirmAlertType } from '@/components/common/LogConfirmAlert'
 
-// 调整颜色透明度的辅助函数
 const adjustColorOpacity = (color: string, opacity: number) => {
   const rgbaMatch = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/)
   if (rgbaMatch) {
@@ -48,7 +47,6 @@ const adjustColorOpacity = (color: string, opacity: number) => {
   return color
 }
 
-// 注意：聆澜自定义源只支持以下3个音源
 const sources = [
   { id: 'kw', name: '酷我' },
   { id: 'kg', name: '酷狗' },
@@ -57,17 +55,16 @@ const sources = [
   { id: 'mg', name: '咪咕' },
 ]
 
-// 音质优先级从高到低排序（移除192K，这是BILIBILI平台专属）
 const qualityLevels = ['master', 'atmos_plus', 'atmos', 'hires', 'flac', '320k', '128k']
 
 const qualityPriority: Record<string, number> = {
-  master: 7,      // 臻品母带（最高）
-  atmos_plus: 6, // ATMOS增强版
-  atmos: 5,      // ATMOS杜比全景声
-  hires: 4,      // Hi-Res高解析音质
-  flac: 3,       // 无损
-  '320k': 2,     // 高品
-  '128k': 1,     // 低品（最低）
+  master: 7,
+  atmos_plus: 6,
+  atmos: 5,
+  hires: 4,
+  flac: 3,
+  '320k': 2,
+  '128k': 1,
   unknown: 0,
 }
 
@@ -145,7 +142,7 @@ interface TestSettings {
   intervalSeconds: string
   qualityIntervalSeconds: string
   testTimeoutSeconds: string
-  sizeErrorMB: string  // 文件大小匹配误差（MB）
+  sizeErrorMB: string
 }
 
 const loadSavedSettings = async (): Promise<TestSettings> => {
@@ -184,20 +181,19 @@ export default memo(() => {
     mg: '晴天',
   })
   const [isLoaded, setIsLoaded] = useState(false)
-  const [intervalSeconds, setIntervalSeconds] = useState('0')  // 默认0秒间隔
-  const [qualityIntervalSeconds, setQualityIntervalSeconds] = useState('0')  // 音质测试间隔，默认0秒
-  const [testTimeoutSeconds, setTestTimeoutSeconds] = useState('20')  // 测试超时，默认20秒
-  const [sizeErrorMB, setSizeErrorMB] = useState('0.5')  // 文件大小匹配误差，默认0.5MB
+  const [intervalSeconds, setIntervalSeconds] = useState('0')
+  const [qualityIntervalSeconds, setQualityIntervalSeconds] = useState('0')
+  const [testTimeoutSeconds, setTestTimeoutSeconds] = useState('20')
+  const [sizeErrorMB, setSizeErrorMB] = useState('0.5')
   const [isStopRequested, setIsStopRequested] = useState(false)
   const [logText, setLogText] = useState('')
-  const [testingSourceId, setTestingSourceId] = useState<string | null>(null)  // 当前正在测试的单个平台
-  const [elapsedTime, setElapsedTime] = useState(0)  // 测试总时长（秒）
+  const [testingSourceId, setTestingSourceId] = useState<string | null>(null)
+  const [elapsedTime, setElapsedTime] = useState(0)
   
-  // 用于控制测试循环
   const shouldContinueTesting = useRef(true)
   const logModalRef = useRef<LogConfirmAlertType>(null)
-  const testStartTimeRef = useRef<number>(0)  // 测试开始时间戳
-  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)  // 计时器引用
+  const testStartTimeRef = useRef<number>(0)
+  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -225,7 +221,6 @@ export default memo(() => {
     setKeywords(prev => ({ ...prev, [sourceId]: value }))
   }, [])
 
-  // 保存设置
   useEffect(() => {
     if (isLoaded) {
       saveSettings({
@@ -237,7 +232,6 @@ export default memo(() => {
     }
   }, [intervalSeconds, qualityIntervalSeconds, testTimeoutSeconds, sizeErrorMB, isLoaded])
 
-  // 停止计时器
   const stopElapsedTimer = useCallback(() => {
     if (elapsedTimerRef.current) {
       clearInterval(elapsedTimerRef.current)
@@ -245,7 +239,6 @@ export default memo(() => {
     }
   }, [])
 
-  // 停止测试
   const handleStop = useCallback(() => {
     shouldContinueTesting.current = false
     setIsStopRequested(true)
@@ -255,7 +248,6 @@ export default memo(() => {
     sourceTestLog.info('========== 用户请求停止测试 ==========')
   }, [stopElapsedTimer])
 
-  // 复制到剪贴板
   const copyToClipboard = async (text: string) => {
     try {
       await Clipboard.setString(text)
@@ -265,7 +257,6 @@ export default memo(() => {
     }
   }
 
-  // 获取源测试日志
   const getSourceTestLog = async () => {
     try {
       const log = await getSourceTestLogs()
@@ -281,13 +272,11 @@ export default memo(() => {
     }
   }
 
-  // 打开日志弹窗
   const openLogModal = () => {
     getSourceTestLog()
     logModalRef.current?.setVisible(true)
   }
 
-  // 清空日志
   const handleCleanLog = () => {
     void clearSourceTestLogs().then(() => {
       toast('日志已清空')
@@ -295,30 +284,22 @@ export default memo(() => {
     })
   }
 
-  // 处理间隔时间变化
   const handleIntervalChange = useCallback((value: string) => {
-    // 只允许数字
     const num = value.replace(/[^0-9]/g, '')
     setIntervalSeconds(num)
   }, [])
 
-  // 处理音质测试间隔时间变化
   const handleQualityIntervalChange = useCallback((value: string) => {
-    // 只允许数字
     const num = value.replace(/[^0-9]/g, '')
     setQualityIntervalSeconds(num)
   }, [])
 
-  // 处理测试超时时间变化
   const handleTestTimeoutChange = useCallback((value: string) => {
-    // 只允许数字
     const num = value.replace(/[^0-9]/g, '')
     setTestTimeoutSeconds(num)
   }, [])
 
-  // 处理大小误差变化（允许小数）
   const handleSizeErrorChange = useCallback((value: string) => {
-    // 只允许数字和小数点，且小数点只能有一个
     const num = value.replace(/[^\d.]/g, '')
     const parts = num.split('.')
     if (parts.length > 2) {
@@ -328,19 +309,16 @@ export default memo(() => {
     }
   }, [])
 
-  // 获取大小误差（MB）
   const getSizeErrorMB = (): number => {
     const num = parseFloat(sizeErrorMB)
     return isNaN(num) || num <= 0 ? 0.5 : num
   }
 
-  // 获取音质测试间隔（毫秒）
   const getQualityTestInterval = (): number => {
     const seconds = parseInt(qualityIntervalSeconds)
     return (isNaN(seconds) ? 0 : seconds) * 1000
   }
 
-  // 获取测试超时（毫秒）
   const getTestTimeout = (): number => {
     const seconds = parseInt(testTimeoutSeconds)
     return (isNaN(seconds) || seconds <= 0 ? 20 : seconds) * 1000
@@ -448,12 +426,10 @@ export default memo(() => {
       const detectedQualities: Record<string, { url: string; time: number }> = {}
       let totalStartTime = Date.now()
 
-      // 按优先级顺序测试每个音质
       for (let i = 0; i < qualityLevels.length; i++) {
         const quality = qualityLevels[i]
         const qualityStartTime = Date.now()
         
-        // 不是第一个音质测试时，添加间隔避免请求过于频繁
         if (i > 0) {
           await sleep(qualityIntervalMs)
         }
@@ -477,7 +453,6 @@ export default memo(() => {
           const qualityEndTime = Date.now()
           const qualityTime = qualityEndTime - qualityStartTime
           
-          // 记录完整的接口返回结果
           sourceTestLog.info(`[${source.name}] ${quality} 接口返回结果:`, JSON.stringify({
             isString: typeof result === 'string',
             hasUrl: !!(result?.url || (typeof result === 'string' && result)),
@@ -490,7 +465,6 @@ export default memo(() => {
           const url = typeof result === 'string' ? result : (result?.url || result?.data?.url)
           const actualType = result?.type || ''
           
-          // 检查URL是否有效
           const hasInvalidLevel = url && /level=(undefined|null|$|&)/i.test(url)
           const isValidUrl = url && url.length > 10 && !hasInvalidLevel
           
@@ -520,16 +494,14 @@ export default memo(() => {
                 
                 if (contentLength) {
                   const actualSizeMB = parseInt(contentLength) / (1024 * 1024)
-                  const actualSizeRounded = Math.round(actualSizeMB * 100) / 100  // 保留两位小数
+                  const actualSizeRounded = Math.round(actualSizeMB * 100) / 100
                   
                   sourceTestLog.info(`[${source.name}]   - 文件大小检测: ${actualSizeRounded.toFixed(2)}MB`)
                   
-                  // 完全匹配：查找元数据中与实际大小完全一致的音质
                     let matchedQuality: string | null = null
                     const errorMB = getSizeErrorMB()
                     for (const [q, expectedSize] of Object.entries(qualitySizes)) {
                       const expectedSizeRounded = Math.round(expectedSize * 100) / 100
-                      // 完全匹配（允许指定MB的误差，因为文件大小可能有微小差异）
                       if (Math.abs(actualSizeRounded - expectedSizeRounded) <= errorMB) {
                         matchedQuality = q
                         sourceTestLog.info(`[${source.name}]   - [OK] 大小完全匹配: ${q} (${expectedSizeRounded.toFixed(2)}MB)`)
@@ -538,25 +510,21 @@ export default memo(() => {
                     }
                   
                   if (!matchedQuality) {
-                    // 没有任何音质大小匹配
                     sourceTestLog.info(`[${source.name}]   - [WARN] 大小不匹配任何元数据音质`)
                     qualityResults[quality] = { success: false, error: `大小不匹配(${actualSizeRounded.toFixed(2)}MB)`, time: qualityTime }
                     continue
                   }
                   
-                  // 检查是否与请求的音质一致
                   if (matchedQuality === quality) {
                     sourceTestLog.info(`[${source.name}]   - [OK] 与请求音质 ${quality} 一致`)
                     actualQualityFromUrl = quality
                   } else {
                     sourceTestLog.info(`[${source.name}]   - [WARN] 实际音质 ${matchedQuality} 与请求音质 ${quality} 不一致`)
-                    // 记录实际匹配的音质，继续测试下一个
                     detectedQualities[matchedQuality] = { url: url.substring(0, 50) + '...', time: qualityTime }
                     qualityResults[quality] = { success: false, error: `实际=${matchedQuality}`, time: qualityTime }
                     continue
                   }
                 } else {
-                  // 无法获取文件大小
                   sourceTestLog.info(`[${source.name}]   - [WARN] 无法获取文件大小`)
                   qualityResults[quality] = { success: false, error: '无法获取文件大小', time: qualityTime }
                   continue
@@ -567,7 +535,6 @@ export default memo(() => {
                 continue
               }
             } else {
-              // 无元数据大小信息
               sourceTestLog.info(`[${source.name}]   - [WARN] 无元数据大小信息`)
               qualityResults[quality] = { success: false, error: '无元数据', time: qualityTime }
               continue
@@ -597,7 +564,6 @@ export default memo(() => {
               sourceTestLog.info(`[${source.name}]   - 降级到下一档测试`)
               qualityResults[quality] = { success: false, error: `不匹配，实际=${actualQualityFromUrl}`, time: qualityTime }
               
-              // 记录检测到的实际音质
               if (actualQualityFromUrl && !detectedQualities[actualQualityFromUrl]) {
                 detectedQualities[actualQualityFromUrl] = { url: url.substring(0, 50) + '...', time: qualityTime }
                 sourceTestLog.info(`[${source.name}]   - 记录检测到的音质: ${actualQualityFromUrl}`)
@@ -606,7 +572,6 @@ export default memo(() => {
               continue
             }
           } else {
-            // URL无效，降级到下一档
             sourceTestLog.info(`[${source.name}] [FAIL] ${quality} URL无效 [耗时${qualityTime}ms]`)
             sourceTestLog.info(`[${source.name}]   - URL存在: ${!!url}`)
             sourceTestLog.info(`[${source.name}]   - URL长度: ${url?.length || 0}`)
@@ -621,19 +586,16 @@ export default memo(() => {
           const errorType = qualityError.constructor?.name || 'Error'
           const errorStack = qualityError.stack || '无堆栈信息'
           
-          // 记录详细的错误信息
           sourceTestLog.info(`[${source.name}] [FAIL] ${quality} 请求异常 [耗时${qualityEndTime - qualityStartTime}ms]`)
           sourceTestLog.info(`[${source.name}]   - 错误类型: ${errorType}`)
           sourceTestLog.info(`[${source.name}]   - 错误消息: ${errorMessage}`)
           sourceTestLog.info(`[${source.name}]   - 错误堆栈: ${errorStack.substring(0, 500)}${errorStack.length > 500 ? '...' : ''}`)
           
-          // 检测是否是请求频率超限错误
           if (isRateLimitError(errorMessage)) {
             sourceTestLog.info(`[${source.name}]   - 检测到请求频率超限，跳过剩余音质测试`)
             
             qualityResults[quality] = { success: false, error: errorMessage, time: qualityEndTime - qualityStartTime }
             
-            // 请求频率超限，直接返回失败，不再继续测试
             const totalDelay = Date.now() - totalStartTime
             sourceTestLog.info(`[${source.name}] 测试终止: 检测到请求频率超限，总耗时 ${totalDelay}ms`)
             sourceTestLog.info(`========== [${source.name}] 测试异常结束 ==========`)
@@ -655,9 +617,7 @@ export default memo(() => {
 
       const totalDelay = Date.now() - totalStartTime
       
-      // 如果没有找到完全匹配的音质，但检测到了降级音质，返回最高的降级音质
       if (!maxQuality && Object.keys(detectedQualities).length > 0) {
-        // 从检测到的音质中找到优先级最高的
         let highestDetectedQuality: string | null = null
         let highestDetectedPriority = -1
         
@@ -721,7 +681,6 @@ export default memo(() => {
     setElapsedTime(0)
     testStartTimeRef.current = Date.now()
     
-    // 启动计时器
     elapsedTimerRef.current = setInterval(() => {
       const elapsed = Math.floor((Date.now() - testStartTimeRef.current) / 1000)
       setElapsedTime(elapsed)
@@ -747,7 +706,6 @@ export default memo(() => {
       })
 
       for (let i = 0; i < sources.length; i++) {
-        // 检查是否应该继续测试
         if (!shouldContinueTesting.current) {
           sourceTestLog.info('========== 测试被用户停止 ==========')
           setCurrentProgress('测试已停止')
@@ -811,8 +769,7 @@ export default memo(() => {
           setCurrentProgress(`${source.name} ${statusText}: ${result.message}`)
         }
 
-        // 每个源测试间隔
-        if (i < sources.length - 1 && shouldContinueTesting.current) {
+      if (i < sources.length - 1 && shouldContinueTesting.current) {
           const interval = parseInt(intervalSeconds) || 2
           if (interval > 0) {
             sourceTestLog.info(`========== 等待 ${interval} 秒后测试下一个源 ==========`)
@@ -834,7 +791,6 @@ export default memo(() => {
     await runTest()
   }, [testSource, keywords, intervalSeconds, qualityIntervalSeconds, stopElapsedTimer])
 
-  // 测试单个平台
   const handleTestSingleSource = useCallback(async (source: typeof sources[0]) => {
     if (isTesting) return
     
@@ -844,7 +800,6 @@ export default memo(() => {
       return
     }
 
-    // 启动计时器
     setElapsedTime(0)
     testStartTimeRef.current = Date.now()
     elapsedTimerRef.current = setInterval(() => {
@@ -855,7 +810,6 @@ export default memo(() => {
     setTestingSourceId(source.id)
     setCurrentProgress(`正在测试 ${source.name}...`)
 
-    // 如果结果数组为空，先初始化所有平台的结果
     setResults(prev => {
       if (prev.length === 0) {
         return sources.map(s => ({
@@ -868,7 +822,6 @@ export default memo(() => {
           searchedSong: '',
         }))
       }
-      // 更新当前测试平台的状态为testing
       return prev.map(r =>
         r.source === source.id ? { ...r, status: 'testing' } : r
       )
@@ -933,13 +886,13 @@ export default memo(() => {
   }
 
   const getQualityColors: Record<string, string> = {
-    master: '#9B59B6',      // 臻品母带 - 紫色
-    atmos_plus: '#E74C3C',  // ATMOS增强版 - 红色
-    atmos: '#E67E22',       // ATMOS杜比全景声 - 橙色
-    hires: '#FF6B6B',       // Hi-Res - 浅红色
-    flac: '#4ECDC4',        // FLAC - 青色
-    '320k': '#45B7D1',      // 320K - 天蓝色
-    '128k': '#95A5A6',      // 128K - 灰色
+    master: '#9B59B6',
+    atmos_plus: '#E74C3C',
+    atmos: '#E67E22',
+    hires: '#FF6B6B',
+    flac: '#4ECDC4',
+    '320k': '#45B7D1',
+    '128k': '#95A5A6',
   }
 
   const getStatusColor = (status: TestResult['status']) => {
@@ -1195,21 +1148,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: '500',
   },
-  // 关键词行布局
   keywordRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
   },
 
-  // 平台名称标签
   sourceLabel: {
     width: 50,
     fontSize: 13,
     fontWeight: '500',
   },
 
-  // 关键词输入框容器
   keywordContainer: {
     flex: 1,
     minWidth: 100,
@@ -1217,7 +1167,6 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
 
-  // 关键词输入框
   keywordInput: {
     width: '100%',
     height: 42,
@@ -1230,14 +1179,12 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
 
-  // 单个平台测试按钮容器
   singleTestBtnContainer: {
     width: 72,
     flexShrink: 0,
     zIndex: 1,
   },
 
-  // 单个平台测试按钮
   singleTestBtn: {
     width: '100%',
     height: 42,
@@ -1249,7 +1196,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'center',
   },
 
-  // 底部按钮行
   buttonRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1257,7 +1203,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  // 开始测试按钮
   startTestBtn: {
     flex: 1,
     height: 40,
@@ -1265,7 +1210,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  // 终止测试按钮
   stopTestBtn: {
     flex: 1,
     height: 40,
@@ -1273,7 +1217,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
 
-  // 设置项行布局
   settingsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1281,13 +1224,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
 
-  // 设置标签
   settingsLabel: {
     fontSize: 13,
     color: '#666666',
   },
 
-  // 误差输入框
   errorInput: {
     width: 80,
     height: 38,
@@ -1303,7 +1244,6 @@ const styles = StyleSheet.create({
     direction: 'ltr',
   },
 
-  // 测试超时输入框
   timeoutInput: {
     width: 80,
     height: 38,
@@ -1319,7 +1259,6 @@ const styles = StyleSheet.create({
     direction: 'ltr',
   },
 
-  // 平台测试间隔输入框
   intervalInput: {
     width: 80,
     height: 38,
@@ -1335,7 +1274,6 @@ const styles = StyleSheet.create({
     direction: 'ltr',
   },
 
-  // 音质测试间隔输入框
   qualityIntervalInput: {
     width: 80,
     height: 38,
@@ -1351,7 +1289,6 @@ const styles = StyleSheet.create({
     direction: 'ltr',
   },
 
-  // 测试日志按钮
   logBtn: {
     height: 38,
     paddingHorizontal: 16,

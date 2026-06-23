@@ -237,7 +237,7 @@ export const handleDownload = async (musicInfo: LX.Music.MusicInfo, quality: LX.
         .replace('歌名', musicInfo.name)
         .replace('歌手', musicInfo.singer)
 
-      fileName = filterFileName(fileName) // 过滤非法字符
+      fileName = filterFileName(fileName)
 
       const downloadDir = settingState.setting['download.path'] || (RNFetchBlob.fs.dirs.MusicDir + '/LX-X Music')
       const path = `${downloadDir}/${fileName}.${extension}`
@@ -276,7 +276,6 @@ export const handleDownload = async (musicInfo: LX.Music.MusicInfo, quality: LX.
             albumName: musicInfo.meta.albumName,
           }
 
-          // 提取年份
           if (musicInfo.releaseDate) {
             const yearMatch = musicInfo.releaseDate.match(/^(\d{4})/)
             if (yearMatch) {
@@ -285,21 +284,15 @@ export const handleDownload = async (musicInfo: LX.Music.MusicInfo, quality: LX.
           }
 
           await writeMetadata(filePath, <MusicMetadata>metadata, true)
-          // --- 强制媒体库更新逻辑 ---
           try {
             const tempPath = filePath + '.tmp'
-            // 1. 重命名为临时文件
             await RNFetchBlob.fs.mv(filePath, tempPath)
-            // 2. 扫描原路径，让媒体库认为文件已删除
             await RNFetchBlob.fs.scanFile([{ path: filePath }])
-            // 3. 立即改回原名
             await RNFetchBlob.fs.mv(tempPath, filePath)
-            // 4. 再次扫描原路径，让媒体库作为新文件重新索引
             await RNFetchBlob.fs.scanFile([{ path: filePath }])
             console.log('Media store updated successfully.')
           } catch (err) {
             console.error('Failed to force update media store:', err)
-            // 即使失败，也尝试一次普通扫描作为后备
             await RNFetchBlob.fs.scanFile([{ path: filePath }])
           }
           toast(`写入标签成功!`, 'short')
@@ -317,12 +310,7 @@ export const handleDownload = async (musicInfo: LX.Music.MusicInfo, quality: LX.
           })
           const tasks = []
           const baseFilePath = filePath.substring(0, filePath.lastIndexOf('.'))
-
-
-
-          // 写入内嵌歌词
           if (settingState.setting['download.writeEmbedLyric']) {
-            // 内嵌歌词通常不包含罗马音
             const embedLyricContent = mergeLyrics(lyrics.lyric, lyrics.tlyric, null)
             if (embedLyricContent) {
               tasks.push(writeLyric(filePath, embedLyricContent))

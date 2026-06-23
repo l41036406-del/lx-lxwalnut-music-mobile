@@ -11,7 +11,6 @@ function getUinFromCookie() {
   
   if (!cookie) return '0'
   
-  // 尝试从Cookie中提取uin（QQ音乐通常需要 o 前缀）
   const uinMatch = cookie.match(/uin=o?(\d+)/)
   if (uinMatch) {
     const uin = 'o' + uinMatch[1]
@@ -421,13 +420,10 @@ const artistApi = {
       }
 
       const data = body.req.data
-      // 修复：API返回的是 albumList，不是 list
       const albumList = data.albumList || data.list || []
       let hotAlbums = this.handleAlbumResult(albumList)
-      // 修复：API返回的是 total，不是 totalNum 或 total_num
       const total = data.total || data.totalNum || data.total_num || albumList.length
 
-      // 获取每个专辑的真实歌曲数量
       if (hotAlbums.length > 0) {
         const sizeResults = await Promise.all(
           hotAlbums.map(item => this.getAlbumSongCount(item.mid).catch(() => item.size || 0))

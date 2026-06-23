@@ -1,35 +1,30 @@
 /**
- * 三方音乐源模块标准化类型声明
+ * Third-party music source module standardized type declarations
  *
- * 本文件定义了 wy / tx / kg 三个平台音乐源 SDK 的统一接口结构。
+ * This file defines the unified interface structure for wy / tx / kg
+ * three-platform music source SDKs.
  *
- * 设计原则：
- * 1. 统一导出结构 — MusicSourceModule 定义了所有平台必须具备的模块集合
- * 2. 包容平台差异 — 各子模块内部通过可选属性(?)兼容不同平台独有的方法名
- * 3. 不重命名现有方法 — 严格遵循"不重命名"铁律，差异方法全部以可选属性共存
+ * Design principles:
+ * 1. Unified export structure — MusicSourceModule defines the module collection all platforms must have
+ * 2. Accommodate platform differences — Each sub-module uses optional properties (?) internally to support different platform-specific method names
+ * 3. Do not rename existing methods — Strictly follow the "no rename" rule, all differing methods coexist as optional properties
  */
 declare namespace LX {
 
   // ============================================================
-  //  通用辅助类型
-  // ============================================================
 
-  /** 歌曲信息（宽泛类型，兼容各平台 MusicInfo 变体） */
   type AnyMusicInfo = LX.Music.MusicInfoOnline
 
-  /** 歌单标签 */
   interface SongListTag {
     id: string
     name: string
   }
 
-  /** 歌单分类信息 */
   interface SongListCategory {
     name: string
     list: SongListTag[]
   }
 
-  /** 歌单概要信息 */
   interface SongListItem {
     play_count: string
     id: string
@@ -40,7 +35,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 歌单详情 */
   interface SongListDetail {
     info: {
       id: string
@@ -54,7 +48,6 @@ declare namespace LX {
     list: AnyMusicInfo[]
   }
 
-  /** 排行榜条目 */
   interface LeaderboardItem {
     id: string
     name: string
@@ -62,7 +55,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 排行榜歌曲列表结果 */
   interface LeaderboardListResult {
     list: AnyMusicInfo[]
     total?: number
@@ -70,7 +62,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 搜索结果（歌曲） */
   interface MusicSearchResult {
     list: AnyMusicInfo[]
     total?: number
@@ -78,7 +69,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 搜索结果（歌手） */
   interface SingerSearchResult {
     list: Array<{
       id: string | number
@@ -91,7 +81,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 搜索结果（专辑） */
   interface AlbumSearchResult {
     list: Array<{
       id: string | number
@@ -106,13 +95,11 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 热搜结果 */
   interface HotSearchResult {
     list: string[]
     source: LX.OnlineSource
   }
 
-  /** 评论条目 */
   interface CommentItem {
     commentId: string | number
     userName: string
@@ -123,7 +110,6 @@ declare namespace LX {
     replyCount?: number
   }
 
-  /** 评论结果 */
   interface CommentResult {
     list: CommentItem[]
     total?: number
@@ -131,7 +117,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 歌手详情 */
   interface ArtistDetail {
     artist: {
       id: string | number
@@ -146,7 +131,6 @@ declare namespace LX {
     }
   }
 
-  /** 歌手歌曲列表结果 */
   interface ArtistSongsResult {
     list: AnyMusicInfo[]
     total?: number
@@ -154,7 +138,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 歌手专辑列表结果 */
   interface ArtistAlbumsResult {
     hotAlbums: Array<{
       id: string | number
@@ -170,7 +153,6 @@ declare namespace LX {
     total?: number
   }
 
-  /** 专辑详情 */
   interface AlbumDetail {
     list: AnyMusicInfo[]
     info: {
@@ -190,7 +172,6 @@ declare namespace LX {
     }
   }
 
-  /** 用户歌单条目 */
   interface UserPlaylistItem {
     id: string | number
     name: string
@@ -201,7 +182,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 用户歌单列表结果 */
   interface UserPlaylistsResult {
     createdList?: UserPlaylistItem[]
     collectedList?: UserPlaylistItem[]
@@ -209,7 +189,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 用户信息 */
   interface UserInfo {
     name: string
     avatar?: string
@@ -218,7 +197,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 收藏专辑条目 */
   interface FavAlbumItem {
     id: string | number
     name: string
@@ -229,7 +207,6 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 收藏歌单条目 */
   interface FavPlaylistItem {
     id: string | number
     name: string
@@ -239,13 +216,11 @@ declare namespace LX {
     source: LX.OnlineSource
   }
 
-  /** 每日推荐结果 */
   interface DailyRecResult {
     list: AnyMusicInfo[]
     source: LX.OnlineSource
   }
 
-  /** 推荐歌单结果 */
   interface RecommendSonglistResult {
     list: Array<{
       id: string | number
@@ -259,25 +234,25 @@ declare namespace LX {
   }
 
   // ============================================================
-  //  子模块接口定义
+  //  Sub-module interface definitions
   // ============================================================
 
   /**
-   * 歌单模块
+   * Playlist module
    *
-   * 统一方法：getTags, getList, getListDetail, getDetailPageUrl, search
-   * 平台差异：
-   *   - kg: getSongList, getSongListRecommend, getUserListDetail（酷狗特有歌单解析）
-   *   - tx/kg: getListDetailNew（新版歌单详情）
+   * Unified methods: getTags, getList, getListDetail, getDetailPageUrl, search
+   * Platform differences:
+   *   - kg: getSongList, getSongListRecommend, getUserListDetail (KuGou-specific playlist parsing)
+   *   - tx/kg: getListDetailNew (new playlist detail)
    */
   interface SongListModule {
-    /** 获取歌单标签分类 */
+    /** Get playlist tag categories */
     getTags(retryNum?: number): Promise<{
       tags: SongListCategory[]
       hotTag: SongListTag[]
     }>
 
-    /** 获取歌单列表 */
+    /** Get playlist list */
     getList(sortId: string | number, tagId: string, page: number, retryNum?: number): Promise<{
       list: SongListItem[]
       total?: number
@@ -285,13 +260,13 @@ declare namespace LX {
       source: LX.OnlineSource
     }>
 
-    /** 获取歌单详情（歌曲列表） */
+    /** Get playlist detail (song list) */
     getListDetail(id: string | number, page: number, retryNum?: number): Promise<SongListDetail>
 
-    /** 获取歌单详情页URL */
+    /** Get playlist detail page URL */
     getDetailPageUrl(id: string | number): Promise<string> | string
 
-    /** 搜索歌单 */
+    /** Search playlists */
     search(text: string, page: number, limit?: number, retryNum?: number): Promise<{
       list: SongListItem[]
       total?: number
@@ -299,95 +274,95 @@ declare namespace LX {
       source: LX.OnlineSource
     }>
 
-    // --- wy 专有 ---
-    /** 解析歌单链接ID (wy) */
+    // --- wy specific ---
+    /** Parse playlist link ID (wy) */
     handleParseId?(link: string, retryNum?: number): Promise<string>
-    /** 获取歌单ID (wy) */
+    /** Get playlist ID (wy) */
     getListId?(id: string | number): Promise<{ id: string }>
 
-    // --- kg 专有 ---
-    /** 获取歌单列表 - 旧接口 (kg) */
+    // --- kg specific ---
+    /** Get playlist list - legacy API (kg) */
     getSongList?(sortId: string | number, tagId: string, page: number, retryNum?: number): Promise<any>
-    /** 获取推荐歌单 (kg) */
+    /** Get recommended playlists (kg) */
     getSongListRecommend?(retryNum?: number): Promise<any>
-    /** 通过链接获取用户歌单详情 (kg) */
+    /** Get user playlist detail by link (kg) */
     getUserListDetail?(link: string, page: number, retryNum?: number): Promise<SongListDetail>
-    /** 通过ID获取用户歌单详情 (kg) */
+    /** Get user playlist detail by ID (kg) */
     getUserListDetailById?(id: string, page: number, limit: number): Promise<SongListDetail>
-    /** 获取歌单信息 (kg) */
+    /** Get playlist info (kg) */
     getListInfo?(tagId: string, retryNum?: number): Promise<any>
 
-    // --- tx 专有 ---
-    /** 新版歌单详情 (tx) */
+    // --- tx specific ---
+    /** New playlist detail (tx) */
     getListDetailNew?(id: string | number, retryNum?: number): Promise<SongListDetail>
   }
 
   /**
-   * 每日推荐模块
+   * Daily recommendation module
    *
-   * 平台差异（核心推荐方法名不同，不重命名）：
-   *   - wy: getList(cookie, retryNum) → 每日推荐歌曲
-   *   - tx: getGuessRecommend(retryNum) → 猜你喜欢
-   *         getHomeFeed(page, direction, sNum, vCache, retryNum) → 首页Feed
-   *   - kg: getRecommendSongs(retryNum) → 个性化推荐
-   *         getEverydayRecommend(retryNum) → 每日推荐
+   * Platform differences (core recommendation method names differ, no renaming):
+   *   - wy: getList(cookie, retryNum) → daily recommended songs
+   *   - tx: getGuessRecommend(retryNum) → guess you like
+   *         getHomeFeed(page, direction, sNum, vCache, retryNum) → home Feed
+   *   - kg: getRecommendSongs(retryNum) → personalized recommendation
+   *         getEverydayRecommend(retryNum) → daily recommendation
    */
   interface DailyRecModule {
-    // --- wy 专有 ---
-    /** 获取每日推荐歌曲 (wy) */
+    // --- wy specific ---
+    /** Get daily recommended songs (wy) */
     getList?(cookie: string, retryNum?: number): Promise<DailyRecResult>
-    /** 保存风格化标签 (wy) */
+    /** Save stylized tag (wy) */
     saveStylizedTag?(cookie: string, categoryId: string, tagIds: string, retryNum?: number): Promise<any>
-    /** 获取风格化推荐 (wy) */
+    /** Get stylized recommendations (wy) */
     getStylizedList?(cookie: string, retryNum?: number): Promise<any>
-    /** 获取推荐歌单 (wy) */
+    /** Get recommended playlists (wy) */
     getRecPlaylists?(cookie: string, retryNum?: number): Promise<RecommendSonglistResult>
-    /** 获取相似歌曲 (wy) */
+    /** Get similar songs (wy) */
     getSimilarSongs?(songId: string | number, limit?: number, offset?: number, retryNum?: number): Promise<DailyRecResult>
-    /** 获取心动模式列表 (wy) */
+    /** Get heartbeat mode list (wy) */
     getHeartbeatModeList?(cookie: string, playlistId?: string, songId?: string, retryNum?: number): Promise<DailyRecResult>
 
-    // --- tx 专有 ---
-    /** 猜你喜欢推荐 (tx) */
+    // --- tx specific ---
+    /** Guess you like recommendation (tx) */
     getGuessRecommend?(retryNum?: number): Promise<DailyRecResult>
-    /** 获取首页Feed (tx) */
+    /** Get home feed (tx) */
     getHomeFeed?(page?: number, direction?: number, sNum?: number, vCache?: any[], retryNum?: number): Promise<DailyRecResult>
-    /** 雷达推荐 (tx) */
+    /** Radar recommendation (tx) */
     getRadarRecommend?(page?: number, retryNum?: number): Promise<DailyRecResult>
-    /** 推荐歌单 (tx) */
+    /** Recommended playlists (tx) */
     getRecommendSonglist?(page?: number, num?: number, retryNum?: number): Promise<RecommendSonglistResult>
-    /** 推荐新歌 (tx) */
+    /** Recommended new songs (tx) */
     getRecommendNewsong?(retryNum?: number): Promise<DailyRecResult>
-    /** 相似歌曲 (tx) */
+    /** Similar songs (tx) */
     getSimilarSongs?(songMid: string, limit?: number, retryNum?: number): Promise<DailyRecResult>
 
-    // --- kg 专有 ---
-    /** 个性化推荐 (kg) */
+    // --- kg specific ---
+    /** Personalized recommendation (kg) */
     getRecommendSongs?(retryNum?: number): Promise<DailyRecResult>
-    /** 每日推荐 (kg) */
+    /** Daily recommendation (kg) */
     getEverydayRecommend?(retryNum?: number): Promise<DailyRecResult>
-    /** 历史推荐 (kg) */
+    /** History recommendation (kg) */
     getHistoryRecommend?(mode?: string, date?: string, historyName?: string, retryNum?: number): Promise<DailyRecResult>
-    /** 风格推荐 (kg) */
+    /** Style recommendation (kg) */
     getStyleRecommend?(tagIds?: string, retryNum?: number): Promise<DailyRecResult>
-    /** 新歌速递 (kg) */
+    /** New song express (kg) */
     getNewSongs?(retryNum?: number): Promise<DailyRecResult>
   }
 
   /**
-   * 歌手模块
+   * Artist module
    *
-   * 统一方法：getDetail, getSongs, getAlbums, getSimilar
-   * 平台差异：
-   *   - 参数名不同：wy 用 id，tx 用 artistMid，kg 用 singerid
-   *   - tx 额外：getSingerDesc, getAlbumSongCount
-   *   - kg：getSimilar 暂不支持（返回空数组）
+   * Unified methods: getDetail, getSongs, getAlbums, getSimilar
+   * Platform differences:
+   *   - Parameter names differ: wy uses id, tx uses artistMid, kg uses singerid
+   *   - tx extras: getSingerDesc, getAlbumSongCount
+   *   - kg: getSimilar not yet supported (returns empty array)
    */
   interface ArtistModule {
-    /** 获取歌手详情 */
+    /** Get artist detail */
     getDetail(id: string | number, retryNum?: number): Promise<ArtistDetail>
 
-    /** 获取歌手歌曲 */
+    /** Get artist songs */
     getSongs(
       id: string | number,
       order?: string,
@@ -396,7 +371,7 @@ declare namespace LX {
       retryNum?: number
     ): Promise<ArtistSongsResult>
 
-    /** 获取歌手专辑 */
+    /** Get artist albums */
     getAlbums(
       id: string | number,
       limit?: number,
@@ -404,85 +379,84 @@ declare namespace LX {
       retryNum?: number
     ): Promise<ArtistAlbumsResult>
 
-    /** 获取相似歌手 */
+    /** Get similar artists */
     getSimilar(id: string | number, retryNum?: number): Promise<ArtistDetail[] | { artists: ArtistDetail[] }>
 
-    // --- tx 专有 ---
-    /** 获取歌手描述 (tx) */
+    // --- tx specific ---
+    /** Get artist description (tx) */
     getSingerDesc?(artistMid: string, retryNum?: number): Promise<string>
-    /** 获取专辑歌曲数量 (tx) */
+    /** Get album song count (tx) */
     getAlbumSongCount?(albumMid: string, retryNum?: number): Promise<number>
   }
 
   /**
-   * 专辑模块
+   * Album module
    *
-   * 统一方法：getAlbum
-   * 平台差异：
-   *   - tx: getAlbumDetail（获取原始详情数据）
-   *   - kg: getAlbumInfo, getAlbumDetail（拆分为信息+列表两个接口）
+   * Unified methods: getAlbum
+   * Platform differences:
+   *   - tx: getAlbumDetail (get raw detail data)
+   *   - kg: getAlbumInfo, getAlbumDetail (split into info + list two APIs)
    */
   interface AlbumModule {
-    /** 获取专辑歌曲列表+详情（统一入口） */
+    /** Get album song list + detail (unified entry) */
     getAlbum(id: string | number, retryNum?: number): Promise<AlbumDetail>
 
-    // --- tx 专有 ---
-    /** 获取专辑原始详情数据 (tx) */
+    // --- tx specific ---
+    /** Get album raw detail data (tx) */
     getAlbumDetail?(albumMid: string, retryNum?: number): Promise<any>
 
-    // --- kg 专有 ---
-    /** 获取专辑信息 (kg) */
+    // --- kg specific ---
+    /** Get album info (kg) */
     getAlbumInfo?(id: string | number): Promise<any>
-    /** 获取专辑歌曲列表 (kg) */
+    /** Get album song list (kg) */
     getAlbumDetail?(id: string | number, page?: number, limit?: number): Promise<any>
   }
 
   /**
-   * 用户模块（歌单同步）
+   * User module (playlist sync)
    *
-   * 平台差异显著，方法名和参数各不相同：
-   *   - wy: manipulatePlaylistTracks(op, pid, tracks) 统一增删
-   *   - tx: addSongToPlaylist / removeSongFromPlaylist 分离增删
-   *   - kg: 通过 kg/utils/api.ts 适配，方法签名含 cookie
+   * Platform differences are significant, method names and parameters vary:
+   *   - wy: manipulatePlaylistTracks(op, pid, tracks) unified add/remove
+   *   - tx: addSongToPlaylist / removeSongFromPlaylist separate add/remove
+   *   - kg: adapted via kg/utils/api.ts, method signatures include cookie
    */
   interface UserModule {
-    // ====== 歌单管理 ======
 
-    /** 获取用户歌单列表 */
+    /** Get user playlists */
     getUserPlaylists(
       ...args: [uid?: string | number, cookie?: string, retryNum?: number] | [retryNum?: number] | [cookie?: string]
     ): Promise<UserPlaylistsResult>
 
-    /** 创建歌单 */
+    /** Create playlist */
     createPlaylist?(
       name: string,
       privacyOrRetry?: number | string,
       retryNum?: number
     ): Promise<any>
 
-    /** 删除歌单 */
+    /** Delete playlist */
     deletePlaylist?(
       id: string | number,
       retryNum?: number
     ): Promise<any>
 
-    /** 添加歌曲到歌单 */
+    /** Add songs to playlist */
     addSongToPlaylist?(
       ...args:
-        | [pid: string | number, tracks: any[], retryNum?: number]           // wy: manipulatePlaylistTracks('add', ...)
-        | [listId: string | number, songMids: string[], retryNum?: number]    // tx
-        | [cookie: string, listId: string | number, songInfo: any]            // kg
+        | [pid: string | number, tracks: any[], retryNum?: number]
+        | [listId: string | number, songMids: string[], retryNum?: number]
+        | [cookie: string, listId: string | number, songInfo: any]
     ): Promise<any>
 
-    /** 从歌单删除歌曲 */
+    /** Remove songs from playlist */
     removeSongsFromPlaylist?(
       ...args:
-        | [pid: string | number, tracks: any[], retryNum?: number]            // wy: manipulatePlaylistTracks('del', ...)
-        | [listId: string | number, songMids: string[], retryNum?: number]    // tx
-        | [cookie: string, listId: string | number, fileHash: string]         // kg
+        | [pid: string | number, tracks: any[], retryNum?: number]
+        | [listId: string | number, songMids: string[], retryNum?: number]
+        | [cookie: string, listId: string | number, fileHash: string]
     ): Promise<any>
 
-    /** 操作歌单歌曲 - 增删统一入口 (wy) */
+    /** Manipulate playlist tracks - unified add/remove entry (wy) */
     manipulatePlaylistTracks?(
       op: 'add' | 'del',
       pid: string | number,
@@ -490,7 +464,7 @@ declare namespace LX {
       retryNum?: number
     ): Promise<any>
 
-    /** 获取歌单歌曲列表 */
+    /** Get playlist song list */
     getPlaylistSongs?(
       cookie: string,
       listId: string | number,
@@ -498,204 +472,194 @@ declare namespace LX {
       limit?: number
     ): Promise<{ list: AnyMusicInfo[]; total?: number }>
 
-    /** 获取歌单详情 (tx) */
+    /** Get playlist detail (tx) */
     getPlaylistDetail?(
       disstid: string | number,
       retryNum?: number
     ): Promise<SongListDetail>
 
-    // ====== 收藏/订阅 ======
-
-    /** 收藏歌单 */
+    /** Subscribe/unsubscribe playlist */
     subPlaylist?(id: string | number, isSub: boolean, retryNum?: number): Promise<any>
 
-    /** 取消收藏歌单 */
+    /** Unsubscribe playlist */
     unsubscribePlaylist?(
       ...args:
-        | [cookie: string, listid: string | number]    // kg
-        | [id: string | number, isSub: boolean]        // wy
+        | [cookie: string, listid: string | number]
+        | [id: string | number, isSub: boolean]
     ): Promise<any>
 
-    /** 收藏歌单 (kg) */
+    /** Subscribe playlist (kg) */
     subscribePlaylist?(
       cookie: string,
       playlistInfo: any
     ): Promise<any>
 
-    /** 获取收藏歌单列表 */
+    /** Get favorited playlists */
     getFavPlaylists?(page?: number, pageSize?: number, retryNum?: number): Promise<{
       list: FavPlaylistItem[]
       total?: number
       hasMore?: boolean
     }>
 
-    /** 获取收藏专辑列表 */
+    /** Get favorited albums */
     getFavAlbums?(page?: number, pageSize?: number, retryNum?: number): Promise<{
       list: FavAlbumItem[]
       total?: number
       hasMore?: boolean
     }>
 
-    /** 获取收藏专辑列表 - 全量 (wy) */
+    /** Get all subscribed album list - full (wy) */
     getAllSubAlbumList?(): Promise<FavAlbumItem[]>
 
-    /** 收藏/取消收藏专辑 */
+    /** Subscribe/unsubscribe album */
     subAlbum?(id: string | number, isSub: boolean, retryNum?: number): Promise<any>
 
-    // ====== 喜欢/收藏歌曲 ======
-
-    /** 喜欢/取消喜欢歌曲 */
+    /** Like/unlike song */
     likeSong?(
       ...args:
-        | [songId: string | number, like: boolean, retryNum?: number]    // wy
-        | [songMid: string, like: boolean]                                // tx
+        | [songId: string | number, like: boolean, retryNum?: number]
+        | [songMid: string, like: boolean]
     ): Promise<any>
 
-    /** 获取喜欢/收藏歌曲列表 */
+    /** Get liked song list */
     getLikedSongList?(
       uid: string | number,
       cookie: string,
       retryNum?: number
     ): Promise<AnyMusicInfo[]>
 
-    /** 获取收藏歌曲 (tx) */
+    /** Get favorited songs (tx) */
     getFavSongs?(page?: number, pageSize?: number, retryNum?: number): Promise<{
       list: AnyMusicInfo[]
       total?: number
       hasMore?: boolean
     }>
 
-    /** 获取"我喜欢"歌单ID (tx) */
+    /** Get "My Favorites" playlist ID (tx) */
     getLikedListId?(): Promise<string>
 
-    // ====== 用户信息 ======
-
-    /** 获取用户UID (wy) */
+    /** Get user UID (wy) */
     getUid?(cookie: string, retryNum?: number): Promise<string | number>
 
-    /** 获取用户信息 (tx) */
+    /** Get user info (tx) */
     getUserInfo?(retryNum?: number): Promise<UserInfo>
 
-    /** 从Cookie提取uin (tx) */
+    /** Extract uin from cookie (tx) */
     extractUin?(cookie: string): string | undefined
 
-    /** 从Cookie提取加密UIN (tx) */
+    /** Extract encrypted UIN from cookie (tx) */
     extractEuin?(cookie: string): string | undefined
 
-    // ====== 关注歌手 ======
-
-    /** 获取关注歌手列表 (wy) */
+    /** Get followed artist list (wy) */
     getSublist?(limit?: number, offset?: number, retryNum?: number): Promise<any>
 
-    /** 获取全部关注歌手 (wy) */
+    /** Get all followed artists (wy) */
     getAllSublist?(): Promise<any>
 
-    /** 关注/取消关注歌手 (wy) */
+    /** Follow/unfollow artist (wy) */
     followSinger?(id: string | number, isFollow: boolean, retryNum?: number): Promise<any>
 
-    // ====== 其他 ======
-
-    /** 歌曲打点/播放记录 (wy) */
+    /** Song scrobble/play record (wy) */
     scrobble?(songId: string | number, sourceId: string | number, duration: number, retryNum?: number): Promise<any>
 
-    /** 更新歌单信息 (wy) */
+    /** Update playlist info (wy) */
     updatePlaylist?(id: string | number, name: string, desc: string, retryNum?: number): Promise<any>
 
-    /** 获取自建歌单 (tx) */
+    /** Get user-created playlists (tx) */
     getCreatedPlaylists?(retryNum?: number): Promise<UserPlaylistsResult>
 
-    /** 获取"我喜欢"收藏音乐 (tx) */
+    /** Get "My Favorites" music (tx) */
     getFavoritesMusic?(page?: number, pageSize?: number, retryNum?: number): Promise<any>
 
-    /** 通过songmid搜索歌曲 (tx) */
+    /** Search songs by songmid (tx) */
     searchSong?(songmid: string): Promise<AnyMusicInfo | null>
 
-    /** 发送签名请求 (tx) */
+    /** Send signed request (tx) */
     sendSignedRequest?(payload: any): Promise<any>
   }
 
   /**
-   * 排行榜模块
+   * Leaderboard module
    *
-   * 统一方法：getBoards, getList
+   * Unified methods: getBoards, getList
    */
   interface LeaderboardModule {
-    /** 获取排行榜列表 */
+    /** Get leaderboard list */
     getBoards(retryNum?: number): Promise<{
       list: LeaderboardItem[]
       source: LX.OnlineSource
     }>
 
-    /** 获取排行榜歌曲 */
+    /** Get leaderboard songs */
     getList(bangid: string | number, page?: number, retryNum?: number): Promise<LeaderboardListResult>
 
-    /** 获取排行榜详情页URL */
+    /** Get leaderboard detail page URL */
     getDetailPageUrl?(id: string | number): string
   }
 
   /**
-   * 搜索模块
+   * Search module
    *
-   * 统一方法：search, searchSinger, searchAlbum
-   * 平台差异：
-   *   - wy: musicSearch 为内部方法（首字母小写），search 为对外方法
-   *   - tx: musicSearch 为内部方法，search 为对外方法
-   *   - kg: musicSearch 为内部方法，search 为对外方法
+   * Unified methods: search, searchSinger, searchAlbum
+   * Platform differences:
+   *   - wy: musicSearch is internal method (lowercase first letter), search is public method
+   *   - tx: musicSearch is internal method, search is public method
+   *   - kg: musicSearch is internal method, search is public method
    */
   interface MusicSearchModule {
-    /** 搜索歌曲 */
+    /** Search songs */
     search(str: string, page?: number, limit?: number, retryNum?: number, options?: Record<string, any>): Promise<MusicSearchResult>
 
-    /** 搜索歌手 */
+    /** Search artists */
     searchSinger(str: string, page?: number, limit?: number, retryNum?: number): Promise<SingerSearchResult>
 
-    /** 搜索专辑 */
+    /** Search albums */
     searchAlbum(str: string, page?: number, limit?: number, retryNum?: number): Promise<AlbumSearchResult>
   }
 
   /**
-   * 热搜模块
+   * Hot search module
    *
-   * 统一方法：getList
+   * Unified methods: getList
    */
   interface HotSearchModule {
-    /** 获取热搜词列表 */
+    /** Get hot search term list */
     getList(retryNum?: number): Promise<HotSearchResult>
   }
 
   /**
-   * 评论模块
+   * Comment module
    *
-   * 统一方法：getComment, getHotComment
-   * 平台差异：
-   *   - wy: sendComment, replyComment, deleteComment（可发送/回复/删除评论）
-   *   - kg: getReplyComment（可获取楼中楼回复）
+   * Unified methods: getComment, getHotComment
+   * Platform differences:
+   *   - wy: sendComment, replyComment, deleteComment (can send/reply/delete comments)
+   *   - kg: getReplyComment (can get nested replies)
    */
   interface CommentModule {
-    /** 获取评论 */
+    /** Get comments */
     getComment(
       musicInfo: AnyMusicInfo,
       page?: number,
       limit?: number
     ): Promise<CommentResult>
 
-    /** 获取热门评论 */
+    /** Get hot comments */
     getHotComment(
       musicInfo: AnyMusicInfo,
       page?: number,
       limit?: number
     ): Promise<CommentResult>
 
-    // --- wy 专有 ---
-    /** 发送评论 (wy) */
+    // --- wy specific ---
+    /** Send comment (wy) */
     sendComment?(songmid: string, content: string, retryNum?: number): Promise<any>
-    /** 回复评论 (wy) */
+    /** Reply to comment (wy) */
     replyComment?(songmid: string, content: string, commentId: string | number, retryNum?: number): Promise<any>
-    /** 删除评论 (wy) */
+    /** Delete comment (wy) */
     deleteComment?(songmid: string, commentId: string | number, retryNum?: number): Promise<any>
 
-    // --- kg 专有 ---
-    /** 获取楼中楼回复 (kg) */
+    // --- kg specific ---
+    /** Get nested replies (kg) */
     getReplyComment?(
       musicInfo: AnyMusicInfo,
       replyId: string | number,
@@ -705,17 +669,17 @@ declare namespace LX {
   }
 
   // ============================================================
-  //  主模块接口
+  //  Main module interface
   // ============================================================
 
   /**
-   * 音乐源模块 — 统一导出结构
+   * Music source module — unified export structure
    *
-   * wy / tx / kg 三个平台的 index.js 导出对象均须实现此接口。
-   * 各子模块通过可选属性(?)兼容平台差异，保证统一访问的同时不丢失特有功能。
+   * The index.js export objects of wy / tx / kg all must implement this interface.
+   * Each sub-module uses optional properties (?) to accommodate platform differences,
+   * ensuring unified access without losing platform-specific features.
    */
   interface MusicSourceModule {
-    // --- 功能模块 ---
     leaderboard: LeaderboardModule
     songList: SongListModule
     musicSearch: MusicSearchModule
@@ -724,36 +688,36 @@ declare namespace LX {
     artist: ArtistModule
     dailyRec: DailyRecModule
 
-    /** 专辑模块（wy 当前未挂载，标准化后须挂载） */
+    /** Album module (wy not yet mounted, must be mounted after standardization) */
     album?: AlbumModule
 
-    /** 用户模块（wy/kg 当前未挂载，标准化后须挂载） */
+    /** User module (wy/kg not yet mounted, must be mounted after standardization) */
     user?: UserModule
 
-    // --- Cookie 模块（wy 专有） ---
+    // --- Cookie module (wy specific) ---
     cookie?: {
-      /** 获取Cookie相关操作 */
+      /** Get cookie-related operations */
       [key: string]: any
     }
 
-    // --- 播放相关 ---
-    /** 获取音乐播放URL */
+    // --- Playback related ---
+    /** Get music playback URL */
     getMusicUrl(songInfo: AnyMusicInfo, type: string): Promise<LX.Music.MusicUrlInfo>
 
-    /** 获取歌词 */
+    /** Get lyrics */
     getLyric(songInfo: AnyMusicInfo): Promise<LX.Music.LyricInfo>
 
-    /** 获取歌曲封面图 */
+    /** Get song cover image */
     getPic(songInfo: AnyMusicInfo): Promise<string>
 
-    /** 获取歌曲详情页URL */
+    /** Get song detail page URL */
     getMusicDetailPageUrl(songInfo: AnyMusicInfo): string
   }
 
   /**
-   * 音乐源模块注册表
+   * Music source module registry
    *
-   * 通过 musicSdk[source] 访问对应平台的模块实例
+   * Access platform module instances via musicSdk[source]
    */
   interface MusicSdkRegistry {
     wy: MusicSourceModule

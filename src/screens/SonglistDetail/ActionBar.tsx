@@ -24,7 +24,6 @@ export default memo(({ onBack }: { onBack: () => void }) => {
   }
 
   const handleCollection = () => {
-    // 优先使用 songlistState 中存储的歌单名称，其次使用 info.name，最后使用默认值
     const name = songlistState.listDetailInfo.info?.name || info.name || '未命名歌单'
     console.log('[ActionBar] 收藏按钮点击', { id: info.id, source: info.source, name })
     void handleCollect(info.id, info.source, name)

@@ -174,7 +174,6 @@ const VersionModal = ({ componentId }: { componentId: string }) => {
     )
     setIgnoreBtn(ignoreBtnConfig)
 
-    // 控制手动更新按钮显示
     if (versionInfo.isLatest) {
       setManualUpdateBtn({ show: false })
     } else if (versionInfo.isUnknown) {

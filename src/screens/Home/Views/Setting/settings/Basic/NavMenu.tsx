@@ -193,7 +193,6 @@ export default memo(() => {
 
   const [localOrder, setLocalOrder] = useState<NAV_ID_Type[]>(() => {
     const order = navOrder || NAV_MENUS.map(m => m.id);
-    // 确保新增的菜单项能够显示
     const allMenuIds = NAV_MENUS.map(m => m.id);
     const missingIds = allMenuIds.filter(id => !order.includes(id));
     if (missingIds.length > 0) {

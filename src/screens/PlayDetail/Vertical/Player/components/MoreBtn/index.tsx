@@ -32,11 +32,8 @@ export default memo(({ componentId }: { componentId: string }) => {
   const playMusicInfo = usePlayMusicInfo();
   const isOneDrive = isOneDriveMusicInfo(playMusicInfo.musicInfo);
 
-  // 监听歌曲变化，以便在菜单打开时能重新渲染以获取最新的“喜欢”状态
   useEffect(() => {
     const handleMusicChange = () => {
-      // 这是一个空的回调，目的只是为了触发组件的重新渲染
-      // 以便 useMemo 能够重新计算菜单项
     };
     global.state_event.on('playerMusicInfoChanged', handleMusicChange);
     global.state_event.on('wyLikedListChanged', handleMusicChange);
@@ -208,12 +205,9 @@ export default memo(({ componentId }: { componentId: string }) => {
 
 const styles = createStyle({
   container: {
-    // flexShrink: 0,
-    // flexGrow: 0,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    // backgroundColor: 'rgba(0,0,0,0.1)',
   },
 })

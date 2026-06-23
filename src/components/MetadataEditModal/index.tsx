@@ -111,8 +111,6 @@ export default forwardRef<MetadataEditType, MetadataEditProps>((props, ref) => {
       if (_metadata.lyric != metadata.current.lyric) {
         isUpdated ||= true
         await writeLyric(filePath.current, _metadata.lyric)
-        // 同时保存到缓存，这样播放器下次使用时就能读取到编辑过的歌词
-        // 如果有传入完整的 musicInfo，使用它的 id（特别是 WebDAV 音乐）
         const lyricMusicInfo: any = musicInfoRef.current || {
           id: filePath.current,
           name: _metadata.name,

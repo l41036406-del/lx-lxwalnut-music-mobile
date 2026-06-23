@@ -34,7 +34,6 @@ const useActive = (id: string) => {
   return isActive
 }
 
-// 内置源项组件（无拖拽）
 const BuiltInItem = ({
   id,
   name,
@@ -291,7 +290,6 @@ export default memo(() => {
     modalRef.current?.show()
   }
 
-  // 拖拽排序状态
   const heightsRef = useRef<number[]>([])
   const animsRef = useRef<DragAnim[]>([])
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
@@ -299,7 +297,6 @@ export default memo(() => {
   const targetIndexRef = useRef<number | null>(null)
   const lastTargetRef = useRef<number | null>(null)
 
-  // 同步动画值数组长度与列表长度
   if (animsRef.current.length !== userApiList.length) {
     if (animsRef.current.length < userApiList.length) {
       for (let i = animsRef.current.length; i < userApiList.length; i++) {

@@ -45,12 +45,10 @@ export default memo(({ componentId }: { componentId: string }) => {
   const isOneDrive = isOneDriveMusicInfo(playMusicInfo.musicInfo)
   const enabledLyric = useSettingValue('desktopLyric.enable')
 
-  // BUG1: 歌词按钮 - 打开/关闭桌面歌词（参考 DesktopLyricBtn）
   const handleLyricPress = useCallback(() => {
     desktopLyricEnableRef.current?.setEnabled(!enabledLyric)
   }, [enabledLyric])
 
-  // BUG3: 下载按钮 - 显示下载弹窗（参考 MoreBtn/index.tsx onDownload）
   const handleDownloadPress = useCallback(() => {
     const info = playerState.playMusicInfo.musicInfo
     if (!info) return
@@ -60,7 +58,6 @@ export default memo(({ componentId }: { componentId: string }) => {
     }
   }, [])
 
-  // BUG2: 评论按钮 - 使用 componentId 而非 commonState
   const handleCommentPress = useCallback(() => {
     navigations.pushCommentScreen(componentId)
   }, [componentId])

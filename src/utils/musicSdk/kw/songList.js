@@ -52,7 +52,6 @@ export default {
       return this.filterTagInfo(body.data)
     })
   },
-  // 获取标签
   getHotTag(tryNum = 0) {
     if (this._requestObj_hotTags) this._requestObj_hotTags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -82,7 +81,6 @@ export default {
     }))
   },
 
-  // 获取列表数据
   getList(sortId, tagId, page, tryNum = 0) {
     if (this._requestObj_list) this._requestObj_list.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -120,7 +118,7 @@ export default {
   },
 
   /**
-   * 格式化播放数量
+   * Format play count
    * @param {*} num
    */
   formatPlayCount(num) {

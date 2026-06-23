@@ -1,4 +1,3 @@
-// 文件路径: src/screens/Home/Views/Setting/settings/Download/DownloadPath.tsx
 import { memo, useRef } from 'react'
 import { View } from 'react-native'
 import SubTitle from '../../components/SubTitle'
@@ -41,7 +40,6 @@ export default memo(() => {
     <>
       <SubTitle title={t('setting_download_path')}>
         <Text style={styles.path} numberOfLines={2}>
-          {/* 修改此处，显示具体路径 */}
           {t('setting_download_path_label', { path: downloadPath || defaultDownloadPath })}
         </Text>
         <View style={styles.btns}>

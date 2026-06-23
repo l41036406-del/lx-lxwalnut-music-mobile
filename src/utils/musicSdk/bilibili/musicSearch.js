@@ -108,7 +108,6 @@ function formatMedia(result) {
     pic: result.pic?.startsWith("//") ? `http:${result.pic}` : result.pic,
     duration: durationToSec(result.duration),
     tags: result.tag?.split(","),
-    // 保存可能用于排序的字段
     play: result.play,
     view: result.view,
     like: result.like,
@@ -153,7 +152,6 @@ const musicSearchModule = {
     const enableMultiPage = settingState.setting['common.bilibili_multi_page'] !== false
     log.info('[Bilibili Search] 多P模式: ' + (enableMultiPage ? '开启' : '关闭'))
 
-    // 并行获取所有视频详情，提高搜索速度
     log.info('[Bilibili Search] 开始并行获取视频详情...')
     const videoDetailsPromises = sortedResults.map(item => {
       const bvid = item.bvid
@@ -180,11 +178,9 @@ const musicSearchModule = {
       const aid = item.aid
       const pages = videoDetail?.data?.pages
       
-      // 获取第一个P的时长和cid（用于单P模式）
       const firstPageDuration = pages?.[0]?.duration || videoDetail?.data?.duration || item.duration
       const firstPageCid = videoDetail?.data?.cid || pages?.[0]?.cid || item.cid
       
-      // 判断是否需要拆分多P：开启多P且有多个分P
       const isMultiPage = enableMultiPage && pages && Array.isArray(pages) && pages.length > 1
       
       if (isMultiPage) {
@@ -220,7 +216,6 @@ const musicSearchModule = {
           partIndex++
         }
       } else {
-        // 单P模式：使用第一个P的时长（而非总时长）
         const musicInfo = {
           name: item.title || '未知歌曲',
           singer: item.artist || '未知歌手',
@@ -274,7 +269,7 @@ const musicSearchModule = {
       const params = {
         context: "",
         page,
-        order: "", // 默认排序
+        order: "",
         page_size: limit,
         keyword,
         duration: "",

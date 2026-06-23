@@ -16,21 +16,6 @@ const kw = {
   _musicInfoPromiseCancelFn: null,
   _musicPicRequestObj: null,
   _musicPicPromiseCancelFn: null,
-  // context: null,
-
-  // init(context) {
-  //   if (this.isInited) return
-  //   this.isInited = true
-  //   this.context = context
-
-  //   // this.musicSearch.search('我又想你了').then(res => {
-  //   //   console.log(res)
-  //   // })
-
-  //   // this.getMusicUrl('62355680', '320k').then(url => {
-  //   //   console.log(url)
-  //   // })
-  // },
 
   tipSearch,
   musicSearch,
@@ -39,28 +24,20 @@ const kw = {
   hotSearch,
   comment,
   getLyric(songInfo, isGetLyricx) {
-    // let singer = songInfo.singer.indexOf('、') > -1 ? songInfo.singer.split('、')[0] : songInfo.singer
     return lyric.getLyric(songInfo, isGetLyricx)
   },
   handleMusicInfo(songInfo) {
     return this.getMusicInfo(songInfo).then((info) => {
-      // console.log(JSON.stringify(info))
       songInfo.name = info.name
       songInfo.singer = formatSinger(info.artist)
       songInfo.img = info.pic
       songInfo.albumName = info.album
       return songInfo
-      // return Object.assign({}, songInfo, {
-      //   name: info.name,
-      //   singer: formatSinger(info.artist),
-      //   img: info.pic,
-      //   albumName: info.album,
-      // })
     })
   },
 
   getMusicUrl(songInfo, type) {
-    const qualityToRequest = resolveQualityAlias('kw', type); // 2. 解析音质
+    const qualityToRequest = resolveQualityAlias('kw', type);
     return apis('kw').getMusicUrl(songInfo, qualityToRequest);
   },
 
@@ -96,10 +73,6 @@ const kw = {
   getMusicDetailPageUrl(songInfo) {
     return `http://www.kuwo.cn/play_detail/${songInfo.songmid}`
   },
-
-  // init() {
-  //   return getToken()
-  // },
 }
 
 export default kw

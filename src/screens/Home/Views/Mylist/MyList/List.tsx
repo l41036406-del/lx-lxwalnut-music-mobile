@@ -32,7 +32,6 @@ type FlatListType = FlatListProps<LX.List.MyListInfo>
 
 const ITEM_HEIGHT = scaleSizeH(40)
 
-// 固定列表项组件（用于 DEFAULT 和 LOVE）
 const FixedListItem = memo(({
   item,
   index,

@@ -26,25 +26,6 @@ export default ({ children }: Props) => {
   const blur = useSettingValue('theme.blur');
   // const BLUR_RADIUS = Math.max(scaleSizeAbsHR(blur), 10)
   const BLUR_RADIUS = blur
-  // const [wh, setWH] = useState<{ width: number | string, height: number | string }>({ width: '100%', height: Dimensions.get('screen').height })
-
-  // 固定宽高度 防止弹窗键盘时大小改变导致背景被缩放
-  // useEffect(() => {
-  //   const onChange = () => {
-  //     setWH({ width: '100%', height: '100%' })
-  //   }
-
-  //   const changeEvent = Dimensions.addEventListener('change', onChange)
-  //   return () => {
-  //     changeEvent.remove()
-  //   }
-  // }, [])
-  // const handleLayout = (e: LayoutChangeEvent) => {
-  //   // console.log('handleLayout', e.nativeEvent)
-  //   // console.log(Dimensions.get('screen'))
-  //   setWH({ width: e.nativeEvent.layout.width, height: Dimensions.get('screen').height })
-  // }
-  // console.log('render page content')
 
   const contentComponent = useMemo(() => {
     return (

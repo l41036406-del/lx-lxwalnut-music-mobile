@@ -15,15 +15,7 @@ export default () => {
 
     const { playIndex } = updatePlayIndex()
     if (playIndex < 0) {
-      // 歌曲被移除
-      // if (global.lx.isPlayedStop) {
-      //   stop()
-      //   setTimeout(() => {
-      //     setPlayMusicInfo(null, null)
-      //   })
-      // } else
       if (!playerState.playMusicInfo.isTempPlay) {
-        // console.log('current music removed')
         void playNext(true)
       }
     }

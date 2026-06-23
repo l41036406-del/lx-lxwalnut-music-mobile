@@ -1,9 +1,9 @@
 /**
- * 酷狗音乐纯 JavaScript 加密工具模块
- * 完全匹配 KuGouMusicApi 的 crypto.js 和 generate_simulate.js 行为
+ * KuGou Music pure JavaScript encryption utility module
+ * Fully matches KuGouMusicApi's crypto.js and generate_simulate.js behavior
  *
- * 使用 crypto-js 进行 AES 加密
- * 使用 node-forge 进行 RSA 加密
+ * Uses crypto-js for AES encryption
+ * Uses node-forge for RSA encryption
  */
 
 import CryptoJS from 'crypto-js';
@@ -11,7 +11,7 @@ import forge from 'node-forge';
 import { stringMd5 } from 'react-native-quick-md5';
 
 // ============================================================
-// 工具函数
+// Utility functions
 // ============================================================
 
 function encodeUtf8(str: string): Uint8Array {
@@ -97,21 +97,21 @@ function randomString(len: number = 16): string {
 }
 
 // ============================================================
-// AES 加密（匹配 KuGouMusicApi cryptoAesEncrypt）
+// AES encryption (matches KuGouMusicApi cryptoAesEncrypt)
 // ============================================================
 
 export interface AesEncryptResult {
-  str: string; // hex 编码的密文
-  key: string; // 原始随机密钥
+  str: string;
+  key: string;
 }
 
 /**
- * AES-CBC 加密
- * 匹配 KuGouMusicApi 的 cryptoAesEncrypt 行为
+ * AES-CBC encryption
+ * Matches KuGouMusicApi's cryptoAesEncrypt behavior
  *
- * @param data 要加密的数据（对象会被 JSON.stringify）
- * @param opt 可选的 key/iv（不传则自动生成）
- * @returns {str: hex密文, key: 原始密钥}
+ * @param data data to encrypt (objects will be JSON.stringify'd)
+ * @param opt optional key/iv (auto-generated if not provided)
+ * @returns {str: hex ciphertext, key: raw key}
  */
 export function cryptoAesEncrypt(
   data: any,
@@ -145,11 +145,11 @@ export function cryptoAesEncrypt(
 }
 
 /**
- * AES-CBC 解密（匹配 KuGouMusicApi cryptoAesDecrypt）
- * @param data hex 编码的密文
- * @param key 原始密钥字符串
- * @param iv 可选 IV（不传则从 key 派生）
- * @returns 解密后的明文
+ * AES-CBC decryption (matches KuGouMusicApi cryptoAesDecrypt)
+ * @param data hex-encoded ciphertext
+ * @param key raw key string
+ * @param iv optional IV (derived from key if not provided)
+ * @returns decrypted plaintext
  */
 export function cryptoAesDecrypt(data: string, key: string, iv?: string): string {
   let actualKey = key;
@@ -173,7 +173,7 @@ export function cryptoAesDecrypt(data: string, key: string, iv?: string): string
 }
 
 // ============================================================
-// RSA 加密（匹配 KuGouMusicApi cryptoRSAEncrypt）
+// RSA encryption (matches KuGouMusicApi cryptoRSAEncrypt)
 // ============================================================
 
 const RSA_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
@@ -197,8 +197,8 @@ function rsaRawEncrypt(buffer: Uint8Array, publicKey: forge.pki.rsa.PublicKey): 
 }
 
 /**
- * RSA 加密（零填充，匹配 KuGouMusicApi cryptoRSAEncrypt）
- * 用于 encrypt_user_info 的 pk 字段
+ * RSA encryption (zero-padding, matches KuGouMusicApi cryptoRSAEncrypt)
+ * Used for encrypt_user_info's pk field
  */
 export function cryptoRSAEncrypt(data: any, publicKeyPem?: string): string {
   const dataStr = typeof data === 'object' ? JSON.stringify(data) : String(data);
@@ -218,14 +218,13 @@ export function cryptoRSAEncrypt(data: any, publicKeyPem?: string): string {
 }
 
 /**
- * RSA-PKCS1v15 加密（匹配 KuGouMusicApi rsaEncrypt2）
- * 用于歌单删除等接口
+ * RSA-PKCS1v15 encryption (matches KuGouMusicApi rsaEncrypt2)
+ * Used for playlist deletion and other endpoints
  */
 export function rsaEncrypt2(data: string, publicKeyPem?: string): string {
   const buffer = normalizeBuffer(data);
   const pem = publicKeyPem || RSA_PUBLIC_KEY;
   const key = getForgePublicKey(pem);
-  // 将 Uint8Array 转为 binary string
   let binaryStr = '';
   for (let i = 0; i < buffer.length; i++) binaryStr += String.fromCharCode(buffer[i]);
   const encrypted = key.encrypt(binaryStr, 'RSAES-PKCS1-V1_5');
@@ -233,8 +232,8 @@ export function rsaEncrypt2(data: string, publicKeyPem?: string): string {
 }
 
 /**
- * 歌单 AES 加密（匹配 KuGouMusicApi playlistAesEncrypt）
- * 生成随机6位key，用MD5派生AES密钥和IV
+ * Playlist AES encryption (matches KuGouMusicApi playlistAesEncrypt)
+ * Generates random 6-char key, derives AES key and IV via MD5
  */
 export function playlistAesEncrypt(data: any): { key: string; str: string } {
   const useData = typeof data === 'object' ? JSON.stringify(data) : String(data);
@@ -253,7 +252,7 @@ export function playlistAesEncrypt(data: any): { key: string; str: string } {
 }
 
 /**
- * 歌单 AES 解密（匹配 KuGouMusicApi playlistAesDecrypt）
+ * Playlist AES decryption (matches KuGouMusicApi playlistAesDecrypt)
  */
 export function playlistAesDecrypt(data: { str: string; key: string }): any {
   const md5Key = stringMd5(data.key);
@@ -278,7 +277,7 @@ export function playlistAesDecrypt(data: { str: string; key: string }): any {
 }
 
 // ============================================================
-// 生成 sid/edt（匹配 KuGouMusicApi generateSimulate）
+// Generate sid/edt (matches KuGouMusicApi generateSimulate)
 // ============================================================
 
 const SSA_RSA_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
@@ -400,10 +399,10 @@ function generateEDTData(opts: {
 }
 
 /**
- * 生成模拟的 sid 和 edt
- * 完全匹配 KuGouMusicApi generateSimulate 行为
+ * Generate simulated sid and edt
+ * Fully matches KuGouMusicApi generateSimulate behavior
  *
- * @returns {edt: base64密文, sid: base64密文}
+ * @returns {edt: base64 ciphertext, sid: base64 ciphertext}
  */
 export function generateSidEdt(
   mid: string,
@@ -413,7 +412,6 @@ export function generateSidEdt(
 ): { edt: string; sid: string } {
   SENTINEL = 0xffffffff - Math.floor(Math.random() * 20);
 
-  // AES-128 密钥：MD5 的前 16 字符，作为原始 UTF-8 字节使用
   const key = stringMd5(randomString(16)).substring(0, 16);
 
   const points = ri(30, 60);
@@ -430,16 +428,14 @@ export function generateSidEdt(
   const data = generateEDTData({ startX, startY, endX, endY, mousePoints: points });
   const plaintext = `mid=${mid};userid=${userid};dfid=${dfid};webgl=${webgl};webdriver=0;ts=${ts};data=${data}`;
 
-  console.log('[KuGou Crypto] generateSidEdt 明文长度:', plaintext.length);
+  console.log('[KuGou Crypto] generateSidEdt plaintext length:', plaintext.length);
 
-  // AES-128-CBC 加密 → EDT (base64)
   const edtData = CryptoJS.AES.encrypt(plaintext, CryptoJS.enc.Utf8.parse(key), {
     iv: CryptoJS.enc.Utf8.parse(SSA_AES_IV),
     mode: CryptoJS.mode.CBC,
     padding: CryptoJS.pad.Pkcs7,
   }).toString();
 
-  // RSA-OAEP SHA-256 加密 AES 密钥 → SID (base64)
   const rsaKey = forge.pki.publicKeyFromPem(SSA_RSA_PUBLIC_KEY) as forge.pki.rsa.PublicKey;
   const encrypted = rsaKey.encrypt(key, 'RSA-OAEP', {
     md: forge.md.sha256.create(),

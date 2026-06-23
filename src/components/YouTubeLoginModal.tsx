@@ -1,5 +1,3 @@
-// src/components/YouTubeLoginModal.tsx (新建，基于 WebLoginModal.tsx 修改)
-
 import { forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import Modal, { type ModalType } from '@/components/common/Modal';
@@ -11,9 +9,7 @@ import Text from '@/components/common/Text';
 import { toast } from '@/utils/tools';
 import theme from "@/core/init/theme.ts";
 
-// [+] 修改登录地址为 YouTube Music
 const LOGIN_URL = 'https://music.youtube.com/';
-// [+] 修改成功标志
 const SUCCESS_URL_FLAG = 'music.youtube.com';
 
 export interface YouTubeLoginModalType {
@@ -28,7 +24,6 @@ const Header = ({ onClose }: { onClose: () => void }) => {
       <TouchableOpacity onPress={onClose} style={styles.backButton}>
         <Icon name="chevron-left" size={24} color={theme['c-font']} />
       </TouchableOpacity>
-      {/* [+] 修改标题 */}
       <Text size={18}>YouTube 登录</Text>
       <View style={styles.backButton} />
     </View>
@@ -64,11 +59,9 @@ export default forwardRef<YouTubeLoginModalType, {}>((props, ref) => {
     if (loggedInRef.current) return;
 
     const cookie = event.nativeEvent.data;
-    // [+] 修改为检查 YouTube 登录所需的关键 Cookie
     if (!cookie || !cookie.includes('SAPISID=')) return;
 
     loggedInRef.current = true;
-    // [+] 触发 yt-cookie-set 事件
     global.app_event.emit('yt-cookie-set', cookie);
     toast('登录成功，已自动获取Cookie！');
     handleClose();

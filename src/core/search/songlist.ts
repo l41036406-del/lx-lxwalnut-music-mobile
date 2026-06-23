@@ -22,7 +22,6 @@ export const search = async (
   page: number,
   sourceId: Source
 ): Promise<ListInfoItem[]> => {
-  // 哔哩哔哩平台暂不支持歌单搜索
   if (sourceId === 'bilibili') {
     toast('哔哩哔哩音源暂不支持歌单搜索')
     return []

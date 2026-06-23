@@ -151,7 +151,6 @@ export default ({ info, onBack, initialScrollToInfo }: { info: ListInfoItem, onB
   }, [info.id, info.source])
 
   useEffect(() => {
-    // 打开歌单详情时强制刷新（获取实时数据）
     console.log(`[SonglistDetail] useEffect refreshList, musicListRef:`, !!musicListRef.current)
     refreshList(true)
   }, [refreshList])
@@ -161,11 +160,9 @@ export default ({ info, onBack, initialScrollToInfo }: { info: ListInfoItem, onB
       if (info.source === source && String(info.id) === String(listId)) {
         console.log(`歌单详情页 ${listId} 收到更新事件`)
         if (addedSong) {
-          // 乐观更新：直接添加到本地列表
           console.log(`[乐观更新] 添加歌曲: ${addedSong.name || addedSong.songname}`)
           musicListRef.current?.addSongToList(addedSong)
         } else {
-          // 删除歌曲：刷新列表
           setTimeout(() => {
             refreshList(true)
           }, 100)
@@ -180,16 +177,12 @@ export default ({ info, onBack, initialScrollToInfo }: { info: ListInfoItem, onB
 
   useEffect(() => {
     const onBackPress = () => {
-      // 获取状态管理中记录的最后一个（即最顶层）屏幕信息
       const lastScreen = commonState.componentIds[commonState.componentIds.length - 1]
 
-      // 如果最顶层的屏幕不是 Home 屏幕，则意味着有其他屏幕（如歌手详情页）被 push 到栈顶
-      // 此时不应处理返回事件，应交由 react-native-navigation 默认处理（即 pop 顶层屏幕）
       if (lastScreen && lastScreen.name !== COMPONENT_IDS.home) {
         return false
       }
 
-      // 否则，处理返回事件，关闭当前的歌单详情浮层
       handleBack()
       return true
     }

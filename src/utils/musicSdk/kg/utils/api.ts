@@ -1,6 +1,6 @@
 /**
- * 酷狗音乐 API 工具模块
- * 直接在应用内实现酷狗 API 调用，无需外部服务器
+ * KuGou Music API utility module
+ * Implements KuGou API calls directly within the app, no external server required
  */
 
 import axios from 'axios';
@@ -8,7 +8,7 @@ import { stringMd5 } from 'react-native-quick-md5';
 import { Buffer } from '@craftzdog/react-native-buffer';
 import { generateSidEdt, cryptoAesEncrypt, cryptoRSAEncrypt, cryptoAesDecrypt, rsaEncrypt2, playlistAesEncrypt, playlistAesDecrypt } from './crypto';
 
-// 酷狗 API 配置
+// KuGou API configuration
 const KG_CONFIG = {
   appid: '1005',
   clientver: '20489',
@@ -16,31 +16,26 @@ const KG_CONFIG = {
   liteClientver: '11440',
 };
 
-// API 基础 URL
+// API base URL
 const KG_API_BASE = 'https://gateway.kugou.com';
 const KG_LOGIN_BASE = 'http://login.user.kugou.com';
-// KuGouMusicApi 服务器地址（用于需要签名的接口）
-// Android 模拟器使用 10.0.2.2，真机需要替换为电脑的 IP 地址
 const KUGOU_API_SERVER = 'http://10.0.2.2:3000';
 
-// 保存上次请求的设备信息，确保同一验证流程中 mid/dfid 一致
 let cachedDevice: { headers: Record<string, string>; defaultParams: Record<string, any> } | null = null;
 
-// 签名盐值
 const ANDROID_SIGN_SALT = 'OIlwieks28dk2k092lksi2UIkp';
 
-// 日志回调函数类型
 export type LogCallback = (message: string) => void;
 
 /**
- * MD5 加密
+ * MD5 encryption
  */
 function md5(str: string): string {
   return stringMd5(str);
 }
 
 /**
- * 生成随机字符串
+ * Generate random string
  */
 function randomString(length: number = 16): string {
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -52,14 +47,14 @@ function randomString(length: number = 16): string {
 }
 
 /**
- * 生成设备标识
+ * Generate device identifier
  */
 function generateDeviceId(): string {
   return randomString(24);
 }
 
 /**
- * 生成 MID
+ * Generate MID
  */
 function generateMid(): string {
   const guid = randomString(32);
@@ -67,8 +62,8 @@ function generateMid(): string {
 }
 
 /**
- * Android 版签名
- * 签名算法：MD5(salt + 排序后的参数 + data + salt)
+ * Android signature
+ * Signature algorithm: MD5(salt + sorted params + data + salt)
  */
 export function signAndroidParams(params: Record<string, any>, data?: string, onLog?: LogCallback): string {
   const sortedKeys = Object.keys(params).sort();
@@ -79,7 +74,6 @@ export function signAndroidParams(params: Record<string, any>, data?: string, on
     })
     .join('');
 
-  // data 是请求体的 JSON 字符串
   const dataStr = data || '';
   const signStr = `${ANDROID_SIGN_SALT}${paramsString}${dataStr}${ANDROID_SIGN_SALT}`;
   
@@ -95,7 +89,7 @@ export function signAndroidParams(params: Record<string, any>, data?: string, on
 }
 
 /**
- * 生成请求头和默认参数
+ * Generate request headers and default parameters
  */
 export function generateHeadersAndParams(): { headers: Record<string, string>; defaultParams: Record<string, any> } {
   const dfid = generateDeviceId();
@@ -127,7 +121,7 @@ export function generateHeadersAndParams(): { headers: Record<string, string>; d
 }
 
 /**
- * 发送验证码
+ * Send verification code
  */
 export async function sendCaptcha(
   mobile: string,
@@ -139,11 +133,9 @@ export async function sendCaptcha(
   };
 
   try {
-    // 如果有缓存的设备信息（验证后重试），复用相同的 mid/dfid
     const { headers, defaultParams } = cachedDevice || generateHeadersAndParams();
     log(`${cachedDevice ? '复用缓存' : '生成'}设备信息: MID=${defaultParams.mid}, dfid=${defaultParams.dfid}`);
 
-    // 首次调用时缓存设备信息
     if (!cachedDevice) {
       cachedDevice = { headers, defaultParams };
     }
@@ -154,7 +146,6 @@ export async function sendCaptcha(
       plat: 3,
     };
 
-    // 签名基于：默认参数（查询参数） + 请求体数据
     const dataStr = JSON.stringify(dataMap);
     const signature = signAndroidParams(defaultParams, dataStr, log);
     log(`生成签名: ${signature}`);
@@ -169,11 +160,11 @@ export async function sendCaptcha(
       baseURL: KG_LOGIN_BASE,
       url: '/v7/send_mobile_code',
       method: 'POST',
-      data: dataMap,  // 请求体只包含业务参数
-      params: { ...defaultParams, signature },  // signature 作为查询参数
+      data: dataMap,
+      params: { ...defaultParams, signature },
       headers: {
         ...headers,
-        Cookie: `mid=${defaultParams.mid}`,  // 添加 Cookie
+        Cookie: `mid=${defaultParams.mid}`,
       },
       timeout: 10000,
     });
@@ -182,7 +173,6 @@ export async function sendCaptcha(
     log(`响应头: ${JSON.stringify(response.headers)}`);
     log(`响应数据: ${JSON.stringify(response.data)}`);
 
-    // 检查是否需要人机验证
     const ssaCode = response.headers['ssa-code'] || response.headers['SSA-CODE'];
     if (ssaCode) {
       log(`需要人机验证: ssa-code=${ssaCode}`);
@@ -196,7 +186,7 @@ export async function sendCaptcha(
     const result = response.data;
     if (result.status === 1 || result.error_code === 0) {
       log('验证码发送成功');
-      cachedDevice = null; // 发送成功，清除缓存
+      cachedDevice = null;
       return { success: true, message: '验证码已发送' };
     } else {
       log(`发送失败: error_code=${result.error_code}, msg=${result.msg || '未知错误'}`);
@@ -216,7 +206,7 @@ export async function sendCaptcha(
 }
 
 /**
- * 手机号登录
+ * Phone number login
  */
 export async function loginByPhone(
   mobile: string,
@@ -230,12 +220,10 @@ export async function loginByPhone(
 
   try {
     const dateTime = Date.now();
-    // 复用缓存的设备信息，确保 mid/dfid 一致
     const { headers, defaultParams } = cachedDevice || generateHeadersAndParams();
 
     log(`设备信息: dfid=${defaultParams.dfid}, mid=${defaultParams.mid}, cached=${!!cachedDevice}`);
 
-    // 使用纯 JS 加密生成 pk 和 params（匹配 KuGouMusicApi 行为）
     const encrypt = cryptoAesEncrypt({ mobile: mobile, code: code });
     const pk = cryptoRSAEncrypt({ clienttime_ms: dateTime, key: encrypt.key }).toUpperCase();
     const params = encrypt.str;
@@ -254,7 +242,6 @@ export async function loginByPhone(
       params: params,
     };
 
-    // 签名基于：默认参数（查询参数） + 请求体数据
     const dataStr = JSON.stringify(dataMap);
     const signature = signAndroidParams(defaultParams, dataStr, log);
     log(`生成签名: ${signature}`);
@@ -284,7 +271,6 @@ export async function loginByPhone(
     if (result.status === 1 && result.data) {
       const data = { ...result.data };
 
-      // 处理 secu_params（加密的 token）
       if (data.secu_params) {
         try {
           const decrypted = cryptoAesDecrypt(data.secu_params, encrypt.key);
@@ -302,7 +288,7 @@ export async function loginByPhone(
 
       const { token, userid, vip_type, vip_token, t1 } = data;
       log(`登录成功: userid=${userid}, token=${token?.substring(0, 20)}...`);
-      cachedDevice = null; // 登录成功，清除缓存
+      cachedDevice = null;
       return {
         success: true,
         data: {
@@ -334,7 +320,7 @@ export async function loginByPhone(
 }
 
 /**
- * 使用 token 刷新登录状态
+ * Refresh login state using token
  */
 export async function refreshToken(
   token: string,
@@ -355,18 +341,17 @@ export async function refreshToken(
 
     const dataMap = {
       dfid: defaultParams.dfid,
-      p3: '', // 简化版本
+      p3: '',
       plat: 1,
       t1: 0,
       t2: 0,
       t3: 'MCwwLDAsMCwwLDAsMCwwLDA=',
-      pk: '', // 简化版本
-      params: '', // 简化版本
+      pk: '',
+      params: '',
       userid: userid,
       clienttime_ms: dateTime,
     };
 
-    // 签名基于：默认参数（查询参数） + 请求体数据
     const dataStr = JSON.stringify(dataMap);
     const signature = signAndroidParams(defaultParams, dataStr, log);
     log(`生成签名: ${signature}`);
@@ -379,8 +364,8 @@ export async function refreshToken(
       baseURL: KG_LOGIN_BASE,
       url: '/v5/login_by_token',
       method: 'POST',
-      data: dataMap,  // 请求体只包含业务参数
-      params: { ...defaultParams, signature },  // signature 作为查询参数
+      data: dataMap,
+      params: { ...defaultParams, signature },
       headers,
       timeout: 10000,
     });
@@ -422,7 +407,7 @@ export async function refreshToken(
 }
 
 /**
- * 获取验证信息
+ * Get verification info
  */
 export async function getVerifyInfo(
   eventid: string,
@@ -486,7 +471,7 @@ export async function getVerifyInfo(
 }
 
 /**
- * 提交验证结果
+ * Submit verification result
  */
 export async function verifyUserInfo(
   eventid: string,
@@ -505,11 +490,9 @@ export async function verifyUserInfo(
   log(`入参: eventid=${eventid}, vType=${vType}, sid长度=${sid.length}, edt长度=${edt.length}`);
 
   try {
-    // 复用缓存的设备信息，确保 mid/dfid 与 sendCaptcha 一致
     const { headers, defaultParams } = cachedDevice || generateHeadersAndParams();
     log(`设备信息: mid=${defaultParams.mid}, dfid=${defaultParams.dfid}, cached=${!!cachedDevice}`);
 
-    // 当 sid/edt 为空时，使用纯 JS 模块生成模拟行为数据
     let finalSid = sid;
     let finalEdt = edt;
     if (!finalSid || !finalEdt) {
@@ -524,7 +507,6 @@ export async function verifyUserInfo(
       }
     }
 
-    // 使用纯 JS 加密生成 pk 和 params（匹配 KuGouMusicApi 行为）
     log(`开始生成 pk/params...`);
     const encrypt = cryptoAesEncrypt({});
     const pk = cryptoRSAEncrypt({ key: encrypt.key }).toUpperCase();
@@ -563,7 +545,6 @@ export async function verifyUserInfo(
     const dataStr = JSON.stringify(dataMap);
     log(`请求体: ${dataStr.substring(0, 300)}...`);
 
-    // 签名：查询参数只有 clientver: 11510（匹配 KuGouMusicApi）
     const queryParams = { ...defaultParams, clientver: 11510 };
     const signature = signAndroidParams(queryParams, dataStr, log);
 
@@ -604,7 +585,7 @@ export async function verifyUserInfo(
 }
 
 /**
- * 构建 cookie 字符串
+ * Build cookie string
  */
 export function buildCookieString(data: {
   userid?: string;
@@ -629,7 +610,7 @@ export function buildCookieString(data: {
 }
 
 /**
- * 解析 cookie 字符串为对象
+ * Parse cookie string to object
  */
 function cookieToJson(cookie: string): Record<string, string> {
   const result: Record<string, string> = {}
@@ -642,7 +623,7 @@ function cookieToJson(cookie: string): Record<string, string> {
 }
 
 /**
- * 获取酷狗用户歌单列表
+ * Get KuGou user playlist list
  */
 export async function getUserPlaylists(
   cookie: string,
@@ -665,7 +646,6 @@ export async function getUserPlaylists(
 
   try {
     const { headers, defaultParams } = generateHeadersAndParams()
-    // 使用 Cookie 中的 dfid 和 mid
     if (cookieObj.dfid) defaultParams.dfid = cookieObj.dfid
     if (cookieObj.mid) defaultParams.mid = cookieObj.mid
 
@@ -679,7 +659,6 @@ export async function getUserPlaylists(
     }
 
     const dataStr = JSON.stringify(dataMap)
-    // 签名
     const queryParams = { ...defaultParams, plat: 1, userid: Number(userid), token }
     const signature = signAndroidParams(queryParams, dataStr, log)
 
@@ -695,7 +674,7 @@ export async function getUserPlaylists(
         mid: cookieObj.mid || headers.mid,
         'x-router': 'cloudlist.service.kugou.com',
         Cookie: `mid=${cookieObj.mid || defaultParams.mid}`,
-        'Content-Type': undefined, // 移除 Content-Type
+        'Content-Type': undefined,
       },
       timeout: 10000,
     })
@@ -724,10 +703,8 @@ export async function getUserPlaylists(
           isCollected,
         }
       })
-      // 分离自建歌单和收藏歌单
       const createdList = allList.filter((p: any) => !p.isCollected)
       const collectedList = allList.filter((p: any) => p.isCollected)
-      // 自建歌单排序：我喜欢(is_def=2)放最前，默认收藏(is_def=1)放第二
       createdList.sort((a: any, b: any) => {
         if (a.isDef === 2) return -1
         if (b.isDef === 2) return 1
@@ -735,7 +712,6 @@ export async function getUserPlaylists(
         if (b.isDef === 1) return 1
         return 0
       })
-      // 为所有封面为空的歌单获取封面（我喜欢、默认收藏等）
       const emptyCoverPlaylists = createdList.filter((p: any) => !p.cover && p.songCount > 0)
       log(`需要获取封面的歌单: ${emptyCoverPlaylists.map((p: any) => p.name).join(', ')}`)
       for (const playlist of emptyCoverPlaylists) {
@@ -768,7 +744,7 @@ export async function getUserPlaylists(
 }
 
 /**
- * 参数密钥签名（匹配 KuGouMusicApi signParamsKey）
+ * Parameter key signing (matches KuGouMusicApi signParamsKey)
  */
 function signParamsKey(data: string): string {
   const result = stringMd5(`${KG_CONFIG.appid}${ANDROID_SIGN_SALT}${KG_CONFIG.clientver}${data}`)
@@ -777,7 +753,7 @@ function signParamsKey(data: string): string {
 }
 
 /**
- * 收藏歌单 / 新建歌单
+ * Subscribe playlist / Create playlist
  */
 export async function subscribePlaylist(
   cookie: string,
@@ -786,8 +762,8 @@ export async function subscribePlaylist(
     list_create_userid: number
     list_create_listid: number
     list_create_gid?: string
-    type?: number // 0=新建, 1=收藏
-    is_pri?: number // 0=公开, 1=隐私
+    type?: number
+    is_pri?: number
   },
   onLog?: LogCallback
 ): Promise<{ success: boolean; message: string }> {
@@ -873,7 +849,7 @@ export async function subscribePlaylist(
 }
 
 /**
- * 取消收藏歌单 / 删除歌单
+ * Unsubscribe playlist / Delete playlist
  */
 export async function unsubscribePlaylist(
   cookie: string,
@@ -911,12 +887,9 @@ export async function unsubscribePlaylist(
 
     const { headers, defaultParams } = generateHeadersAndParams()
 
-    // 使用 Cookie 中的 dfid 和 mid（与 KuGouMusicApi 的 useAxios 行为一致）
     if (cookieObj.dfid) defaultParams.dfid = cookieObj.dfid
     if (cookieObj.mid) defaultParams.mid = cookieObj.mid
 
-    // 合并默认参数（dfid, mid, uuid 等）和自定义参数
-    // 注意：必须加入 token 和 userid，KuGouMusicApi 的 useAxios 会自动加入
     const paramsMap: Record<string, any> = {
       ...defaultParams,
       clienttime,
@@ -938,13 +911,12 @@ export async function unsubscribePlaylist(
       'x-router': 'cloudlist.service.kugou.com',
       Cookie: `mid=${cookieObj.mid || defaultParams.mid}`,
     }
-    delete fullHeaders['Content-Type'] // 不设置 Content-Type，让 axios 自动检测
+    delete fullHeaders['Content-Type']
     log(`请求URL: ${fullUrl}`)
     log(`请求头: ${JSON.stringify(fullHeaders)}`)
     log(`查询参数: ${JSON.stringify({ ...paramsMap, signature })}`)
     log(`请求体(加密): ${aesEncrypt.str.substring(0, 100)}...`)
 
-    // 使用 fetch 替代 axios，正确处理二进制响应
     const queryString = Object.entries({ ...paramsMap, signature })
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
       .join('&')
@@ -962,16 +934,13 @@ export async function unsubscribePlaylist(
     const uint8Array = new Uint8Array(arrayBuffer)
     log(`响应数据长度: ${uint8Array.length}`)
 
-    // 尝试解析为 JSON（未加密）或 AES 解密（加密）
     let result: any
     try {
-      // 先尝试转为文本看是否是 JSON
       const textDecoder = new TextDecoder('utf-8')
       const text = textDecoder.decode(uint8Array)
       result = JSON.parse(text)
       log(`JSON解析: ${JSON.stringify(result)}`)
     } catch {
-      // 不是 JSON，用 AES 解密
       const base64Str = Buffer.from(uint8Array).toString('base64')
       log(`Base64: ${base64Str.substring(0, 100)}...`)
       result = playlistAesDecrypt({ str: base64Str, key: aesEncrypt.key })
@@ -995,9 +964,9 @@ export async function unsubscribePlaylist(
 }
 
 /**
- * 从歌单删除歌曲
- * 接口: /v4/delete_songs
- * fileids: 歌单中歌曲的fileid数组
+ * Remove songs from playlist
+ * Endpoint: /v4/delete_songs
+ * fileids: array of fileid of songs in the playlist
  */
 export async function removeSongsFromPlaylist(
   cookie: string,
@@ -1023,7 +992,6 @@ export async function removeSongsFromPlaylist(
   try {
     const { headers, defaultParams } = generateHeadersAndParams()
 
-    // 构建 resource 数组
     const resource = fileids.map(id => ({ fileid: Number(id) }))
 
     const dataMap = {
@@ -1080,8 +1048,8 @@ export async function removeSongsFromPlaylist(
 }
 
 /**
- * 添加歌曲到酷狗歌单
- * 接口: /cloudlist.service/v6/add_song
+ * Add song to KuGou playlist
+ * Endpoint: /cloudlist.service/v6/add_song
  */
 export async function addSongToPlaylist(
   cookie: string,
@@ -1108,7 +1076,6 @@ export async function addSongToPlaylist(
     const { headers, defaultParams } = generateHeadersAndParams()
     const clienttime = Math.floor(Date.now() / 1000)
 
-    // 构建 resource 数组（与 KuGouMusicApi 一致）
     const resource = [{
       number: 1,
       name: songInfo.name || '',
@@ -1121,7 +1088,6 @@ export async function addSongToPlaylist(
       mixsongid: songInfo.mixsongid || 0,
     }];
 
-    // 请求体（与 KuGouMusicApi 一致）
     const dataMap = {
       userid: Number(userid),
       token,
@@ -1135,7 +1101,6 @@ export async function addSongToPlaylist(
 
     const dataStr = JSON.stringify(dataMap)
     
-    // 查询参数：defaultParams + 接口特定参数（不含 timestamp）
     const queryParams = {
       ...defaultParams,
       last_time: clienttime,
@@ -1144,7 +1109,6 @@ export async function addSongToPlaylist(
       token,
     }
 
-    // 签名：基于查询参数和请求体
     const signature = signAndroidParams(queryParams, dataStr, log)
 
     const fullUrl = 'https://gateway.kugou.com/cloudlist.service/v6/add_song'
@@ -1175,7 +1139,6 @@ export async function addSongToPlaylist(
     const result = response.data
     if (result.status === 1 || result.error_code === 0) {
       log('添加成功')
-      // 返回添加的歌曲信息（用于乐观更新）
       const addedSong = result.data?.info?.[0] || null
       return { success: true, message: '添加成功', song: addedSong }
     } else {
@@ -1192,8 +1155,8 @@ export async function addSongToPlaylist(
 }
 
 /**
- * 获取酷狗歌单详情（歌曲列表）
- * 使用 global_collection_id 格式
+ * Get KuGou playlist details (song list)
+ * Uses global_collection_id format
  */
 export async function getPlaylistSongs(
   cookie: string,

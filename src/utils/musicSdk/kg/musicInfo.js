@@ -115,7 +115,6 @@ export const filterMusicInfoList = (rawList) => {
 
 export const getMusicInfos = async (hashs) => {
   const rawData = await Promise.all(createGetMusicInfosTask(hashs)).then((data) => data.flat())
-  // 过滤掉 undefined 和无效数据
   const validData = rawData.filter(item => item && item.audio_info && item.audio_info.audio_id)
   return filterMusicInfoList(validData)
 }

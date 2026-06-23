@@ -1,4 +1,3 @@
-// src/components/YouTubeLoginManager.tsx (新建)
 import { useEffect, useRef, useState } from 'react';
 import YouTubeLoginModal, { type YouTubeLoginModalType } from './YouTubeLoginModal';
 
@@ -18,7 +17,6 @@ export default () => {
       }
     };
 
-    // [+] 监听 showYouTubeLogin 事件
     global.app_event.on('showYouTubeLogin', handleShow);
     return () => {
       global.app_event.off('showYouTubeLogin', handleShow);

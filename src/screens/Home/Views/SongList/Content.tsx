@@ -30,27 +30,21 @@ export default () => {
   const [headerKey, setHeaderKey] = useState(Date.now())
   const subscribedPlaylists = useWySubscribedPlaylists()
 
-  // 使用 useCallback 包裹 loadList
   const loadList = useCallback(() => {
     listRef.current?.loadList(songlistInfo.current.source, songlistInfo.current.sortId, songlistInfo.current.tagId)
   }, [])
 
   useEffect(() => {
     const onBackPress = () => {
-      // 检查当前是否正在显示歌单详情页
       if (selectedListRef.current) {
-        // 检查是否有其他原生屏幕（如歌手/专辑详情页）在Home屏幕之上
         if (commonState.componentIds.length > 1) {
-          // 有其他原生屏幕在顶部，不处理返回事件，让原生导航库来 pop
           return false;
         }
 
-        // 如果没有其他原生屏幕，说明这个返回操作是针对歌单详情页的
         setSelectedList(null);
-        return true; // 消费事件
+        return true;
       }
 
-      // 如果不在歌单详情页，则不处理返回事件
       return false;
     };
 
@@ -64,13 +58,11 @@ export default () => {
       songlistInfo.current.sortId = info.sortId
       songlistInfo.current.tagId = info.tagId
       headerBarRef.current?.setSource(info.source, info.sortId, info.tagName, info.tagId)
-      loadList() // **核心修改：调用封装好的 loadList**
+      loadList()
     })
-  }, [loadList, headerKey]) // **核心修改：添加依赖**
+  }, [loadList, headerKey])
 
-  // 用于从详情页返回时重新加载列表**
   useEffect(() => {
-    // 仅当 selectedList 从有值变为 null (即返回列表页) 时触发
     if (!selectedList) {
       setHeaderKey(Date.now())
       loadList()

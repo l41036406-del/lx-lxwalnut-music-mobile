@@ -330,7 +330,6 @@ export default {
       },
     })
     // console.log(songInfo)
-    // type 1单曲，2歌单，3电台，4酷狗码，5别人的播放队列
     let songList
     let info = songInfo.info
     switch (info.type) {
@@ -562,7 +561,6 @@ export default {
     console.log('[KuGou] [SDK] 歌单信息响应:', JSON.stringify(info).substring(0, 300))
     console.log('[KuGou] [SDK] 歌曲数量:', info.songcount)
 
-    // 优先使用网关端点获取歌曲（无 2 分钟缓存）
     let songInfo
     const totalSongs = info.songcount || 0
     try {
@@ -792,7 +790,6 @@ export default {
   },
 
   async getListDetail(id, page) {
-    // 获取歌曲列表内的音乐
     id = id.toString()
     if (id.includes('special/single/')) {
       id = id.replace(this.regExps.listDetailLink, '$1')
@@ -804,7 +801,6 @@ export default {
     } else if (id.startsWith('id_')) {
       id = id.replace('id_', '')
     } else if (id.startsWith('collection_')) {
-      // 酷狗用户歌单 global_collection_id 格式
       return this.getUserListDetail2(id)
     }
     // if ((/[?&:/]/.test(id))) id = id.replace(this.regExps.listDetailLink, '$1')
@@ -826,7 +822,6 @@ export default {
     })
   },
 
-  // 获取列表数据
   getList(sortId, tagId, page) {
     let tasks = [this.getSongList(sortId, tagId, page)]
     tasks.push(
@@ -839,7 +834,7 @@ export default {
           })
     )
     if (!tagId && page === 1 && sortId === this.sortList[0].id)
-      tasks.push(this.getSongListRecommend()) // 如果是所有类别，则顺便获取推荐列表
+      tasks.push(this.getSongListRecommend())
     return Promise.all(tasks).then(([list, info, recommendList]) => {
       if (recommendList) list.unshift(...recommendList)
       return {
@@ -849,7 +844,6 @@ export default {
     })
   },
 
-  // 获取标签
   getTags(tryNum = 0) {
     if (this._requestObj_tags) this._requestObj_tags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))

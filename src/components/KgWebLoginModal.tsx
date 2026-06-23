@@ -30,7 +30,6 @@ const Header = ({ onClose }: { onClose: () => void }) => {
   );
 };
 
-// 生成悬浮验证 HTML - 直接加载验证码，无中间页
 function generateVerifyHtml(txappid: string, ssaCode: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -47,7 +46,6 @@ body{background:transparent}
 var appid='${txappid}';
 var code='${ssaCode}';
 
-// 修复触摸事件
 (function() {
   var lastTouchEnd = 0;
   document.addEventListener('touchend', function(event) {
@@ -59,7 +57,6 @@ var code='${ssaCode}';
   }, false);
 })();
 
-// 直接加载验证码
 var s=document.createElement('script');
 s.src='https://turing.captcha.qcloud.com/TCaptcha.js';
 s.onload=function(){
@@ -100,12 +97,10 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
   const cooldownRef = useRef<NodeJS.Timeout | null>(null);
   const handleSendCodeRef = useRef<() => void>(() => {});
 
-  // 处理验证完成
   const handleVerifyComplete = useCallback((success: boolean) => {
     setShowVerify(false);
     if (success) {
       console.log('[KgLogin] 人机验证通过，自动重新发送验证码...');
-      // 验证成功后自动重新发送验证码
       setTimeout(() => {
         handleSendCodeRef.current?.();
       }, 500);
@@ -115,7 +110,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
     }
   }, []);
 
-  // 处理验证消息
   const handleVerifyMessage = useCallback(async (event: any) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
@@ -172,7 +166,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
     modalRef.current?.setVisible(false);
   }, []);
 
-  // 启动冷却时间（2秒防高频发送）
   const startCooldown = useCallback(() => {
     setCooldown(2);
     cooldownRef.current = setInterval(() => {
@@ -189,7 +182,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
     }, 1000);
   }, []);
 
-  // 发送验证码
   const handleSendCode = useCallback(async () => {
     if (!phone || phone.length < 11) {
       toast('请输入正确的手机号');
@@ -225,11 +217,9 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
         console.log('[KgLogin] 需要人机验证:', result.ssaCode);
         toast('需要人机验证');
         
-        // 获取验证信息
         const verifyResult = await getVerifyInfo(result.ssaCode);
         if (verifyResult.success && verifyResult.data?.txappid) {
           console.log('[KgLogin] 获取验证信息成功, txappid:', verifyResult.data.txappid);
-          // 直接显示悬浮验证
           setVerifyHtml(generateVerifyHtml(verifyResult.data.txappid, result.ssaCode));
           setShowVerify(true);
         } else {
@@ -248,10 +238,8 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
     }
   }, [phone, cooldown, startCooldown]);
 
-  // 保持 ref 指向最新的 handleSendCode
   handleSendCodeRef.current = handleSendCode;
 
-  // 登录
   const handleLogin = useCallback(async () => {
     if (!phone || phone.length < 11) {
       toast('请输入正确的手机号');
@@ -297,7 +285,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
               <Text size={14} style={[styles.subtitle, { color: theme['c-font-label'] }]}>请使用酷狗音乐账号登录</Text>
             </View>
 
-            {/* 手机号输入框 */}
             <View style={styles.inputGroup}>
               <Text size={13} weight="500" style={[styles.inputLabel, { color: theme['c-font-label'] }]}>手机号</Text>
               <View style={[styles.inputContainer, { borderColor: theme['c-border'], backgroundColor: theme['c-content-background'] }]}>
@@ -314,7 +301,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
               </View>
             </View>
 
-            {/* 验证码输入框 */}
             <View style={styles.inputGroup}>
               <Text size={13} weight="500" style={[styles.inputLabel, { color: theme['c-font-label'] }]}>验证码</Text>
               <View style={styles.codeRow}>
@@ -343,7 +329,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
               </View>
             </View>
 
-            {/* 登录按钮 */}
             <TouchableOpacity
               style={[styles.loginBtn, { backgroundColor: isLogging ? theme['c-border'] : '#1677ff' }]}
               onPress={handleLogin}
@@ -355,7 +340,6 @@ const KgWebLoginModal = forwardRef<KgWebLoginModalType, object>((props, ref) => 
           </View>
         </ScrollView>
 
-        {/* 悬浮验证层 */}
         {showVerify && verifyHtml ? (
           <View style={styles.verifyOverlay}>
             <View style={styles.verifyContainer}>
@@ -448,7 +432,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
-  // 悬浮验证层
   verifyOverlay: {
     position: 'absolute',
     top: 0,

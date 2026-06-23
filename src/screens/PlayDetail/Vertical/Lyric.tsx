@@ -95,7 +95,6 @@ const LrcLine = memo(
       onPress(lineNum);
     }, [onPress, lineNum]);
 
-    // textBreakStrategy="simple" 用于解决某些设备上字体被截断的问题
     // https://stackoverflow.com/a/72822360
     return (
       <TouchableOpacity activeOpacity={0.7} onPress={handlePress}>
@@ -376,7 +375,6 @@ export default () => {
 
   const handleLinePress = useCallback((index: number) => {
     if (!isShowLyricProgressSetting) return;
-    // 清除可能存在的滚动暂停定时器
     if (scrollTimoutRef.current) {
       clearTimeout(scrollTimoutRef.current);
       scrollTimoutRef.current = null;
@@ -385,19 +383,16 @@ export default () => {
       scrollCancelRef.current();
       scrollCancelRef.current = null;
     }
-    // 允许列表滚动
     isPauseScrollRef.current = false;
-    // 跳转播放
     const line = lyricLines[index];
     if (line) {
       global.app_event.setProgress(line.time / 1000);
     }
-    // 滚动到点击的行
     handleScrollToActive(index);
   }, [isShowLyricProgressSetting, lyricLines]);
 
   const renderItem: FlatListType['renderItem'] = ({ item, index }) => {
-    return <LrcLine line={item} lineNum={index} activeLine={line} onLayout={handleLineLayout} onPress={handleLinePress} isSmallWindow={isSmallWindow} />; // 传入 onPress
+    return <LrcLine line={item} lineNum={index} activeLine={line} onLayout={handleLineLayout} onPress={handleLinePress} isSmallWindow={isSmallWindow} />;
   };
   const getkey: FlatListType['keyExtractor'] = (item, index) => `${index}${item.text}`
 

@@ -88,14 +88,12 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
       })),
     })
     
-    // 网易云歌单
     if (playlistType === 'wy') {
       if (!selectedList.length) {
         log.error('[MusicMultiAddModal] 网易歌单添加失败: selectedList 为空')
         return
       }
       
-      // 检查 songId 格式 - 网易云音乐需要纯数字 ID
       const invalidSongs = selectedList.filter(m => {
         const songId = m.meta.songId;
         return !songId || typeof songId !== 'string' || !/^\d+$/.test(songId);
@@ -116,7 +114,6 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
       }
       
       const toListId = String(listInfo.id)
-      // 检查目标歌单 ID 格式
       if (toListId.startsWith('tx__')) {
         log.error('[MusicMultiAddModal] 网易歌单添加失败: 目标歌单 ID 格式错误', {
           toListId,
@@ -188,14 +185,12 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
       return
     }
     
-    // QQ音乐歌单
     if (playlistType === 'tx') {
       if (!selectedList.length) {
         log.error('[MusicMultiAddModal] QQ歌单添加失败: selectedList 为空')
         return
       }
       
-      // 检查歌曲来源 - QQ 歌单只能添加 QQ 音乐的歌曲
       const nonTxSongs = selectedList.filter(m => m.source !== 'tx');
       if (nonTxSongs.length > 0) {
         log.error('[MusicMultiAddModal] QQ歌单添加失败: 部分歌曲来源不是QQ音乐', {
@@ -210,7 +205,6 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
         return;
       }
       
-      // 检查歌曲 mid 格式
       const invalidSongs = selectedList.filter(m => !m.meta.mid && !m.meta.songId);
       if (invalidSongs.length > 0) {
         log.error('[MusicMultiAddModal] QQ歌单添加失败: 部分歌曲 mid 为空', {
@@ -225,7 +219,6 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
         return;
       }
       
-      // 获取真实的 QQ 歌单 ID（去掉 tx__ 前缀）
       const toListId = String(listInfo.id).replace('tx__', '')
       if (!toListId || toListId === String(listInfo.id)) {
         log.error('[MusicMultiAddModal] QQ歌单添加失败: 目标歌单 ID 格式错误', {
@@ -247,8 +240,6 @@ export default forwardRef<MusicMultiAddModalType, MusicMultiAddModalProps>(({ on
       })
       
       txApi.addSongToPlaylist(toListId, songMids).then(() => {
-        // 如果添加到"我喜欢"歌单（dirid=201），同步更新本地喜欢状态
-        // 统一使用 songId（meta.id）作为喜欢状态的键
         if (listInfo.dirid === 201) {
           for (const music of selectedList) {
             const txSongId = (music.meta as any).id

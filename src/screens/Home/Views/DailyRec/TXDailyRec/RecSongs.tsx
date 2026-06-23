@@ -19,7 +19,6 @@ interface Props {
   onOpenDetail?: (playlistInfo: ListInfoItem) => void
 }
 
-// 处理播放
 const handlePlay = async (list: LX.Music.MusicInfoOnline[], listId: string, index = 0) => {
   await setTempList(listId, [...list])
   clearPlayedList()
@@ -27,7 +26,6 @@ const handlePlay = async (list: LX.Music.MusicInfoOnline[], listId: string, inde
   void playList(LIST_IDS.TEMP, index)
 }
 
-// 歌单项组件
 const PlaylistItem = ({ item, onPress }: { item: { id: string; name: string; cover: string; playCount: number }; onPress: () => void }) => {
   const theme = useTheme()
   return (
@@ -52,7 +50,6 @@ export default memo(({ type, onOpenDetail }: Props) => {
   const [loading, setLoading] = useState(false)
   const theme = useTheme()
 
-  // 获取歌单列表（主页推荐）
   const loadPlaylists = useCallback(async (refresh = false) => {
     if (type !== 'home') return
     if (!refresh && playlists.length > 0) return
@@ -75,7 +72,6 @@ export default memo(({ type, onOpenDetail }: Props) => {
     }
   }, [type, playlists.length])
 
-  // 获取歌曲列表（雷达推荐、推荐新歌）
   const fetchSongs = useCallback(async () => {
     try {
       let result: { list: LX.Music.MusicInfoOnline[] } | null = null
@@ -145,7 +141,6 @@ export default memo(({ type, onOpenDetail }: Props) => {
     }
   }
 
-  // 主页推荐显示歌单列表
   if (type === 'home') {
     return (
       <View style={{ flex: 1 }}>
@@ -161,7 +156,6 @@ export default memo(({ type, onOpenDetail }: Props) => {
     )
   }
 
-  // 雷达推荐、推荐新歌显示歌曲列表
   return (
     <View style={{ flex: 1 }}>
       <OnlineList

@@ -299,7 +299,6 @@ declare global {
           'bg-image-size': string
 
           'c-liked'?: string
-          // 徽章颜色
           'c-badge-primary': string
           'c-badge-secondary': string
           'c-badge-tertiary': string

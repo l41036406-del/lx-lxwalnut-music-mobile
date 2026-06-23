@@ -78,7 +78,6 @@ const buildTrackExtra = (musicInfo: LX.Player.PlayMusic, url?: string) => {
   const result: any = {}
   
   if (source === 'bilibili') {
-    // 对于 bilibili，我们同时设置 headers 和 userAgent
     if (headers) {
       result.headers = headers
     }
@@ -300,7 +299,6 @@ const updateMetaInfo = async (mInfo: LX.Player.MusicInfo, lyric?: string) => {
 }
 
 
-// 解决快速切歌导致的通知栏歌曲信息与当前播放歌曲对不上的问题
 const debounceUpdateMetaInfoTools = {
   updateMetaPromise: Promise.resolve(),
   musicInfo: null as LX.Player.MusicInfo | null,

@@ -30,9 +30,9 @@ declare namespace LX {
     >
 
     interface MusicInfoMetaBase {
-      songId: string | number // 歌曲ID，mg源为copyrightId，local为文件路径
-      albumName: string // 歌曲专辑名称
-      picUrl?: string | null // 歌曲图片链接
+      songId: string | number
+      albumName: string
+      picUrl?: string | null
       toggleMusicInfo?: MusicInfoOnline | null
     }
 
@@ -59,12 +59,12 @@ declare namespace LX {
 
     interface MusicInfoBase<S = LX.Source> {
       id: string
-      name: string // 歌曲名
+      name: string
       alias?: string
-      singer: string // 艺术家名
+      singer: string
       artists?: Array<{ id: string | number; name: string }>
-      source: S // 源
-      interval: string | null // 格式化后的歌曲时长，例：03:55
+      source: S
+      interval: string | null
       releaseDate?: string | null
       meta: MusicInfoMetaBase
     }
@@ -80,28 +80,28 @@ declare namespace LX {
     interface MusicInfoMeta_kg extends MusicInfoMeta_online {
       qualitys: MusicQualityTypeKg[]
       _qualitys: _MusicQualityTypeKg
-      hash: string // 歌曲hash
+      hash: string
     }
     interface MusicInfo_kg extends MusicInfoBase<'kg'> {
       meta: MusicInfoMeta_kg
     }
 
     interface MusicInfoMeta_tx extends MusicInfoMeta_online {
-      strMediaMid: string // 歌曲strMediaMid
-      songmid?: string // 歌曲mid
-      id?: number // 歌曲songId
-      albumMid?: string // 歌曲albumMid
-      vid?: string // MV vid
+      strMediaMid: string
+      songmid?: string
+      id?: number
+      albumMid?: string
+      vid?: string
     }
     interface MusicInfo_tx extends MusicInfoBase<'tx'> {
       meta: MusicInfoMeta_tx
     }
 
     interface MusicInfoMeta_mg extends MusicInfoMeta_online {
-      copyrightId: string // 歌曲copyrightId
-      lrcUrl?: string // 歌曲lrcUrl
-      mrcUrl?: string // 歌曲mrcUrl
-      trcUrl?: string // 歌曲trcUrl
+      copyrightId: string
+      lrcUrl?: string
+      mrcUrl?: string
+      trcUrl?: string
     }
     interface MusicInfo_mg extends MusicInfoBase<'mg'> {
       meta: MusicInfoMeta_mg
@@ -111,13 +111,9 @@ declare namespace LX {
     type MusicInfo = MusicInfoOnline | MusicInfoLocal
 
     interface LyricInfo {
-      // 歌曲歌词
       lyric: string
-      // 翻译歌词
       tlyric?: string | null
-      // 罗马音歌词
       rlyric?: string | null
-      // 逐字歌词
       lxlyric?: string | null
     }
 

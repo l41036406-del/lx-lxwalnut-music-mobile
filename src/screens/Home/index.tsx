@@ -27,7 +27,7 @@ interface Props {
 
 export default ({ componentId }: Props) => {
   const isHorizontalMode = useHorizontalMode()
-  const t = useI18n() // 新增
+  const t = useI18n()
   const lastBackPressed = useRef(0)
   useEffect(() => {
     setComponentId(COMPONENT_IDS.home, componentId)
@@ -55,7 +55,6 @@ export default ({ componentId }: Props) => {
         return false;
       }
 
-      // 如果当前在设置页面，让设置页面的返回逻辑优先处理
       if (commonState.navActiveId === 'nav_setting') {
         return false
       }

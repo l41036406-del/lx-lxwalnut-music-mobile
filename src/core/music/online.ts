@@ -52,7 +52,6 @@ export const getMusicUrl = async ({
   onToggleSource?: (musicInfo?: LX.Music.MusicInfoOnline) => void
 }): Promise<string> => {
   // if (!musicInfo._types[type]) {
-  //   // 兼容旧版酷我源搜索列表过滤128k音质的bug
   //   if (!(musicInfo.source == 'kw' && type == '128k')) throw new Error('该歌曲没有可播放的音频')
 
   //   // return Promise.reject(new Error('该歌曲没有可播放的音频'))
@@ -61,7 +60,6 @@ export const getMusicUrl = async ({
   let currentMusicInfo = musicInfo;
   const preferredQuality = settingState.setting['player.playQuality'];
 
-  // 检查是否需要获取详细音质
   const isWySource = currentMusicInfo.source === 'wy';
   const hasFullDetails = currentMusicInfo.meta._full;
   console.log("播放：currentMusicInfo:", currentMusicInfo);
@@ -71,14 +69,11 @@ export const getMusicUrl = async ({
     const preferredQualityIndex = QUALITY_RANK.indexOf(preferredQuality);
     const maxAvailableQualityIndex = Math.min(...availableQualities.map(q => QUALITY_RANK.indexOf(q)));
 
-    // 特殊情况：用户想要的音质比当前已知的最好音质还要高，此时需要等待获取
     if (preferredQualityIndex < maxAvailableQualityIndex) {
       console.log('用户想要的音质比当前已知的最好音质还要高，获取音质详情');
-      // 阻塞式获取
       currentMusicInfo = await fetchAndApplyDetailedQuality(currentMusicInfo);
     } else {
       console.log('用户想要的音质比当前已知的最好音质还要低，无需获取音质详情');
-      // 默认情况：不阻塞播放，在后台异步获取
       void fetchAndApplyDetailedQuality(currentMusicInfo);
     }
   }
@@ -88,21 +83,18 @@ export const getMusicUrl = async ({
   const cachedUrl = await getStoreMusicUrl(currentMusicInfo, targetQuality)
   if (cachedUrl && !isRefresh) return cachedUrl
 
-  // 定义高音质列表
   const highQualityLevels: LX.Quality[] = ['flac', 'hires', 'master', 'atmos', 'atmos_plus'];
 
   const isVipUser = userState.wy_vip_type !== 0;
   const isVipSong = currentMusicInfo.meta.fee === 1;
   const isHighQuality = highQualityLevels.includes(targetQuality);
 
-  // 非网易源或不是网易云vip且歌曲是vip歌曲或高音质歌曲
   const preferApi = !isWySource || (!isVipUser && (isVipSong || isHighQuality))
 
   console.log("vip:" + userState.wy_vip_type)
   if (preferApi) {
     try {
       console.log('Attempting to get music URL via custom API');
-      // 优先尝试自定义音源 (API)
       const result = await handleGetOnlineMusicUrl({
         musicInfo: currentMusicInfo,
         quality: targetQuality,
@@ -119,7 +111,6 @@ export const getMusicUrl = async ({
     }
   }
 
-  // 默认流程
   if (musicInfo.source == 'wy' && settingState.setting['common.wy_cookie']) {
     try {
       const { url } = await wySdk.cookie.getMusicUrl(currentMusicInfo, targetQuality).promise;

@@ -181,7 +181,6 @@ export const saveIgnoreVersion = (version: string | null) => {
     void saveData(ignoreVersionKey, version)
   }
 }
-// 获取忽略更新的版本号
 export const getIgnoreVersion = async () => {
   if (ignoreVersion === undefined)
     ignoreVersion = (await getData<string | null>(ignoreVersionKey)) ?? null
@@ -197,7 +196,6 @@ export const saveIgnoreVersionFailTipTime = (time: number | null) => {
     void saveData(ignoreVersionFailTipTimeKey, time)
   }
 }
-// 获取忽略更新的版本号
 export const getIgnoreVersionFailTipTime = async () => {
   if (ignoreVersionFailTipTime === undefined)
     ignoreVersionFailTipTime = await getData<number | null>(ignoreVersionFailTipTimeKey)
@@ -215,7 +213,6 @@ export const saveOpenStoragePath = async (path: string) => {
     await removeData(openStoragePathPrefix)
   }
 }
-// 获取上次打开的存储路径
 export const getOpenStoragePath = async () => {
   if (openStoragePath === '') {
     openStoragePath = await getData<string | null>(openStoragePathPrefix)
@@ -286,12 +283,11 @@ export const saveViewPrevState = (state: { id: NAV_ID_Type }) => {
 
 const idFixRxp = /\.0$/
 /**
- * 获取用户列表
+ * Get user lists
  */
 export const getUserLists = async (): Promise<LX.List.UserListInfo[]> => {
   const list = (await getData<LX.List.UserListInfo[]>(userListKey)) ?? []
   for (const info of list) {
-    // 兼容v2.3.0之前版本PC端插入数字类型的ID导致其意外在末尾追加 .0 的问题
     if (info.sourceListId?.endsWith?.('.0')) {
       info.sourceListId = info.sourceListId.replace(idFixRxp, '')
     }
@@ -300,7 +296,7 @@ export const getUserLists = async (): Promise<LX.List.UserListInfo[]> => {
 }
 
 /**
- * 保存用户列表
+ * Save songs in list
  * @param listInfo
  */
 export const saveUserList = async (listInfo: LX.List.UserListInfo[]) => {
@@ -308,8 +304,8 @@ export const saveUserList = async (listInfo: LX.List.UserListInfo[]) => {
 }
 
 /**
- * 获取列表内歌曲
- * @param listId 列表id
+ * Get songs in list
+ * @param listId List id
  * @returns
  */
 export const getListMusics = async (listId: string): Promise<LX.Music.MusicInfo[]> => {
@@ -318,8 +314,8 @@ export const getListMusics = async (listId: string): Promise<LX.Music.MusicInfo[
 }
 
 /**
- * 保存列表内歌曲
- * @param listData 列表数据
+ * Save songs in list
+ * @param listData List data
  */
 export const saveListMusics = async (
   listData: Array<{ id: string; musics: LX.Music.MusicInfo[] }>
@@ -333,7 +329,7 @@ export const saveListMusics = async (
 }
 
 /**
- * 移除歌曲列表
+ * Remove song list
  * @param ids
  */
 export const removeListMusics = async (ids: string[]): Promise<void> => {
@@ -419,15 +415,15 @@ export const clearOtherSource = async (keys?: string[]) => {
 }
 
 /**
- * 获取不喜欢列表信息
- * @returns 不喜欢列表信息
+ * Get dislike list rules
+ * @returns Dislike list rules
  */
 export const getDislikeListRules = async () => {
   return (await getData<string>(dislikeListPrefix)) ?? ''
 }
 /**
- * 保存列表信息
- * @param rules 规则信息
+ * Save list rules
+ * @param rules Rules info
  */
 export const saveDislikeListRules = async (rules: string) => {
   await saveData(dislikeListPrefix, rules)
@@ -457,7 +453,6 @@ export const getMetaCache = async () => {
 export const savePlayInfo = async (playInfo: LX.Player.SavedPlayInfo) => {
   return saveData(playInfoStorageKey, playInfo)
 }
-// 获取上次关闭时的当前歌曲播放信息
 export const getPlayInfo = async () => {
   return getData<LX.Player.SavedPlayInfo | null>(playInfoStorageKey)
 }
@@ -498,7 +493,6 @@ export const getSyncHost = async () => {
   if (syncHostInfo === undefined) {
     syncHostInfo = (await getData(syncHostPrefix)) ?? ''
 
-    // 清空1.0.0之前版本的同步主机
     if (typeof syncHostInfo == 'object') syncHostInfo = ''
   }
   return syncHostInfo
@@ -515,7 +509,6 @@ export const getSyncHostHistory = async () => {
   if (syncHostHistory === undefined) {
     syncHostHistory = (await getData(syncHostHistoryPrefix)) ?? []
 
-    // 清空1.0.0之前版本的同步历史
     if (syncHostHistory.length && typeof syncHostHistory[0] !== 'string') syncHostHistory = []
   }
   return syncHostHistory
@@ -524,7 +517,7 @@ export const addSyncHostHistory = async (host: string) => {
   let syncHostHistory = await getSyncHostHistory()
   if (syncHostHistory.some((h) => h == host)) return
   syncHostHistory.unshift(host)
-  if (syncHostHistory.length > 20) syncHostHistory = syncHostHistory.slice(0, 20) // 最多存储20个
+  if (syncHostHistory.length > 20) syncHostHistory = syncHostHistory.slice(0, 20)
   await saveData(syncHostHistoryPrefix, syncHostHistory)
 }
 export const removeSyncHostHistory = async (index: number) => {
@@ -535,7 +528,6 @@ export const removeSyncHostHistory = async (index: number) => {
 let userApis: LX.UserApi.UserApiInfo[] = []
 export const getUserApiList = async (): Promise<LX.UserApi.UserApiInfo[]> => {
   userApis = (await getData<LX.UserApi.UserApiInfo[]>(userApiPrefix)) ?? []
-  // 移除 1.7.1 及之前版本的脚本数据被意外存储到列表中的问题
   let updated = false
   for (const info of userApis) {
     if ((info as LX.UserApi.UserApiInfo & { script?: string }).script != null) {

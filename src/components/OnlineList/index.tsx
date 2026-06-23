@@ -236,9 +236,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(
       
       const musicInfos = info.selectedList.length ? info.selectedList : [info.musicInfo]
       
-      // 判断来源
       if (listId.startsWith('wy__')) {
-        // 网易云音乐
         const playlistId = listId.replace('wy__', '')
         const sourcePlaylist = subscribedPlaylists.find(p => String(p.id) === playlistId)
         const songIds = musicInfos.map(m => m.meta.songId)
@@ -255,7 +253,6 @@ export default forwardRef<OnlineListType, OnlineListProps>(
           toast('移除失败: ' + err.message)
         })
       } else if (listId.startsWith('tx__')) {
-        // QQ音乐
         const playlistId = listId.replace('tx__', '')
         const songMids = musicInfos.map(m => m.meta.songId || m.id)
         txUserApi.removeSongFromPlaylist(playlistId, songMids).then(() => {
@@ -267,13 +264,11 @@ export default forwardRef<OnlineListType, OnlineListProps>(
           toast('移除失败: ' + err.message)
         })
       } else if (listId.startsWith('kg__')) {
-        // 酷狗音乐 - 需要先获取歌单歌曲的 fileid
         if (!kgCookie) {
           toast('请先登录酷狗音乐，Cookie可能已失效')
           return
         }
         const playlistId = listId.replace('kg__', '')
-        // 从 collection_3_userid_listid_ver 格式提取数字 listid
         const numericListId = (() => {
           const parts = playlistId.split('_')
           return parts.length >= 4 ? Number(parts[3]) : Number(playlistId)
@@ -282,18 +277,15 @@ export default forwardRef<OnlineListType, OnlineListProps>(
           toast('无法获取歌单ID')
           return
         }
-        // 获取歌单歌曲列表来获取 fileid
         getKgPlaylistSongs(kgCookie, playlistId, 1, 500).then(songsResult => {
           if (!songsResult.success || !songsResult.data?.list) {
             toast('获取歌单歌曲失败')
             return
           }
-          // 通过 songmid(hash) 匹配找到 fileid
           const hashToFileId = new Map<string, number>()
           for (const song of songsResult.data.list) {
             if (song.songmid && song.fileId) hashToFileId.set(song.songmid.toLowerCase(), song.fileId)
           }
-          // 尝试多种方式获取 hash
           const selectedHashes = musicInfos.map(m => {
             const meta = m.meta as any
             return (meta?.songmid || meta?.songId || m.id || '').toString().toLowerCase()

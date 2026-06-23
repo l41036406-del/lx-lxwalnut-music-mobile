@@ -84,7 +84,6 @@ export default memo(
     const isPlaying = playingId === item.id;
     const isSelected = selectedList.includes(item)
     const isWyLiked = useIsWyLiked(item.meta.songId)
-    // 统一使用 songId（meta.id）作为喜欢状态的键（如果存在且为纯数字），否则使用 songmid
     const txSongId = (item.meta as any).id
     const isNumericId = txSongId && /^\d+$/.test(String(txSongId))
     const txSongMid = isNumericId 

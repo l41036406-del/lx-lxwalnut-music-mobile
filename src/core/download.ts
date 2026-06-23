@@ -68,7 +68,6 @@ const startDownload = async (task: DownloadTask) => {
       return;
     }
   } else {
-    // 对于 bilibili 源，我们直接调用 SDK 来获取完整信息（包括 headers）
     if (task.musicInfo.source === 'bilibili') {
       console.log(`[Download] 处理 bilibili 源`);
       try {
@@ -84,27 +83,22 @@ const startDownload = async (task: DownloadTask) => {
         return;
       }
     } else {
-      // 其他源使用正常流程
       url = await getMusicUrl({ musicInfo: task.musicInfo, quality: task.quality, isRefresh: true });
     }
   }
 
-  // 对于 bilibili 源，先以临时文件名下载，下载完成后再重命名为 mp3
   const isBilibiliSource = task.musicInfo.source === 'bilibili';
   let finalFilePath = task.filePath;
 
-  // 获取 URL 中的真实扩展名
   const urlExtension = getFileExtensionFromUrl(url);
   const taskExt = task.filePath.substring(task.filePath.lastIndexOf('.') + 1).toLowerCase();
 
-  // 如果是 bilibili 源，先使用临时扩展名下载
   let downloadFilePath = task.filePath;
   if (isBilibiliSource && urlExtension) {
     const downloadDir = settingState.setting['download.path'] || (RNFetchBlob.fs.dirs.MusicDir + '/LX-X Music');
     downloadFilePath = `${downloadDir}/${task.fileName}.download.${urlExtension}`;
     console.log(`[Download] Bilibili 源使用临时路径下载: ${downloadFilePath}`);
   } else if (urlExtension && urlExtension !== taskExt) {
-    // 对于所有其他源，如果 URL 的真实扩展名与任务路径不一致，使用真实扩展名
     const downloadDir = settingState.setting['download.path'] || (RNFetchBlob.fs.dirs.MusicDir + '/LX-X Music');
     downloadFilePath = `${downloadDir}/${task.fileName}.download.${urlExtension}`;
     finalFilePath = `${downloadDir}/${task.fileName}.${urlExtension}`;
@@ -152,7 +146,6 @@ const startDownload = async (task: DownloadTask) => {
     downloadedFilePath = res.path();
     console.log('下载完成:', downloadedFilePath);
     
-    // 下载完成后，如果最终路径与下载路径不一致，进行重命名
     if (finalFilePath !== downloadedFilePath) {
       try {
         await RNFetchBlob.fs.mv(downloadedFilePath, finalFilePath);
@@ -163,7 +156,6 @@ const startDownload = async (task: DownloadTask) => {
       }
     }
     
-    // 对于 bilibili 源，跳过元数据处理（歌词、封面等）
     if (!isBilibiliSource) {
       await handleMetadata(task, downloadedFilePath);
     } else {
@@ -189,11 +181,9 @@ const startDownload = async (task: DownloadTask) => {
 const handleMetadata = async (task: DownloadTask, filePath: string) => {
   console.log('开始处理元数据:', filePath);
   
-  // 获取文件扩展名，用于后续处理
   const fileExt = filePath.substring(filePath.lastIndexOf('.') + 1).toLowerCase();
   console.log(`[Metadata] 文件格式: ${fileExt}`);
   
-  // 写入标签
   if (settingState.setting['download.writeMetadata']) {
     try {
       const title = settingState.setting['download.writeAlias'] && task.musicInfo.alias
@@ -214,7 +204,6 @@ const handleMetadata = async (task: DownloadTask, filePath: string) => {
   }
 
   const downloadDir = settingState.setting['download.path'] || (RNFetchBlob.fs.dirs.MusicDir + '/LX-X Music')
-  // 写入封面
   if (settingState.setting['download.writePicture']) {
     try {
       const picUrl = await getPicUrl({ musicInfo: task.musicInfo });
@@ -234,7 +223,6 @@ const handleMetadata = async (task: DownloadTask, filePath: string) => {
     }
   }
 
-  // 写入歌词
   if (settingState.setting['download.writeLyric'] || settingState.setting['download.writeEmbedLyric']) {
     try {
       const lyrics = await getLyricInfo({ musicInfo: task.musicInfo as LX.Music.MusicInfoOnline });
@@ -277,11 +265,9 @@ export const retryMetadata = async (taskId: string) => {
   const filePath = task.filePath;
   const metadataStatus = { ...task.metadataStatus };
 
-  // 获取文件扩展名
   const fileExt = filePath.substring(filePath.lastIndexOf('.') + 1).toLowerCase();
   console.log(`[Retry Metadata] 文件格式: ${fileExt}`);
 
-  // 重试写入标签
   if (metadataStatus.tags === 'fail' && settingState.setting['download.writeMetadata']) {
     try {
       const title = settingState.setting['download.writeAlias'] && task.musicInfo.alias
@@ -302,7 +288,6 @@ export const retryMetadata = async (taskId: string) => {
     }
   }
 
-  // 重试写入封面
   if (metadataStatus.cover === 'fail' && settingState.setting['download.writePicture']) {
     try {
       const picUrl = await getPicUrl({ musicInfo: task.musicInfo as LX.Music.MusicInfoOnline });
@@ -322,7 +307,6 @@ export const retryMetadata = async (taskId: string) => {
     }
   }
 
-  // 重试写入歌词
   if (metadataStatus.lyric === 'fail' && (settingState.setting['download.writeLyric'] || settingState.setting['download.writeEmbedLyric'])) {
     try {
       const lyrics = await getLyricInfo({ musicInfo: task.musicInfo as LX.Music.MusicInfoOnline });
@@ -365,17 +349,13 @@ export const retryTask = (taskId: string) => {
   const task = downloadState.tasks.find(t => t.id === taskId);
   if (!task) return;
 
-  // 如果歌曲文件下载失败，或者文件路径不存在，则重新下载整个文件
   if (task.status === 'error' || !task.filePath) {
     toast('正在重新下载...');
-    // 通过先移除再添加的方式实现重新下载
     removeTask(task.id);
-    // 延迟一下，确保状态更新
     setTimeout(() => {
       addTask(task.musicInfo, task.quality);
     }, 200);
   }
-  // 如果文件已存在，但元信息失败，则只重试元信息
   else if (Object.values(task.metadataStatus ?? {}).includes('fail')) {
     void retryMetadata(task.id);
   }
@@ -407,14 +387,12 @@ export const resumeTask = async (taskId: string) => {
 };
 
 export const addTask = (musicInfo: LX.Music.MusicInfo, quality: LX.Quality, isForceCookie: boolean = false) => {
-  // 对于 bilibili 源，默认使用 mp3 扩展名
   let extension = getFileExtension(quality);
   if (musicInfo.source === 'bilibili') {
     extension = 'mp3';
   }
 
   let finalSingerString = musicInfo.singer;
-  // 文件名过长的情况下，只取前6个歌手名
   if (musicInfo.artists && musicInfo.artists.length > 6) {
     finalSingerString = musicInfo.artists.slice(0, 6).map(artist => artist.name).join('、') + '...';
   }
@@ -466,10 +444,8 @@ export const removeTask = (id: string) => {
   } else if (taskToRemove && taskToRemove.status !== 'completed' && taskToRemove.filePath) {
     void unlink(taskToRemove.filePath).catch(() => {});
   }
-  // 从队列中移除
   const taskIndex = taskQueue.findIndex(t => t.id === id);
   if (taskIndex > -1) taskQueue.splice(taskIndex, 1);
-  // 从store中移除
   downloadActions.removeTask(id);
   isProcessing = false;
   processQueue();
@@ -477,14 +453,13 @@ export const removeTask = (id: string) => {
 
 
 /**
- * 批量下载任务 - 间隔添加下载任务
- * @param musicInfos 选中的歌曲列表
+ * Batch download tasks - add download tasks with interval
+ * @param musicInfos Selected song list
  */
 export const batchDownload = async (musicInfos: LX.Music.MusicInfo[]) => {
   const cookie = settingState.setting['common.wy_cookie'];
   const hasWyMusic = musicInfos.some(m => m.source === 'wy');
   
-  // 只有选了网易云歌曲且没配 Cookie 时才提醒
   if (hasWyMusic && !cookie) {
     toast('未配置网易云 Cookie，网易云音源将使用普通音质下载');
   }
@@ -503,7 +478,6 @@ export const batchDownload = async (musicInfos: LX.Music.MusicInfo[]) => {
   toast(`准备添加 ${musicInfos.length} 首歌曲到下载队列 (${tips.join(', ')})`);
   
   for (const musicInfo of musicInfos) {
-    // 有 Cookie 时网易云音源使用 Cookie 下载，否则正常下载
     const isWyAndHasCookie = musicInfo.source === 'wy' && !!cookie;
     addTask(musicInfo, quality, isWyAndHasCookie);
     await new Promise(resolve => setTimeout(resolve, 1000));

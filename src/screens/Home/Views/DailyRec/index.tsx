@@ -154,7 +154,7 @@ export default memo(() => {
           return false
         }
         setSelectedPlaylist(null)
-        return true // 消费事件，防止退出应用
+        return true
       }
       return false
     }
@@ -176,7 +176,7 @@ export default memo(() => {
         <PagerView
           ref={pagerViewRef}
           style={{ flex: 1 }}
-          initialPage={activeTab === 'songs' ? 0 : 1} // <-- 核心修改在这里
+          initialPage={activeTab === 'songs' ? 0 : 1}
           onPageSelected={onPageSelected}
           scrollEnabled={!isHomePageScrollEnabled}
         >

@@ -103,7 +103,6 @@ export default {
       })
     })
   },
-  // 获取单个歌手详情
   async getSingerDetail(singerid) {
     try {
       const requestObj = httpFetch(`http://mobiles.kugou.com/api/v5/singer/info?singerid=${singerid}`)
@@ -125,7 +124,6 @@ export default {
   
   async searchSinger(keyword, page = 1, limit = 10) {
     try {
-      // 使用歌曲搜索，从结果中提取歌手ID
       const requestObj = httpFetch(
         `https://songsearch.kugou.com/song_search_v2?keyword=${encodeURIComponent(keyword)}&page=${page}&pagesize=30&userid=0&platform=WebFilter&filter=2&iscorrection=1&area_code=1`
       )
@@ -135,7 +133,6 @@ export default {
         return { list: [] }
       }
 
-      // 从歌曲中提取歌手ID
       const singerIds = new Set()
       for (const song of body.data.lists) {
         if (song.Singers && song.Singers.length > 0) {
@@ -145,12 +142,10 @@ export default {
         }
       }
 
-      // 批量获取歌手详情（最多获取limit个）
       const idsToFetch = [...singerIds].slice(0, limit)
       const detailPromises = idsToFetch.map(id => this.getSingerDetail(id))
       const results = await Promise.all(detailPromises)
       
-      // 过滤掉失败的结果
       const list = results.filter(item => item !== null && item.name)
       
       return { list }
@@ -159,7 +154,6 @@ export default {
       return { list: [] }
     }
   },
-  // 获取单个专辑详情
   async getAlbumDetail(albumid) {
     try {
       const requestObj = httpFetch(
@@ -169,24 +163,19 @@ export default {
       
       if (!body) return null
       
-      // 直接检查 body 的结构
-      console.log('[KuGou] getAlbumDetail 专辑ID:', albumid, 'body keys:', Object.keys(body), 'has total:', 'total' in body, 'has data:', 'data' in body)
+      console.log('[KuGou] getAlbumDetail albumID:', albumid, 'body keys:', Object.keys(body), 'has total:', 'total' in body, 'has data:', 'data' in body)
       
-      // 如果 body 直接有 total 字段
       if (body.total !== undefined) {
         return { id: albumid, size: body.total }
       }
       
-      // 如果 body.data 存在
       const data = body.data
       if (!data) return null
       
-      // data 可能是数组
       if (Array.isArray(data)) {
         return { id: albumid, size: body.total || data.length || 0 }
       }
       
-      // data 可能有 info 或 songs 字段
       if (data.info && Array.isArray(data.info)) {
         return { id: albumid, size: data.total || data.info.length || 0 }
       }
@@ -194,8 +183,7 @@ export default {
         return { id: albumid, size: data.total || data.songs.length || 0 }
       }
       
-      // 打印 data 的结构
-      console.log('[KuGou] getAlbumDetail 专辑ID:', albumid, 'data keys:', Object.keys(data))
+      console.log('[KuGou] getAlbumDetail albumID:', albumid, 'data keys:', Object.keys(data))
       
       return null
     } catch (err) {
@@ -217,12 +205,10 @@ export default {
         return { list: [], total: 0, allPage: 0 }
       }
 
-      // 打印第一条数据的字段
       if (body.data.lists.length > 0) {
         console.log('[KuGou] searchAlbum 第一条数据字段:', Object.keys(body.data.lists[0]))
       }
 
-      // 提取专辑基本信息并去重（使用字符串ID）
       const albumMap = new Map()
       for (const item of body.data.lists) {
         const id = String(item.AlbumID || item.albumid || '')
@@ -244,14 +230,12 @@ export default {
       
       console.log('[KuGou] searchAlbum 专辑数量:', albums.length)
 
-      // 批量获取专辑详情（获取歌曲数量）
       const albumsToFetch = albums.slice(0, 30)
       console.log('[KuGou] searchAlbum 获取详情的专辑:', albumsToFetch.map(a => a.id))
       const detailPromises = albumsToFetch.map(album => this.getAlbumDetail(album.id))
       const details = await Promise.all(detailPromises)
       console.log('[KuGou] searchAlbum 详情结果:', details)
       
-      // 更新专辑的歌曲数量
       const detailMap = new Map()
       for (const detail of details) {
         if (detail) detailMap.set(detail.id, detail.size)

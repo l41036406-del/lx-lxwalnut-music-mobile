@@ -88,7 +88,6 @@ let apkSavePath
 export const downloadNewVersion = async (version, onDownload = noop) => {
   const abi = await getTargetAbi()
   const url = `https://github.com/${releaseOwner}/${releaseRepo}/releases/download/v${version}/${apkFileNamePrefix}-v${version}-${abi}.apk`
-  // 使用私有存储路径而不是临时目录，这样更可靠
   let savePath = privateStorageDirectoryPath + '/lx-lxwalnut-music-mobile.apk'
 
   log.info(`[Update] Download URL: ${url}`)

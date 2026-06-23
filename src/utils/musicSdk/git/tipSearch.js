@@ -6,7 +6,6 @@ export default {
   async tipSearchByKeyword(str) {
     this.cancelTipSearch()
 
-    // 创建一个可取消的Promise
     let canceled = false
     const promise = new Promise(async (resolve, reject) => {
       try {
@@ -15,7 +14,6 @@ export default {
           return
         }
 
-        // 加载数据库
         const database = await loadDatabase()
 
         if (canceled) {
@@ -28,7 +26,6 @@ export default {
           return
         }
 
-        // 根据关键词过滤（如果需要）或者随机返回
         const filtered = str
           ? database.filter((item) => {
               const title = item.title || extractNameFromFile(item.filename)
@@ -36,7 +33,6 @@ export default {
             })
           : database
 
-        // 随机打乱并取前5个
         const shuffled = [...filtered].sort(() => Math.random() - 0.5)
         const results = shuffled.slice(0, 5)
 

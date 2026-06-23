@@ -71,9 +71,7 @@ export default memo(
     const isSupported = useAssertApiSupport(item.source)
     const moreButtonRef = useRef<TouchableOpacity>(null)
 
-    // 爱心按钮逻辑
     const isWyLiked = useIsWyLiked(item.meta.songId)
-    // 统一使用 songId（meta.id）作为喜欢状态的键（如果存在且为纯数字），否则使用 songmid
     const txSongId = (item.meta as any).id
     const isNumericId = txSongId && /^\d+$/.test(String(txSongId))
     const txSongMid = isNumericId 
@@ -146,12 +144,10 @@ export default memo(
             )}
           </View>
           <View style={styles.itemInfo}>
-            {/* <View style={styles.listItemTitle}> */}
             <Text color={active ? theme['c-primary-font'] : theme['c-font']} numberOfLines={1}>
               {item.name}
               {item.alias ? <Text color={theme['c-font-label']}> ({item.alias})</Text> : null}
             </Text>
-            {/* </View> */}
             <View style={styles.listItemSingle}>
               <Badge>{item.source.toUpperCase()}</Badge>
               {tagInfo.type ? <Badge type={tagInfo.type}>{tagInfo.text}</Badge> : null}
@@ -177,17 +173,14 @@ export default memo(
             </Text>
           ) : null}
         </TouchableOpacity>
-        {/* 爱心按钮 */}
         {showLikeButton ? (
           <TouchableOpacity onPress={handleLike} style={styles.likeButton}>
             <Icon name={isLiked ? "love-filled" : "love"} size={16} color={isLiked ? theme['c-liked'] : theme['c-350']} />
           </TouchableOpacity>
         ) : null}
-        {/* <View style={styles.listItemRight}> */}
         <TouchableOpacity onPress={handleShowMenu} ref={moreButtonRef} style={styles.moreButton}>
           <Icon name="dots-vertical" style={{ color: theme['c-350'] }} size={12} />
         </TouchableOpacity>
-        {/* </View> */}
       </View>
     )
   },

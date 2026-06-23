@@ -12,12 +12,9 @@ import CookieManager from '@react-native-cookies/cookies';
 const syncCookieToNative = async (cookie: string) => {
   const domain = 'https://music.163.com';
   try {
-    // 1. 关键步骤：清除该域名的所有原生Cookie，`true` 表示使用共享存储
     await CookieManager.clearAll(true);
 
     if (cookie) {
-      // 2. 将新的Cookie字符串拆分并逐个设置回原生Cookie Jar
-      // 这样可以确保原生层也使用最新的Cookie
       const cookiePairs = cookie.split(';').map(pair => pair.trim());
       for (const pair of cookiePairs) {
         const [name, ...valueParts] = pair.split('=');

@@ -28,7 +28,6 @@ export type RecognitionResult = {
 
 const isNativeAvailable = Platform.OS === 'android' && !!MusicRecognitionModule
 
-// 监听原生事件
 let recognitionListener: ReturnType<typeof DeviceEventEmitter.addListener> | null = null
 
 const musicRecognition: MusicRecognitionInterface = {

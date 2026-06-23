@@ -4,7 +4,7 @@ import { stringMd5 } from 'react-native-quick-md5'
 
 const SIGN_SALT = 'OIlwieks28dk2k092lksi2UIkp'
 
-// 签名函数
+// Signing function
 function signAndroidParams(params: Record<string, any>, data = ''): string {
   const sortedKeys = Object.keys(params).sort()
   const paramsString = sortedKeys.map(key => {
@@ -15,7 +15,7 @@ function signAndroidParams(params: Record<string, any>, data = ''): string {
   return stringMd5(signStr)
 }
 
-// 获取设备信息
+// Get device info
 function getDeviceInfo() {
   const cookie = settingState.setting['common.kg_cookie'] || ''
   const cookieObj: Record<string, string> = {}
@@ -31,7 +31,7 @@ function getDeviceInfo() {
   }
 }
 
-// 通用请求头
+// Common request headers
 const buildHeaders = () => ({
   'User-Agent': 'Android15-1070-11083-46-0-DiscoveryDRADProtocol-wifi',
   'kg-rc': '1',
@@ -42,15 +42,15 @@ const buildHeaders = () => ({
 
 export interface ClimaxInfo {
   hash: string
-  begin: number   // 高潮开始时间（毫秒）
-  end: number     // 高潮结束时间（毫秒）
-  duration: number // 持续时间（毫秒）
+  begin: number
+  end: number
+  duration: number
 }
 
 /**
- * 获取歌曲高潮部分
- * @param hash 歌曲hash
- * @returns 高潮部分信息
+ * Get song climax section
+ * @param hash song hash
+ * @returns climax section info
  */
 export async function getClimax(hash: string): Promise<ClimaxInfo | null> {
   console.log('[Climax] 获取高潮部分, hash:', hash)
@@ -113,7 +113,7 @@ export async function getClimax(hash: string): Promise<ClimaxInfo | null> {
 }
 
 /**
- * 格式化时间（毫秒转为 mm:ss）
+ * Format time (milliseconds to mm:ss)
  */
 export function formatTime(ms: number): string {
   const seconds = Math.floor(ms / 1000)

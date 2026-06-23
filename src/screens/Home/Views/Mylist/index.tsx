@@ -31,8 +31,6 @@ export default () => {
   const picOpacity = useSettingValue('theme.picOpacity')
 
   const showMylistBg = isDynamicBg && isMylistDynamicBg && pic
-  // const [width, setWidth] = useState(0)
-
   useEffect(() => {
     const handleFixDrawer = (id: CommonState['navActiveId']) => {
       if (id == 'nav_love') drawer.current?.fixWidth()
@@ -47,23 +45,12 @@ export default () => {
       }
     }
 
-    // setWidth(getWindowSise().width * 0.82)
-
     global.state_event.on('navActiveIdUpdated', handleFixDrawer)
     global.app_event.on('changeLoveListVisible', changeVisible)
-
-    // 就放旋转屏幕后的宽度没有更新的问题
-    // const changeEvent = onDimensionChange(({ window }) => {
-    //   setWidth(window.width * 0.82)
-    //   drawer.current?.setNativeProps({
-    //     width: window.width,
-    //   })
-    // })
 
     return () => {
       global.state_event.off('navActiveIdUpdated', handleFixDrawer)
       global.app_event.off('changeLoveListVisible', changeVisible)
-      // changeEvent.remove()
     }
   }, [])
 

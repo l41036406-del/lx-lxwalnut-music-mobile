@@ -56,7 +56,6 @@ export const getLogs = async () => {
   try {
     const info = await stat(logPath)
     if (info.size > READ_LIMIT) {
-      // 大文件只读取最后 1MB，避免 OOM
       const position = Math.max(0, info.size - READ_LIMIT)
       return await RNFS.read(logPath, READ_LIMIT, position, 'utf8')
     }

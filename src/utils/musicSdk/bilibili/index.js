@@ -221,19 +221,16 @@ async function getBilibiliMusicUrl(musicInfo, type) {
     log.info('[Bilibili] 按bandwidth排序后: ' + JSON.stringify(audios.map(a => ({ id: a.id, bandwidth: a.bandwidth }))))
     const len = audios.length
     
-    // 找到最合适的音频（优先选择包含 mcdn 域名的）
     const findBestUrl = (audioList) => {
       for (const audio of audioList) {
         const candidateUrl = audio.baseUrl || audio.base_url
         if (candidateUrl) {
-          // 优先选择 mcdn 域名
           if (candidateUrl.includes('mcdn.bilivideo')) {
             log.info('[Bilibili] 优先选择 mcdn 域名: ' + candidateUrl.substring(0, 100))
             return candidateUrl
           }
         }
       }
-      // 如果没有 mcdn 域名，返回第一个可用的
       for (const audio of audioList) {
         const candidateUrl = audio.baseUrl || audio.base_url
         if (candidateUrl) {
@@ -247,7 +244,6 @@ async function getBilibiliMusicUrl(musicInfo, type) {
     log.info('[Bilibili] 选择音质 type: ' + type + ', len: ' + len)
     let selectedAudios = []
     
-    // 哔哩哔哩音质 ID: 30216=64K, 30232=132K, 30280=192K
     switch (type) {
       case '64k':
         selectedAudios = audios.filter(a => a.id === 30216)
@@ -267,7 +263,6 @@ async function getBilibiliMusicUrl(musicInfo, type) {
     
     log.info('[Bilibili] 选择的音质 ID: ' + JSON.stringify(selectedAudios.map(a => a.id)))
     
-    // 尝试选中的音质，如果不行则尝试所有音质
     url = findBestUrl(selectedAudios) || findBestUrl(audios)
     log.info('[Bilibili] 选择的URL是否为空: ' + (!url) + ', URL长度: ' + (url ? url.length : 0))
     if (url) {
@@ -327,7 +322,6 @@ async function getBilibiliMusicUrl(musicInfo, type) {
 const bilibili = {
   musicSearch,
   
-  // 添加安全的songList占位符，防止报错
   songList: {
     sortList: [],
     getTags() {
@@ -386,7 +380,6 @@ const bilibili = {
       log.info('[Bilibili] getMusicUrl songInfo.interval: ' + JSON.stringify(songInfo.interval))
     }
 
-    // 哔哩哔哩音源固定使用 192K 音质，不受设置影响
     const bilibiliType = '192k'
     log.info('[Bilibili] 哔哩哔哩音源固定使用 192K 音质，忽略传入的 type: ' + type)
 
@@ -402,7 +395,6 @@ const bilibili = {
           log.info('[Bilibili] getMusicUrl .then - result.url 值: ' + (result.url ? result.url.substring(0, 80) + '...' : '空'))
           log.info('[Bilibili] getMusicUrl .then - result.headers 是否存在: ' + (result.headers != null))
         }
-        // 同时返回 url 和 headers 信息，方便后续下载使用
         const finalResult = { url: result?.url, headers: result?.headers, type }
         log.info('[Bilibili] getMusicUrl .then - 最终返回: url类型=' + typeof finalResult.url + ', url是否为空=' + (finalResult.url == null) + ', type=' + finalResult.type + ', hasHeaders=' + (finalResult.headers != null))
         return finalResult

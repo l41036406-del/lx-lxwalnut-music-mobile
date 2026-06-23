@@ -19,7 +19,7 @@ const cache = new Map<string, CacheValue>()
 const LIST_LOAD_LIMIT = 30
 
 /**
- * 获取排序列表
+ * Get sort list
  * @param source
  * @returns
  */
@@ -28,7 +28,7 @@ export const getSortList = (source: LX.OnlineSource) => {
 }
 
 /**
- * 获取标签列表
+ * Get tag list
  * @param source
  * @returns
  */
@@ -40,7 +40,7 @@ export const getTags = async <T extends LX.OnlineSource>(source: T) => {
 }
 
 /**
- * 设置列表加载加载前的基本信息（用于加载失败后的重新加载）
+ * Set list basic info before loading (for reload after failure)
  * @param source
  * @param tagId
  * @param sortId
@@ -50,7 +50,7 @@ export const setListInfo: typeof songlistActions.setListInfo = (source, tagId, s
   songlistActions.setListInfo(source, tagId, sortId)
 }
 /**
- * 设置列表信息
+ * Set list info
  * @param result
  * @param tagId
  * @param sortId
@@ -66,12 +66,12 @@ export const clearList = () => {
 }
 
 /**
- * 获取歌单列表
- * @param source 歌单源
- * @param tabId 类型id
- * @param sortId 排序
- * @param page 页数
- * @param isRefresh 是否跳过缓存
+ * Get songlist list
+ * @param source Songlist source
+ * @param tabId Type id
+ * @param sortId Sort id
+ * @param page Page number
+ * @param isRefresh Whether to skip cache
  * @returns
  */
 export const getList = async (
@@ -98,10 +98,10 @@ export const getList = async (
 }
 
 /**
- * 获取歌单详情内单页分页歌曲（用于在本地控制每页大小）
- * @param source 源
- * @param id 歌单id
- * @param page 页数
+ * Get paginated songs from songlist detail (for local page size control)
+ * @param source Source
+ * @param id Songlist id
+ * @param page Page number
  * @returns
  */
 const getListDetailLimit = async (
@@ -172,7 +172,7 @@ const getListDetailLimit = async (
 }
 
 /**
- * 设置列表加载加载前的基本信息（用于加载失败后的重新加载）
+ * Set list detail basic info before loading (for reload after failure)
  * @param source
  * @param tagId
  * @param sortId
@@ -190,10 +190,10 @@ export const clearListDetail = () => {
 }
 
 /**
- * 获取歌单内单页歌曲
- * @param id 歌单id
- * @param source 歌单源
- * @param isRefresh 是否跳过缓存
+ * Get single page songs from songlist
+ * @param id Songlist id
+ * @param source Songlist source
+ * @param isRefresh Whether to skip cache
  * @returns
  */
 export const getListDetail = async (
@@ -217,10 +217,10 @@ export const getListDetail = async (
 }
 
 /**
- * 获取歌单内全部歌曲
- * @param id 歌单id
- * @param source 歌单源
- * @param isRefresh 是否跳过缓存
+ * Get all songs from songlist
+ * @param id Songlist id
+ * @param source Songlist source
+ * @param isRefresh Whether to skip cache
  * @returns
  */
 export const getListDetailAll = async (

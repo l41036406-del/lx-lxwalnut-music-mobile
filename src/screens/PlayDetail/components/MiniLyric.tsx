@@ -1,5 +1,3 @@
-// src/screens/PlayDetail/components/MiniLyric.tsx
-
 import { memo, useMemo } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 import { useLrcPlay, useLrcSet } from '@/plugins/lyric';
@@ -27,7 +25,7 @@ const MiniLyric = ({ onPress, style }: { onPress?: () => void, style?: any }) =>
     };
   }, [activeLine, lyricLines]);
 
-  const size = lrcFontSize / 16; // 缩小字体
+  const size = lrcFontSize / 16;
   const lineHeight = setSpText(size) * 1.3;
 
   const activeColor = theme.isDark ? theme['c-font'] : theme['c-primary'];

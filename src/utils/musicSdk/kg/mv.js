@@ -5,7 +5,7 @@ import { stringMd5 } from 'react-native-quick-md5'
 
 const SIGN_SALT = 'OIlwieks28dk2k092lksi2UIkp'
 
-// 签名函数
+// Signing function
 function signAndroidParams(params, data = '') {
   const sortedKeys = Object.keys(params).sort()
   const paramsString = sortedKeys.map(key => {
@@ -16,7 +16,7 @@ function signAndroidParams(params, data = '') {
   return stringMd5(signStr)
 }
 
-// 获取设备信息
+// Get device info
 function getDeviceInfo() {
   const cookie = settingState.setting['common.kg_cookie'] || ''
   const cookieObj = {}
@@ -32,7 +32,7 @@ function getDeviceInfo() {
   }
 }
 
-// 通用请求头
+// Common request headers
 const buildHeaders = () => ({
   'User-Agent': 'Android15-1070-11083-46-0-DiscoveryDRADProtocol-wifi',
   'kg-rc': '1',
@@ -42,9 +42,9 @@ const buildHeaders = () => ({
 })
 
 /**
- * 根据歌曲hash获取MV信息
- * @param {string} hash - 歌曲hash
- * @returns {Promise<Object>} MV信息
+ * Get MV info by song hash
+ * @param {string} hash - song hash
+ * @returns {Promise<Object>} MV info
  */
 const getMvInfo = async (hash) => {
   console.log('[MV] getMvInfo 开始, hash:', hash)
@@ -98,14 +98,11 @@ const getMvInfo = async (hash) => {
     const mvData = body.data[0]
     console.log('[MV] getMvInfo mvData:', mvData)
     
-    // 检查返回的数据结构
-    // 如果 mvData 是数组，直接返回（包含多个MV）
     if (Array.isArray(mvData) && mvData.length > 0) {
       console.log('[MV] getMvInfo 成功, mvList:', mvData.length, '个MV')
       return mvData
     }
     
-    // 如果 mvData 有 video_info 字段
     if (mvData && mvData.video_info) {
       console.log('[MV] getMvInfo 成功, video_info:', mvData.video_info)
       return mvData
@@ -120,10 +117,10 @@ const getMvInfo = async (hash) => {
 }
 
 /**
- * 通过搜索API获取MV信息
- * @param {string} songName - 歌曲名
- * @param {string} singerName - 歌手名
- * @returns {Promise<Object>} MV信息
+ * Get MV info through search API
+ * @param {string} songName - song name
+ * @param {string} singerName - singer name
+ * @returns {Promise<Object>} MV info
  */
 const searchMv = async (songName, singerName) => {
   console.log('[MV] searchMv 开始, songName:', songName, 'singerName:', singerName)
@@ -164,7 +161,6 @@ const searchMv = async (songName, singerName) => {
     console.log('[MV] searchMv 响应:', body)
     
     if (body && body.error_code === 0 && body.data && body.data.lists && body.data.lists.length > 0) {
-      // 返回第一个匹配的MV
       return body.data.lists[0]
     }
     
@@ -176,34 +172,30 @@ const searchMv = async (songName, singerName) => {
 }
 
 /**
- * 获取MV播放链接
- * @param {string} songId - 歌曲ID (album_audio_id)
- * @param {string} songName - 歌曲名（可选，用于搜索）
- * @param {string} singerName - 歌手名（可选，用于搜索）
- * @returns {Promise<Object>} 包含url的对象
+ * Get MV playback link
+ * @param {string} songId - song ID (album_audio_id)
+ * @param {string} songName - song name (optional, for search)
+ * @param {string} singerName - singer name (optional, for search)
+ * @returns {Promise<Object>} object containing url
  */
 export const getMvUrl = async (songId, songName, singerName) => {
   try {
     console.log('[MV] getMvUrl 开始, songId:', songId, 'songName:', songName, 'singerName:', singerName)
     
-    // 首先尝试通过API获取MV信息
     let mvInfo = null
     try {
       mvInfo = await getMvInfo(songId)
     } catch (e) {
-      console.log('[MV] getMvInfo 失败，尝试搜索MV')
+      console.log('[MV] getMvInfo failed, trying search MV')
     }
     
     let videoId = null
     
-    // 如果API返回了MV列表（数组格式）
     if (Array.isArray(mvInfo) && mvInfo.length > 0) {
-      // 选择第一个官方MV（非UGC内容）
       const officialMv = mvInfo.find(mv => mv.is_ugc === 0 && mv.is_other === 0) || mvInfo[0]
       console.log('[MV] 选择MV:', officialMv.mv_name, 'video_id:', officialMv.video_id)
       videoId = officialMv.video_id
     }
-    // 如果API返回了MV信息（video_info格式）
     else if (mvInfo && mvInfo.video_info && mvInfo.video_info.length > 0) {
       const videoInfo = mvInfo.video_info[mvInfo.video_info.length - 1]
       if (videoInfo && videoInfo.hash) {
@@ -211,9 +203,8 @@ export const getMvUrl = async (songId, songName, singerName) => {
       }
     }
     
-    // 如果没有获取到MV信息，尝试通过搜索获取
     if (!videoId && songName && singerName) {
-      console.log('[MV] 尝试通过搜索获取MV')
+      console.log('[MV] trying to get MV through search')
       const searchResult = await searchMv(songName, singerName)
       
       if (searchResult && searchResult.videoid) {
@@ -227,9 +218,8 @@ export const getMvUrl = async (songId, songName, singerName) => {
       return Promise.reject(new Error('该歌曲暂无MV'))
     }
     
-    console.log('[MV] getMvUrl 获取播放链接, videoId:', videoId)
+    console.log('[MV] getMvUrl get playback link, videoId:', videoId)
     
-    // 第一步：通过 video_detail 获取视频 hash
     const device = getDeviceInfo()
     const clienttime = Math.floor(Date.now() / 1000)
     const dfid = device.dfid || '-'
@@ -274,7 +264,6 @@ export const getMvUrl = async (songId, songName, singerName) => {
     
     console.log('[MV] getMvUrl 视频详情响应:', detailBody?.status, detailBody?.error_code)
     
-    // 从详情中提取视频 hash
     let videoHash = null
     if (detailBody?.data?.[0]) {
       const detail = detailBody.data[0]
@@ -287,7 +276,6 @@ export const getMvUrl = async (songId, songName, singerName) => {
       return Promise.reject(new Error('获取MV播放链接失败'))
     }
     
-    // 第二步：使用 video_url API (trackermv) 获取完整 MV 播放链接
     const SIGN_KEY_SALT = '57ae12eb6890223e355ccfcb74edf70d'
     const key = stringMd5(`${videoHash}${SIGN_KEY_SALT}1005${mid}${device.userid || 0}`)
     
@@ -310,13 +298,11 @@ export const getMvUrl = async (songId, songName, singerName) => {
     if (device.token) urlParams.token = device.token
     if (device.userid && device.userid !== '0') urlParams.userid = Number(device.userid)
     
-    // 签名需要包含查询参数（按key排序拼接）
     const urlSig = signAndroidParams(urlParams, '')
     urlParams.signature = urlSig
     
     console.log('[MV] getMvUrl 签名参数:', { hash: videoHash, mid, userid: device.userid, key, signature: urlSig })
     
-    // 手动构建查询字符串，确保参数按key排序
     const sortedKeys = Object.keys(urlParams).sort()
     const queryParts = sortedKeys.map(k => `${encodeURIComponent(k)}=${encodeURIComponent(urlParams[k])}`)
     const queryStr = queryParts.join('&')
@@ -324,7 +310,6 @@ export const getMvUrl = async (songId, songName, singerName) => {
     const trackermvUrl = `https://trackermv.kugou.com/v2/interface/index?${queryStr}`
     console.log('[MV] getMvUrl 请求URL:', trackermvUrl)
     
-    // 使用axios发送请求（与测试脚本一致）
     const urlResponse = await axios({
       url: trackermvUrl,
       method: 'GET',

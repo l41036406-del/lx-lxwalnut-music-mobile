@@ -3,8 +3,8 @@
 const timeTagRegex = /\[(\d{2}:\d{2}\.\d{2,3})\]/g
 
 /**
- * 将LRC字符串解析为 Map<时间戳, 歌词行[]> 的结构
- * @param lrcString 原始LRC字符串
+ * Parse LRC string into Map<timestamp, lyrics line[]> structure
+ * @param lrcString Raw LRC string
  * @returns Map<string, string[]>
  */
 const parseLrcToMap = (lrcString: string | null | undefined): Map<string, string[]> => {
@@ -30,11 +30,11 @@ const parseLrcToMap = (lrcString: string | null | undefined): Map<string, string
 }
 
 /**
- * 逐行合并多个LRC字符串
- * @param lrc 主歌词
- * @param tlrc 翻译歌词 (可选)
- * @param rlrc 罗马音歌词 (可选)
- * @returns 合并后的LRC字符串
+ * Merge multiple LRC strings line by line
+ * @param lrc Main lyrics
+ * @param tlrc Translated lyrics (optional)
+ * @param rlrc Romanized lyrics (optional)
+ * @returns Merged LRC string
  */
 export const mergeLyrics = (
   lrc: string,
@@ -52,7 +52,6 @@ export const mergeLyrics = (
 
   const resultLines: string[] = []
 
-  // 保留LRC文件头部的元数据标签 (如 [ti:], [ar:])
   const metadataLines = lrc.split(/\r\n|\n|\r/).filter(line => !line.match(timeTagRegex) && line.startsWith('['))
   if (metadataLines.length) {
     resultLines.push(...metadataLines, '')

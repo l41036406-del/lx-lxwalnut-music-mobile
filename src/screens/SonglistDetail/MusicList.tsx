@@ -32,7 +32,6 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
   const [txIsUserCreated, setTxIsUserCreated] = useState(false)
   const [kgIsUserCreated, setKgIsUserCreated] = useState(false)
 
-  // 判断QQ音乐歌单是否是用户自建歌单
   useEffect(() => {
     if (info.source === 'tx') {
       txUserApi.getUserPlaylists().then(playlists => {
@@ -50,18 +49,14 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
     }
   }, [info.source, info.id])
 
-  // 判断酷狗歌单是否是用户自建歌单
   useEffect(() => {
     if (info.source === 'kg') {
-      // 酷狗歌单通过 isCollected 字段判断
-      // 如果歌单详情中没有 isCollected 信息，默认为自建
       setKgIsUserCreated(true)
     } else {
       setKgIsUserCreated(false)
     }
   }, [info.source, info.id])
 
-  // 最终的 isCreator 判断
   const finalIsCreator = info.source === 'tx' ? txIsUserCreated : info.source === 'kg' ? kgIsUserCreated : isCreator
 
   useEffect(() => {
@@ -77,14 +72,11 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
         if (index > -1) {
           listRef.current?.scrollToInfo(musicInfo as LX.Music.MusicInfoOnline)
         } else {
-          // 尝试从播放列表获取完整数据
           const currentListId = `${info.source}__${info.id}`
           if (listId === currentListId) {
             void getListMusics(LIST_IDS.TEMP).then(fullList => {
-              // 只有当临时列表数据更多（说明加载了更多页）且 ID 匹配时才更新
               if (fullList.length > currentList.length) {
                 const castedList = fullList as LX.Music.MusicInfoOnline[]
-                // 简单校验一下是否是同一个列表的数据（检查第一首歌 ID 是否一致，或者直接信任 listId）
                 if (castedList.length && currentList.length && castedList[0].id === currentList[0].id) {
                   songlistState.listDetailInfo.list = castedList
                   listRef.current?.setList(castedList)
@@ -166,7 +158,6 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
           return
         }
 
-        // 检查播放器中是否有完整列表
         const currentListId = `${songlistState.listDetailInfo.source}__${songlistState.listDetailInfo.id}`
         let playingListId = playerState.playMusicInfo.listId
         if (playingListId === LIST_IDS.TEMP) playingListId = listState.tempListMeta.id
@@ -185,7 +176,6 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
         }
       },
       addSongToList(rawSong: any) {
-        // 乐观更新：将 API 返回的歌曲数据添加到本地列表
         const { decodeName } = require('@/utils/index')
         const song: LX.Music.MusicInfoOnline = {
           id: `kg__${rawSong.hash || rawSong.audio_id}`,
@@ -202,7 +192,6 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
           fileId: rawSong.fileid || 0,
         } as any
         const currentList = [...songlistState.listDetailInfo.list]
-        // 避免重复添加
         if (!currentList.some(s => s.id === song.id)) {
           currentList.push(song)
           songlistState.listDetailInfo.list = currentList

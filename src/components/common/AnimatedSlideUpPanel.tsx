@@ -50,7 +50,7 @@ const AnimatedSlideUpPanel = forwardRef<AnimatedSlideUpPanelType, Props>(({ chil
     const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
       if (isVisible) {
         hide();
-        return true; // 阻止事件冒泡
+        return true;
       }
       return false;
     });

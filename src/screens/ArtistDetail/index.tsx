@@ -23,14 +23,12 @@ import { log } from '@/utils/log'
 const SONG_LIMIT = 100;
 const ALBUM_LIMIT = 100;
 
-// 获取对应源的API
 const getApi = (source) => {
   if (source === 'tx') return txApi
   if (source === 'kg') return kgApi
   return wyApi
 }
 
-// 获取歌手参数
 const getArtistParam = (artistInfo) => {
   if (artistInfo.source === 'tx') return artistInfo.mid || artistInfo.id
   if (artistInfo.source === 'kg') return artistInfo.id
@@ -288,9 +286,9 @@ export default memo(({ componentId, artistInfo }: { componentId: string, artistI
 
   useEffect(() => {
     if (activeTab === 'songs') {
-      if (songs.list.length === 0) loadSongs(songs.sort, 1, false); // 首次加载使用缓存
+      if (songs.list.length === 0) loadSongs(songs.sort, 1, false);
     } else {
-      if (albums.list.length === 0) loadAlbums(1, false); // 首次加载使用缓存
+      if (albums.list.length === 0) loadAlbums(1, false);
     }
   }, [activeTab, artistInfo.id]);
 
@@ -311,11 +309,10 @@ export default memo(({ componentId, artistInfo }: { componentId: string, artistI
     loadAlbums(albums.page);
   };
 
-  // 调用全局缓存清理
   const handleSortChange = (newSort) => {
     if (songs.sort === newSort) return;
     const cacheKeyParam = artistInfo.source === 'tx' ? (artistInfo.mid || artistInfo.id) : artistInfo.id
-    clearArtistCache(cacheKeyParam); // 清理该歌手所有缓存
+    clearArtistCache(cacheKeyParam);
     setSongs(prev => ({ ...prev, sort: newSort, list: [], page: 1, hasMore: true }));
   };
 

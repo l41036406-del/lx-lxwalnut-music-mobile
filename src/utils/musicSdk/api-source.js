@@ -15,7 +15,6 @@ for (const api of apiSourceInfo) {
 const getAPI = (source) => apiList[`${settingState.setting['common.apiSource']}_api_${source}`]
 
 const apis = (source) => {
-  // bilibili 始终使用内置插件
   if (source === 'bilibili') {
     return bilibili
   }

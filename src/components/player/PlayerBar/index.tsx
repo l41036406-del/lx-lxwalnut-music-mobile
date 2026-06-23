@@ -60,7 +60,7 @@ export default memo(({ componentId, isHome = false }: { isHome?: boolean }) => {
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
         const { dx, dy } = gestureState
-        if (Math.abs(dx) > Math.abs(dy) * 1.5) { // 水平滑动为主
+        if (Math.abs(dx) > Math.abs(dy) * 1.5) {
           if (drawerLayoutPosition === 'left' && dx > 10) {
             gestureAction.current = 'drawer'
             return true
@@ -69,7 +69,7 @@ export default memo(({ componentId, isHome = false }: { isHome?: boolean }) => {
             gestureAction.current = 'drawer'
             return true
           }
-        } else if (isSwipeToShowPlaylist && Math.abs(dy) > Math.abs(dx) * 1.5) { // 垂直滑动为主（仅在启用时）
+        } else if (isSwipeToShowPlaylist && Math.abs(dy) > Math.abs(dx) * 1.5) {
           if (dy < -10) {
             gestureAction.current = 'playlist'
             return true

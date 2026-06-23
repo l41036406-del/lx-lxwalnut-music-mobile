@@ -238,7 +238,6 @@ export default {
     // console.log(rawList)
     let list = []
     for (const board of rawList) {
-      // 排除 MV榜
       if (board.id == 201) continue
 
       if (board.topTitle.startsWith('巅峰榜·')) {

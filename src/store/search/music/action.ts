@@ -12,10 +12,10 @@ export interface SearchResult {
 }
 
 /**
- * 按搜索关键词重新排序列表
- * @param list 歌曲列表
- * @param keyword 搜索关键词
- * @returns 排序后的列表
+ * Re-sort list by search keyword
+ * @param list Song list
+ * @param keyword Search keyword
+ * @returns Sorted list
  */
 const handleSortList = (list: LX.Music.MusicInfoOnline[], keyword: string) => {
   let arr: any[] = []
@@ -57,7 +57,6 @@ const setLists = (
     totals.push(source.total)
   }
   
-  // 如果只有bilibili的结果，保持热度排序；否则按关键词相似度排序
   let convertedList = list.map(convertMusicInfo).filter((item): item is LX.Music.MusicInfoOnline => item !== null)
   
   if (onlyBilibili) {

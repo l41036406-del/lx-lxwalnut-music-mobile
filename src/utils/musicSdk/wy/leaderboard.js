@@ -136,7 +136,6 @@ export default {
     // console.log(rawList)
     let list = []
     for (const board of rawList) {
-      // 排除 MV榜
       // if (board.id == 201) continue
       list.push({
         id: 'wy__' + board.id,

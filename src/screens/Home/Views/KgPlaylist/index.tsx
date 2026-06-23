@@ -1,5 +1,5 @@
 /**
- * 酷狗音乐歌单页面 - 显示用户自建歌单和收藏歌单（复刻QQ音乐歌单页面）
+ * Kugou Music playlist page - Displays user-created and collected playlists (replicating QQ Music playlist page)
  */
 
 import { memo, useEffect, useState, useCallback, useRef } from 'react'
@@ -88,18 +88,15 @@ export default memo(() => {
     fetchPlaylists()
   }, [fetchPlaylists])
 
-  // 监听歌单更新事件，刷新歌单列表（封面等）
   useEffect(() => {
     const handlePlaylistUpdate = ({ source, listId, newCover }: { source: string, listId?: string, newCover?: string }) => {
       if (source === 'kg') {
         console.log('[KgPlaylist] 收到歌单更新事件')
-        // 如果有新封面，立即更新对应歌单的封面
         if (newCover && listId) {
           setCreatedPlaylists(prev => prev.map(p =>
             p.id === listId ? { ...p, cover: newCover } : p
           ))
         }
-        // 刷新歌单列表获取最新数据
         fetchPlaylists(true)
       }
     }

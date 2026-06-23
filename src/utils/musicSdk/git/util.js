@@ -3,27 +3,21 @@ import { toMD5 } from '../utils'
 import { httpFetch } from '../../request'
 import { formatPlayTime } from '@/utils/common'
 
-// 音乐数据库缓存
 let musicDatabase = null
 let lastFetchTime = 0
-const CACHE_DURATION = 3600000 // 1小时缓存
+const CACHE_DURATION = 3600000
 
-// Gitcode配置
 export const GITCODE_CONFIG = {
-  owner: 'ikun_0014', // Gitcode用户名
-  repo: 'music', // 仓库名
-  token: 'WzsER9knWNgC_4tjeJCtHKcN', // 访问令牌
-  dbUrl: null, // 数据库文件URL（将在init中设置）
+  owner: 'ikun_0014',
+  repo: 'music',
+  token: 'WzsER9knWNgC_4tjeJCtHKcN',
+  dbUrl: null,
 }
 GITCODE_CONFIG.dbUrl = `https://api.gitcode.com/api/v5/repos/${GITCODE_CONFIG.owner}/${GITCODE_CONFIG.repo}/raw/audio_database.json?access_token=${GITCODE_CONFIG.token}`
 
-/**
- * 加载音乐数据库
- */
 export const loadDatabase = async (forceReload = false) => {
   const now = Date.now()
 
-  // 检查缓存是否有效
   if (!forceReload && musicDatabase && now - lastFetchTime < CACHE_DURATION) {
     return musicDatabase
   }
@@ -47,68 +41,44 @@ export const loadDatabase = async (forceReload = false) => {
   }
 }
 
-/**
- * 从文件名提取歌曲名
- */
 export const extractNameFromFile = (filename) => {
   if (!filename) return '未知歌曲'
-  // 移除扩展名
   let name = filename.replace(/\.[^.]+$/, '')
-  // 尝试提取歌曲名（处理常见格式：歌手 - 歌名）
   const match = name.match(/^(?:.*?[-–—]\s*)?(.+)$/)
   return match ? match[1].trim() : name
 }
 
-/**
- * 生成歌曲ID
- */
 export const generateSongId = (relativePath) => {
-  // 使用相对路径的哈希作为唯一ID
   const hash = simpleHash(relativePath)
   return `gitcode_${hash}`
 }
 
-/**
- * 生成专辑ID
- */
 export const generateAlbumId = (album) => {
   if (!album) return ''
   return `album_${simpleHash(album)}`
 }
 
-/**
- * 简单哈希函数
- */
 export const simpleHash = (str) => {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i)
     hash = (hash << 5) - hash + char
-    hash = hash & hash // 转换为32位整数
+    hash = hash & hash
   }
   return Math.abs(hash).toString(36)
 }
 
-/**
- * 获取歌曲时长
- */
 export const getInterval = (item) => {
-  // 如果元数据中有时长信息，使用它
   if (item.duration) {
     return formatPlayTime(item.duration)
   }
-  // 否则返回默认值
   return '00:00'
 }
 
-/**
- * 获取音质类型
- */
 export const getTypes = (item) => {
   const types = []
   const format = item.format?.toLowerCase()
 
-  // 根据格式判断音质
   if (format === 'flac') {
     types.push({ type: 'flac', size: formatSize(item.filesize) })
   } else if (format === 'mp3') {
@@ -122,9 +92,6 @@ export const getTypes = (item) => {
   return types
 }
 
-/**
- * 获取音质类型（详细版）
- */
 export const get_Types = (item) => {
   const _types = {}
   const format = item.format?.toLowerCase()
@@ -140,9 +107,6 @@ export const get_Types = (item) => {
   return _types
 }
 
-/**
- * 格式化文件大小
- */
 export const formatSize = (bytes) => {
   if (!bytes) return 'UNKNOWN'
   const sizes = ['B', 'KB', 'MB', 'GB']
@@ -192,7 +156,6 @@ export const lrcTools = {
         }
 
         prevWord.newTimeStr = `<${prevWord.startTime},${prevWord.endTime - prevWord.startTime}>`
-        // console.log(prevWord)
       }
     }
     return {
@@ -212,7 +175,6 @@ export const lrcTools = {
       }
       const wordTimes = words.match(this.rxps.wordTimeAll)
       if (!wordTimes) return
-      // console.log(wordTimes)
       let preTimeInfo
       for (const timeStr of wordTimes) {
         const result = this.rxps.wordTime.exec(timeStr)
@@ -248,7 +210,6 @@ export const lrcTools = {
     }
   },
   parse(lrc) {
-    // console.log(lrc)
     const lines = lrc.split(/\r\n|\r|\n/)
     const tools = Object.create(this)
     tools.isOK = true
@@ -264,7 +225,6 @@ export const lrcTools = {
     if (!tools.lines.length) return ''
     let lrcs = tools.lines.join('\n')
     if (tools.tags.length) lrcs = `${tools.tags.join('\n')}\n${lrcs}`
-    // console.log(lrcs)
     return lrcs
   },
 }
@@ -293,9 +253,6 @@ export const wbdCrypto = {
   },
 }
 
-/**
- * 构建下载URL
- */
 export const buildDownloadUrl = (relativePath) => {
   const encodedPath = encodeURIComponent(relativePath.replace(/\\/g, '/'))
   return `https://api.gitcode.com/api/v5/repos/${GITCODE_CONFIG.owner}/${GITCODE_CONFIG.repo}/raw/${encodedPath}?access_token=${GITCODE_CONFIG.token}`

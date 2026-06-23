@@ -52,7 +52,6 @@ export default forwardRef<WebLoginModalType, {}>((props, ref) => {
   }, []);
 
   const stopPolling = () => {
-    // 可以在这里停止任何轮询操作
   };
 
   const handleNavigationStateChange = async (navState: WebViewNavigation) => {
@@ -83,16 +82,13 @@ export default forwardRef<WebLoginModalType, {}>((props, ref) => {
 
     isCheckingRef.current = true;
     try {
-      // 使用 getUid 接口验证 Cookie 有效性
       await wyApi.getUid(cookie);
 
-      // 验证成功
       loggedInRef.current = true;
       global.app_event.emit('wy-cookie-set', cookie);
       toast('登录成功，已自动获取Cookie！');
       handleClose();
     } catch (error) {
-      // Cookie 无效，静默处理，等待用户后续操作
       console.log('Web登录: Cookie验证失败:', (error as Error).message);
     } finally {
       isCheckingRef.current = false;

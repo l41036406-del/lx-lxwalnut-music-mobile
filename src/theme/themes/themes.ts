@@ -1,5 +1,3 @@
-//! 此文件由 createThemes.js 生成
-
 export default [
   {
     "id": "green",

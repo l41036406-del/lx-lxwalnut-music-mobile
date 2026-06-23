@@ -67,7 +67,7 @@ const createGettingUrlId = (musicInfo: LX.Music.MusicInfo | LX.Download.ListItem
   return `${musicInfo.id}_${tInfo?.id ?? ''}`
 }
 /**
- * 检查音乐信息是否已更改
+ * Check if music info has changed
  */
 const diffCurrentMusicInfo = (curMusicInfo: LX.Music.MusicInfo | LX.Download.ListItem): boolean => {
   // return curMusicInfo !== playerState.playMusicInfo.musicInfo || playerState.isPlay
@@ -117,9 +117,7 @@ const getMusicPlayUrl = async (
   const currentMusicInfo = 'progress' in musicInfo ? musicInfo.metadata.musicInfo : musicInfo
   const isWebDAVMusic = 'webdav' in currentMusicInfo.meta && (currentMusicInfo.meta as any).webdav === true
   
-  // 如果是 WebDAV 音乐且本地文件不存在，尝试下载
   if (isWebDAVMusic) {
-    // 使用 WebDAV 专用下载路径配置，默认使用私有目录
     const webdavPath = settingState.setting['webdav.downloadPath']
     let configuredDownloadDir = ''
     if (webdavPath && typeof webdavPath === 'string' && webdavPath.trim()) {
@@ -130,15 +128,12 @@ const getMusicPlayUrl = async (
     }
     const fileName = currentMusicInfo.meta.fileName
     
-    // 优先使用配置中已保存的文件路径（如果存在）
     const existingFilePath = currentMusicInfo.meta.filePath
     let filePathToCheck = existingFilePath || `${configuredDownloadDir}/${fileName}`
     
-    // 检查文件是否存在
     const { existsFile } = await import('@/utils/fs')
     let fileExists = await existsFile(filePathToCheck)
     
-    // 如果配置的路径中不存在，检查配置的下载目录
     if (!fileExists && existingFilePath) {
       const alternativePath = `${configuredDownloadDir}/${fileName}`
       filePathToCheck = alternativePath
@@ -206,19 +201,14 @@ export const setMusicUrl = (
   void getMusicPlayUrl(musicInfo, isRefresh)
     .then((url) => {
       if (!url) return
-      // 在调用 setResource 之前清除 gettingUrlId 和状态文本
-      // 这样播放器状态事件才能被正确处理
       const currentMusicInfo = playerState.playMusicInfo.musicInfo
       if (musicInfo.id === currentMusicInfo?.id) {
         global.lx.gettingUrlId = ''
         clearLoadTimeout()
-        // 立即清空状态文本，避免"正在下载歌曲..."一直显示
         setStatusText('')
         
-        // 如果是 WebDAV 音乐，且下载完成后正在播放，我们需要停止当前可能的幽灵播放并重新设置资源
         const isWebDAVMusic = 'webdav' in currentMusicInfo.meta && (currentMusicInfo.meta as any).webdav === true
         if (isWebDAVMusic) {
-          // 停止播放并清除队列，防止幽灵播放
           void setStop().then(() => {
             setResource(currentMusicInfo, url, playerState.progress.nowPlayTime)
           })
@@ -234,7 +224,6 @@ export const setMusicUrl = (
       // addDelayNextTimeout()
     })
     .finally(() => {
-      // 确保在异常情况下也能清除 gettingUrlId
       if (musicInfo.id === playerState.playMusicInfo.musicInfo?.id && global.lx.gettingUrlId) {
         global.lx.gettingUrlId = ''
         clearLoadTimeout()
@@ -242,7 +231,6 @@ export const setMusicUrl = (
     })
 }
 
-// 恢复上次播放的状态
 const handleRestorePlay = async (restorePlayInfo: LX.Player.SavedPlayInfo) => {
   const musicInfo = playerState.playMusicInfo.musicInfo
   if (!musicInfo) return
@@ -324,7 +312,6 @@ const debouncePlay = debounceBackgroundTimer((musicInfo: LX.Player.PlayMusic) =>
     })
 }, 200)
 
-// 处理音乐播放
 export const handlePlay = async () => {
   if (!isInitialized()) {
     await checkNotificationPermission()
@@ -368,9 +355,9 @@ export const handlePlay = async () => {
 }
 
 /**
- * 播放列表内歌曲
- * @param listId 列表id
- * @param index 播放的歌曲位置
+ * Play song in list
+ * @param listId list id
+ * @param index song position to play
  */
 export const playList = async (listId: string, index: number) => {
   const prevListId = playerState.playInfo.playerListId
@@ -402,9 +389,8 @@ export const resetRandomNextMusicInfo = () => {
 
 export const getNextPlayMusicInfo = async (): Promise<LX.Player.PlayMusicInfo | null> => {
   if (playerState.tempPlayList.length) {
-    // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
-    const playMusicInfo = playerState.tempPlayList[0]
-    return playMusicInfo
+  const playMusicInfo = playerState.tempPlayList[0]
+  return playMusicInfo
   }
 
   if (playerState.playMusicInfo.musicInfo == null) return null
@@ -420,7 +406,6 @@ export const getNextPlayMusicInfo = async (): Promise<LX.Player.PlayMusicInfo | 
 
   const playedList = playerState.playedList
   if (playedList.length) {
-    // 移除已播放列表内不存在原列表的歌曲
     let currentId: string
     if (playMusicInfo.isTempPlay) {
       const musicInfo = currentList[playInfo.playerPlayIndex]
@@ -428,7 +413,6 @@ export const getNextPlayMusicInfo = async (): Promise<LX.Player.PlayMusicInfo | 
     } else {
       currentId = playMusicInfo.musicInfo!.id
     }
-    // 从已播放列表移除播放列表已删除的歌曲
     let index
     for (
       index = playedList.findIndex((m) => m.musicInfo.id === currentId) + 1;
@@ -446,9 +430,7 @@ export const getNextPlayMusicInfo = async (): Promise<LX.Player.PlayMusicInfo | 
 
     if (index < playedList.length) return playedList[index]
   }
-  // const isCheckFile = findNum > 2 // 针对下载列表，如果超过两次都碰到无效歌曲，则过滤整个列表内的无效歌曲
   let { filteredList, playerIndex } = await filterList({
-    // 过滤已播放歌曲
     listId: currentListId,
     list: currentList,
     playedList,
@@ -498,23 +480,22 @@ const handlePlayNext = async (playMusicInfo: LX.Player.PlayMusicInfo) => {
   await handlePlay()
 }
 /**
- * 下一曲
- * @param isAutoToggle 是否自动切换
+ * Play next song
+ * @param isAutoToggle whether auto toggle
  * @returns
  */
 export const playNext = async (isAutoToggle = false): Promise<void> => {
   if (playerState.tempPlayList.length) {
-    // 如果稍后播放列表存在歌曲则直接播放改列表的歌曲
     const playMusicInfo = playerState.tempPlayList[0]
-    removeTempPlayList(0)
-    await handlePlayNext(playMusicInfo)
-    return
+    return playMusicInfo
   }
+
+  if (playerState.playMusicInfo.musicInfo == null) return null
+
+  if (randomNextMusicInfo.info) return randomNextMusicInfo.info
 
   const playMusicInfo = playerState.playMusicInfo
   const playInfo = playerState.playInfo
-  if (playMusicInfo.musicInfo == null) return handleToggleStop()
-
   // console.log(playInfo.playerListId)
   const currentListId = playInfo.playerListId
   if (!currentListId) return handleToggleStop()
@@ -523,7 +504,6 @@ export const playNext = async (isAutoToggle = false): Promise<void> => {
   const playedList = playerState.playedList
 
   if (playedList.length) {
-    // 移除已播放列表内不存在原列表的歌曲
     let currentId: string
     if (playMusicInfo.isTempPlay) {
       const musicInfo = currentList[playInfo.playerPlayIndex]
@@ -531,7 +511,6 @@ export const playNext = async (isAutoToggle = false): Promise<void> => {
     } else {
       currentId = playMusicInfo.musicInfo.id
     }
-    // 从已播放列表移除播放列表已删除的歌曲
     let index
     for (
       index = playedList.findIndex((m) => m.musicInfo.id === currentId) + 1;
@@ -556,9 +535,7 @@ export const playNext = async (isAutoToggle = false): Promise<void> => {
     await handlePlayNext(randomNextMusicInfo.info)
     return
   }
-  // const isCheckFile = findNum > 2 // 针对下载列表，如果超过两次都碰到无效歌曲，则过滤整个列表内的无效歌曲
   let { filteredList, playerIndex } = await filterList({
-    // 过滤已播放歌曲
     listId: currentListId,
     list: currentList,
     playedList,
@@ -608,7 +585,7 @@ export const playNext = async (isAutoToggle = false): Promise<void> => {
 }
 
 /**
- * 上一曲
+ * Play previous song
  */
 export const playPrev = async (isAutoToggle = false): Promise<void> => {
   const playMusicInfo = playerState.playMusicInfo
@@ -628,7 +605,6 @@ export const playPrev = async (isAutoToggle = false): Promise<void> => {
     } else {
       currentId = playMusicInfo.musicInfo.id
     }
-    // 从已播放列表移除播放列表已删除的歌曲
     let index
     for (
       index = playedList.findIndex((m) => m.musicInfo.id === currentId) - 1;
@@ -650,9 +626,7 @@ export const playPrev = async (isAutoToggle = false): Promise<void> => {
     }
   }
 
-  // const isCheckFile = findNum > 2
   let { filteredList, playerIndex } = await filterList({
-    // 过滤已播放歌曲
     listId: currentListId,
     list: currentList,
     playedList,
@@ -701,7 +675,7 @@ export const playPrev = async (isAutoToggle = false): Promise<void> => {
 }
 
 /**
- * 恢复播放
+ * Resume playback
  */
 export const play = () => {
   if (playerState.playMusicInfo.musicInfo == null) return
@@ -714,14 +688,14 @@ export const play = () => {
 }
 
 /**
- * 暂停播放
+ * Pause playback
  */
 export const pause = async () => {
   await setPause()
 }
 
 /**
- * 停止播放
+ * Stop playback
  */
 export const stop = async () => {
   await setStop()
@@ -731,7 +705,7 @@ export const stop = async () => {
 }
 
 /**
- * 播放、暂停播放切换
+ * Toggle play/pause
  */
 export const togglePlay = () => {
   global.lx.isPlayedStop &&= false
@@ -743,7 +717,7 @@ export const togglePlay = () => {
 }
 
 /**
- * 收藏当前播放的歌曲
+ * Collect current playing song
  */
 export const collectMusic = () => {
   if (!playerState.playMusicInfo.musicInfo) return
@@ -759,7 +733,7 @@ export const collectMusic = () => {
 }
 
 /**
- * 取消收藏当前播放的歌曲
+ * Uncollect current playing song
  */
 export const uncollectMusic = () => {
   if (!playerState.playMusicInfo.musicInfo) return
@@ -771,7 +745,7 @@ export const uncollectMusic = () => {
 }
 
 /**
- * 不喜欢当前播放的歌曲
+ * Dislike current playing song
  */
 export const dislikeMusic = async () => {
   if (!playerState.playMusicInfo.musicInfo) return

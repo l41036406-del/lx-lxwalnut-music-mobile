@@ -9,7 +9,7 @@ import SearchResultList from "@/screens/Home/Views/Search/SearchResultList.tsx";
 
 interface ListProps {
   onSearch: (keyword: string) => void
-  onOpenDetail: (item: any) => void; // 保留 onOpenDetail 以便传递
+  onOpenDetail: (item: any) => void;
 }
 export interface ListType {
   loadList: (

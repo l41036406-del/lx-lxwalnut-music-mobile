@@ -5,7 +5,7 @@ import List, { type ListProps, type ListType, type Status } from './List'
 export interface SonglistProps {
   onRefresh: ListProps['onRefresh']
   onLoadMore: ListProps['onLoadMore']
-  onOpenDetail: (item: ListInfoItem, index: number) => void // 确保 onOpenDetail 被定义和传递
+  onOpenDetail: (item: ListInfoItem, index: number) => void
 }
 export interface SonglistType {
   setList: (list: ListInfoItem[], showSource?: boolean) => void

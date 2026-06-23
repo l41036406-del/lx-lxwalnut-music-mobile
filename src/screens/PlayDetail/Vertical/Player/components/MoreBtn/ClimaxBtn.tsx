@@ -15,31 +15,6 @@ export default memo(() => {
   const [climaxInfo, setClimaxInfo] = useState<ClimaxInfo | null>(null)
   const iconColor = theme.isDark ? theme['c-font'] : theme['c-primary']
 
-  // 自动加载高潮数据（仅酷狗源）
-  useEffect(() => {
-    const musicInfo = playerState.playMusicInfo.musicInfo
-    if (!musicInfo || musicInfo.source !== 'kg') {
-      return
-    }
-    
-    const hash = 'hash' in musicInfo ? musicInfo.hash : (musicInfo as any).hash
-    if (!hash) {
-      console.log('[Climax] 无hash，跳过加载')
-      return
-    }
-    
-    console.log('[Climax] 检测到酷狗源，自动加载高潮数据')
-    getClimax(hash)
-      .then(result => {
-        console.log('[Climax] 加载结果:', result)
-        setClimaxInfo(result)
-      })
-      .catch(err => {
-        console.error('[Climax] 加载失败:', err)
-      })
-  }, [playerState.playMusicInfo.musicInfo?.hash, playerState.playMusicInfo.musicInfo?.source])
-
-  // 高潮按钮点击处理
   const handleClimaxPress = useCallback(() => {
     if (!climaxInfo) {
       console.log('[Climax] 无高潮数据')
@@ -57,7 +32,6 @@ export default memo(() => {
     )
   }, [climaxInfo])
 
-  // 没有高潮数据时不显示
   if (!climaxInfo) {
     return null
   }

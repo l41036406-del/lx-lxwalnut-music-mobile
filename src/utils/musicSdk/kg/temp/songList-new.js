@@ -53,7 +53,7 @@ export default {
   },
 
   /**
-   * 获取歌曲列表内的音乐
+   * Get music within song list
    * @param {*} id
    * @param {*} page
    */
@@ -98,7 +98,7 @@ export default {
   },
 
   /**
-   * 获取SpecialId歌单
+   * Get SpecialId playlist
    * @param {*} id
    */
   async getUserListDetailBySpecialId(id, page, tryNum = 0) {
@@ -127,8 +127,6 @@ export default {
         name,
         img: pic,
         desc,
-        // author: body.result.info.userinfo.username,
-        // play_count: formatPlayCount(body.result.listen_num),
       },
     }
   },
@@ -143,7 +141,7 @@ export default {
   },
 
   /**
-   * 使用SpecialId获取CollectionId
+   * Get CollectionId using SpecialId
    * @param {*} specialId
    */
   async getCollectionIdBySpecialId(specialId) {
@@ -153,7 +151,6 @@ export default {
           'Mozilla/5.0 (Linux; Android 10; HLK-AL00) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.5112.102 Mobile Safari/537.36 EdgA/104.0.1293.70',
       },
     }).promise.then(({ body }) => {
-      // console.log('getCollectionIdBySpecialId', body)
       if (!body.data.global_specialid)
         return Promise.reject(new Error('Failed to get global collection id.'))
       return body.data.global_specialid
@@ -161,7 +158,7 @@ export default {
   },
 
   /**
-   * 获取歌单URL
+   * Get song list URL
    * @param {*} sortId
    * @param {*} tagId
    * @param {*} page
@@ -263,7 +260,7 @@ export default {
   },
 
   /**
-   * 通过CollectionId获取歌单详情
+   * Get playlist details through CollectionId
    * @param {*} id
    */
   async getUserListInfoByCollectionId(id) {
@@ -301,40 +298,7 @@ export default {
     })
   },
   /**
-   * 通过SpecialId获取歌单
-   * @param {*} id
-   */
-  // async getUserListDetailBySpecialId(id, page = 1, limit = 300) {
-  //   if (!id || id.length > 1000) return Promise.reject(new Error('get list error.'))
-  //   const listInfo = await this.getListInfoBySpecialId(id)
-
-  //   const params = `specialid=${id}&need_sort=1&module=CloudMusic&clientver=11589&pagesize=${limit}&userid=0&page=${page}&type=0&area_code=1&appid=1005`
-  //   return createHttpFetch(`http://pubsongs.kugou.com/v2/get_other_list_file?${params}&signature=${signatureParams(params, 2)}`, {
-  //     headers: {
-  //       'User-Agent': 'Android10-AndroidPhone-11589-201-0-playlist-wifi',
-  //     },
-  //   }).then(body => {
-  //     if (!body.info) return Promise.reject(new Error('Get list failed.'))
-  //     const songList = this.filterListByCollectionId(body.info)
-
-  //     return {
-  //       list: songList || [],
-  //       page,
-  //       limit,
-  //       total: body.count,
-  //       source: 'kg',
-  //       info: {
-  //         name: listInfo.name,
-  //         img: listInfo.image,
-  //         desc: listInfo.desc,
-  //         // author: listInfo.userName,
-  //         // play_count: formatPlayCount(listInfo.playCount),
-  //       },
-  //     }
-  //   })
-  // },
-  /**
-   * 通过CollectionId获取歌单
+   * Get playlist through CollectionId
    * @param {*} id
    */
   async getUserListDetailByCollectionId(id, page = 1, limit = 300) {
@@ -370,7 +334,7 @@ export default {
     })
   },
   /**
-   * 过滤GlobalSpecialId歌单数据
+   * Filter GlobalSpecialId playlist data
    * @param {*} rawData
    */
   filterListByCollectionId(rawData) {
@@ -439,12 +403,11 @@ export default {
     return list
   },
   /**
-   * 通过酷狗码获取歌单
+   * Get playlist through KuGou code
    * @param {*} id
    * @param {*} page
    */
   async getUserListDetailByCode(id, page = 1) {
-    // type 1单曲，2歌单，3电台，4酷狗码，5别人的播放队列
     const codeData = await createHttpFetch('http://t.kugou.com/command/', {
       method: 'POST',
       headers: {
@@ -502,7 +465,6 @@ export default {
           },
         }
       )
-      // console.log(songList)
       let list = await getMusicInfosByList(songList || codeInfo.list)
       return {
         list,
@@ -513,9 +475,7 @@ export default {
         info: {
           name: codeInfo.name,
           img: (codeInfo.img_size && codeInfo.img_size.replace('{size}', 240)) || codeInfo.img,
-          // desc: body.result.info.list_desc,
           author: codeInfo.username,
-          // play_count: formatPlayCount(info.count),
         },
       }
     }
@@ -540,7 +500,6 @@ export default {
         )
     }
     let list = await getMusicInfosByList(songInfo.list)
-    // console.log(info, songInfo)
     return {
       list,
       page: 1,
@@ -550,9 +509,7 @@ export default {
       info: {
         name: songInfo.info.name,
         img: songInfo.info.img,
-        // desc: body.result.info.list_desc,
         author: songInfo.info.username,
-        // play_count: formatPlayCount(info.count),
       },
     }
   },
@@ -581,7 +538,6 @@ export default {
     }
     let result = await Promise.all(tasks).then(([...datas]) => datas.flat())
     result = await getMusicInfosByList(result)
-    // console.log(result)
     return {
       list: result,
       page,
@@ -591,9 +547,7 @@ export default {
       info: {
         name: listInfo.name,
         img: listInfo.pic && listInfo.pic.replace('{size}', 240),
-        // desc: body.result.info.list_desc,
         author: listInfo.list_create_username,
-        // play_count: formatPlayCount(listInfo.count),
       },
     }
   },
@@ -652,7 +606,6 @@ export default {
     )
     const songInfo = await this.createGetListDetail2Task(id, info.songcount)
     let list = await getMusicInfosByList(songInfo)
-    // console.log(info, songInfo, list)
     return {
       list,
       page: 1,
@@ -677,7 +630,6 @@ export default {
           'Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1',
       },
     }).promise
-    // console.log(body)
     let result = body.match(/var\sphpParam\s=\s({.+?});/)
     if (result) result = JSON.parse(result[1])
     this.cache.set(chain, result)
@@ -697,7 +649,6 @@ export default {
     if (result) result = JSON.parse(result[1])
     this.cache.set(chain, result)
     result = await getMusicInfosByList(result)
-    // console.log(info, songInfo)
     return result
   },
 
@@ -716,9 +667,7 @@ export default {
       info: {
         name: listInfo.specialname,
         img: listInfo.imgurl && listInfo.imgurl.replace('{size}', 240),
-        // desc: body.result.info.list_desc,
         author: listInfo.nickname,
-        // play_count: formatPlayCount(info.count),
       },
     }
   },
@@ -737,9 +686,7 @@ export default {
       info: {
         name: listInfo.specialname,
         img: listInfo.imgurl && listInfo.imgurl.replace('{size}', 240),
-        // desc: body.result.info.list_desc,
         author: listInfo.nickname,
-        // play_count: formatPlayCount(info.count),
       },
     }
   },
@@ -760,7 +707,6 @@ export default {
       statusCode,
       body,
     } = await requestLink.promise
-    // console.log(body, location, statusCode)
     if (statusCode > 400) return this.getUserListDetail(link, page, ++retryNum)
     if (typeof body == 'string') {
       if (body.includes('"global_collection_id":'))
@@ -776,7 +722,6 @@ export default {
         return album.getAlbumDetail(body.replace(/^[\s\S]+?list_id = "(\w+)"[\s\S]+?$/, '$1'), page)
     }
     if (location) {
-      // 概念版分享链接 https://t1.kugou.com/xxx
       if (location.includes('global_specialid'))
         return this.getUserListDetailByCollectionId(
           location.replace(/^.*?global_specialid=(\w+)(?:&.*$|#.*$|$)/, '$1'),
@@ -815,7 +760,6 @@ export default {
     return this.getUserListDetailByLink(body, link)
   },
 
-  // 获取列表信息
   getListInfo(tagId, tryNum = 0) {
     if (this._requestObj_listInfo) this._requestObj_listInfo.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -831,7 +775,6 @@ export default {
     })
   },
 
-  // 获取列表数据
   getList(sortId, tagId, page) {
     let tasks = [this.getSongList(sortId, tagId, page)]
     tasks.push(
@@ -844,7 +787,7 @@ export default {
           })
     )
     if (!tagId && page === 1 && sortId === this.sortList[0].id)
-      tasks.push(this.getSongListRecommend()) // 如果是所有类别，则顺便获取推荐列表
+      tasks.push(this.getSongListRecommend())
     return Promise.all(tasks).then(([list, info, recommendList]) => {
       if (recommendList) list.unshift(...recommendList)
       return {
@@ -854,7 +797,6 @@ export default {
     })
   },
 
-  // 获取标签
   getTags(tryNum = 0) {
     if (this._requestObj_tags) this._requestObj_tags.cancelHttp()
     if (tryNum > 2) return Promise.reject(new Error('try max num'))
@@ -883,7 +825,6 @@ export default {
       `http://complexsearchretry.kugou.com/v1/search/special?${params}&signature=${signatureParams(params, 'android')}`
     )
     return createHttpFetch(url).then((body) => {
-      // console.log(body)
       return {
         list: body.lists.map((item) => {
           return {
@@ -904,12 +845,5 @@ export default {
         source: 'kg',
       }
     })
-    // http://msearchretry.kugou.com/api/v3/search/special?version=9209&keyword=%E5%91%A8%E6%9D%B0%E4%BC%A6&pagesize=20&filter=0&page=1&sver=2&with_res_tag=0
-    // http://ioscdn.kugou.com/api/v3/search/special?keyword=${encodeURIComponent(text)}&page=${page}&pagesize=${limit}&showtype=10&plat=2&version=7910&correct=1&sver=5
-    // http://msearchretry.kugou.com/api/v3/search/special?keyword=${encodeURIComponent(text)}&page=${page}&pagesize=${limit}&showtype=10&filter=0&version=7910&sver=2
   },
 }
-
-// getList
-// getTags
-// getListDetail

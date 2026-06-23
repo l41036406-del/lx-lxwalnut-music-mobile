@@ -274,10 +274,8 @@ export default {
 
     const list = []
     rawList.forEach((item, index) => {
-      // 支持新的数据格式：歌曲信息在 songInfo 字段中
       const songInfo = item.songInfo || item
       
-      // 详细记录原始数据结构
       txLog.info('=== txApi.handleAlbumResult 原始数据诊断 ===', {
         index,
         itemId: item.id,

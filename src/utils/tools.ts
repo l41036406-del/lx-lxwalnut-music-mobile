@@ -81,7 +81,6 @@ export const TEMP_FILE_PATH = temporaryDirectoryPath + '/tempFile'
 // }
 
 export const checkStoragePermissions = async () => {
-  // 检查所有必要的存储权限
   const writeGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE)
   const readGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE)
   console.log('checkStoragePermissions', { writeGranted, readGranted })
@@ -128,10 +127,10 @@ export const requestStoragePermission = async () => {
 }
 
 /**
- * 显示toast
- * @param message 消息
- * @param duration 时长
- * @param position 位置
+ * Show toast
+ * @param message message
+ * @param duration duration
+ * @param position position
  */
 export const toast = (
   message: string,
@@ -205,7 +204,6 @@ export const handleReadFile = async <T = unknown>(path: string): Promise<T> => {
   }
   data = JSON.parse(data)
 
-  // 修复PC v1.14.0出现的导出数据被序列化两次的问题
   if (typeof data != 'object') {
     try {
       data = JSON.parse(data as string)
@@ -467,9 +465,9 @@ export const showImportTip = (type: string) => {
 }
 
 /**
- * 生成节流函数
- * @param fn 回调
- * @param delay 延迟
+ * Generate throttle function
+ * @param fn callback
+ * @param delay delay
  * @returns
  */
 export function throttleBackgroundTimer<Args extends any[]>(
@@ -489,9 +487,9 @@ export function throttleBackgroundTimer<Args extends any[]>(
 }
 
 /**
- * 生成防抖函数
- * @param fn 回调
- * @param delay 延迟
+ * Generate debounce function
+ * @param fn callback
+ * @param delay delay
  * @returns
  */
 export function debounceBackgroundTimer<Args extends any[]>(

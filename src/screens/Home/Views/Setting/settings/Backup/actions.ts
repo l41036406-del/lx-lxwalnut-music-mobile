@@ -104,7 +104,7 @@ const importNewListData = async (
 }
 
 /**
- * 导入单个列表
+ * Import a single list
  * @param listData
  * @param position
  * @returns
@@ -199,7 +199,7 @@ const importPlayList = async (path: string) => {
   }
 
   switch (configData.type) {
-    case 'defautlList': // 兼容0.6.2及以前版本的列表数据
+    case 'defautlList':
       if (!(await showConfirm())) return true
       await overwriteListMusics(
         LIST_IDS.DEFAULT,
@@ -217,7 +217,6 @@ const importPlayList = async (path: string) => {
       await importNewListData(configData.data)
       break
     case 'allData':
-      // 兼容0.6.2及以前版本的列表数据
       if (!(await showConfirm())) return true
       if (configData.defaultList)
         await overwriteListMusics(
