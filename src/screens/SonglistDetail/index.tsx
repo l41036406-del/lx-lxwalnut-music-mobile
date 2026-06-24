@@ -130,7 +130,7 @@ export default ({ info, onBack, initialScrollToInfo }: { info: ListInfoItem, onB
   const handleBack = onBack
 
   const refreshList = useCallback((isRefresh = false) => {
-    console.log(`[SonglistDetail] refreshList called, musicListRef:`, !!musicListRef.current, { source: info.source, id: info.id, isRefresh })
+    if (global.lx.isEnableLog) console.log(`[SonglistDetail] refreshList`, { source: info.source, id: info.id, isRefresh })
     musicListRef.current?.loadList(info.source, info.id, isRefresh).then(setDetailInfo)
   }, [info.source, info.id])
 
@@ -151,16 +151,17 @@ export default ({ info, onBack, initialScrollToInfo }: { info: ListInfoItem, onB
   }, [info.id, info.source])
 
   useEffect(() => {
-    console.log(`[SonglistDetail] useEffect refreshList, musicListRef:`, !!musicListRef.current)
     refreshList(true)
   }, [refreshList])
 
   useEffect(() => {
+    // Normalize ID for event matching: strip all known prefixes so different ID formats match
+    const normalizeId = (id: string) =>
+      id.toString().replace('kg__', '').replace('collection_', '').replace('id_', '')
+
     const handlePlaylistUpdate = ({ source, listId, addedSong }: { source: string, listId: string, addedSong?: any }) => {
-      if (info.source === source && String(info.id) === String(listId)) {
-        console.log(`歌单详情页 ${listId} 收到更新事件`)
+      if (info.source === source && normalizeId(info.id) === normalizeId(listId)) {
         if (addedSong) {
-          console.log(`[乐观更新] 添加歌曲: ${addedSong.name || addedSong.songname}`)
           musicListRef.current?.addSongToList(addedSong)
         } else {
           setTimeout(() => {
@@ -200,7 +201,6 @@ export default ({ info, onBack, initialScrollToInfo }: { info: ListInfoItem, onB
       return
     }
     if (updatedPlaylist.name !== detailInfo.name || updatedPlaylist.description !== detailInfo.desc && updatedPlaylist.description != null) {
-      console.log('歌单详情页检测到名称或描述变化，正在更新UI...')
       setDetailInfo(prev => ({
         ...prev,
         name: updatedPlaylist.name,

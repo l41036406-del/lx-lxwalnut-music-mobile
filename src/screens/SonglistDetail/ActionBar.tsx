@@ -25,7 +25,6 @@ export default memo(({ onBack }: { onBack: () => void }) => {
 
   const handleCollection = () => {
     const name = songlistState.listDetailInfo.info?.name || info.name || '未命名歌单'
-    console.log('[ActionBar] 收藏按钮点击', { id: info.id, source: info.source, name })
     void handleCollect(info.id, info.source, name)
   }
 

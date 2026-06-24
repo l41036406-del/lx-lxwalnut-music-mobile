@@ -59,7 +59,8 @@ const transformSong = (item, index) => {
     const singername = item.author_name || item.singername || item.audio_info?.singername || ''
     const albumName = item.album_name || item.audio_info?.album_name || ''
     const albumId = item.album_id || item.audio_info?.album_id || ''
-    const duration = item.timelength || item.duration || item.audio_info?.duration || 0
+    const rawDuration = item.time_length || item.timelength || item.timelen || item.duration || item.audio_info?.timelength || item.audio_info?.duration || 0
+    const duration = rawDuration > 10000 ? Math.floor(rawDuration / 1000) : rawDuration
     let img = item.sizable_cover || item.image || item.audio_info?.image || 
               item.album_sizable_cover || item.album_info?.sizable_cover ||
               item.trans_param?.union_cover || ''

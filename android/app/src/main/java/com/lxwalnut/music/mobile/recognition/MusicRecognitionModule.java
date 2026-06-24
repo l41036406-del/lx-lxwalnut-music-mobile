@@ -68,6 +68,12 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
     private boolean logoHidden = false;
     private Runnable autoHideRunnable = null;
     private static final int AUTO_HIDE_DELAY_MS = 10000;
+    private static final int WIDGET_WIDTH = 120;
+    private static final int PANEL_WIDTH = 760;
+    private int snappedEdge = 0;           // 0=none, 1=LEFT, 2=RIGHT
+    private static final int LEFT_EDGE = 1;
+    private static final int RIGHT_EDGE = 2;
+    private boolean logoWasHiddenAtTouchDown = false;
 
     public MusicRecognitionModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -75,13 +81,14 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
         this.mainHandler = new Handler(Looper.getMainLooper());
     }
 
+    private int getScreenWidth() {
+        return reactContext.getResources().getDisplayMetrics().widthPixels;
+    }
+
     private void resetAutoHideTimer() {
         if (autoHideRunnable != null) {
             mainHandler.removeCallbacks(autoHideRunnable);
             logToJS("自动隐藏计时器已重置");
-        }
-        if (logoHidden) {
-            showLogoButton();
         }
         if (!isExpanded && !isRecording) {
             autoHideRunnable = () -> hideLogoButton();
@@ -92,28 +99,118 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
         }
     }
 
+    /**
+     * 10-second auto-hide: snap half the widget off the nearest screen edge.
+     * Uses params.x (real window position) — NOT translationX.
+     * Requires FLAG_LAYOUT_NO_LIMITS for off-screen rendering.
+     */
     private void hideLogoButton() {
-        if (logoButtonView != null && !logoHidden) {
-            logoHidden = true;
-            logToJS("悬浮按钮自动隐藏：滑出一半 + 半透明");
+        if (logoButtonView == null || windowManager == null || floatingContainer == null || logoHidden) return;
+        logoHidden = true;
+        logToJS("悬浮按钮自动隐藏：滑出一半 + 半透明");
+
+        logoButtonView.post(() -> {
+            if (!logoHidden || logoButtonView.getWidth() == 0) return;
+
+            WindowManager.LayoutParams params = (WindowManager.LayoutParams) floatingContainer.getLayoutParams();
+            int widgetWidth = logoButtonView.getWidth();
+            int halfWidget = widgetWidth / 2;
+            int screenWidth = getScreenWidth();
+            int currentX = params.x;
+
+            // Decide which edge is closer
+            int leftEdgeTarget = -halfWidget;
+            int rightEdgeTarget = screenWidth - halfWidget;
+            int distToLeft = Math.abs(currentX - leftEdgeTarget);
+            int distToRight = Math.abs(currentX - rightEdgeTarget);
+            int targetX = (distToLeft <= distToRight) ? leftEdgeTarget : rightEdgeTarget;
+            snappedEdge = (distToRight <= distToLeft) ? RIGHT_EDGE : LEFT_EDGE;
+
+            final int startX = currentX;
+            final int delta = targetX - startX;
+
+            android.animation.ValueAnimator animator = android.animation.ValueAnimator.ofInt(0, 1000);
+            animator.setDuration(300);
+            animator.setInterpolator(new android.view.animation.DecelerateInterpolator());
+            animator.addUpdateListener(animation -> {
+                float fraction = animation.getAnimatedFraction();
+                params.x = startX + (int) (delta * fraction);
+                try {
+                    windowManager.updateViewLayout(floatingContainer, params);
+                } catch (Exception e) {
+                    Log.e(TAG, "Hide animation failed", e);
+                }
+            });
+            animator.start();
+
             logoButtonView.animate()
-                .translationX(-logoButtonView.getWidth() / 2)
                 .alpha(0.5f)
                 .setDuration(300)
                 .start();
-        }
+        });
     }
 
+    /**
+     * Restore the widget to fully visible position at the snapped edge.
+     * Left:  params.x = 0
+     * Right: params.x = screenWidth - widgetWidth
+     * Optionally runs onComplete after animation finishes (for click-to-expand).
+     */
     private void showLogoButton() {
-        if (logoButtonView != null && logoHidden) {
-            logoHidden = false;
-            logToJS("悬浮按钮恢复显示：滑回原位 + 全透明");
-            logoButtonView.animate()
-                .translationX(0)
-                .alpha(1.0f)
-                .setDuration(300)
-                .start();
+        showLogoButton(null);
+    }
+
+    private void showLogoButton(Runnable onComplete) {
+        if (logoButtonView == null || windowManager == null || floatingContainer == null) return;
+        logoHidden = false;
+        logToJS("悬浮按钮恢复显示：滑回安全边缘 + 全透明");
+
+        WindowManager.LayoutParams params = (WindowManager.LayoutParams) floatingContainer.getLayoutParams();
+        int screenWidth = getScreenWidth();
+        int widgetWidth = logoButtonView.getWidth();
+
+        // Target: fully visible edge (NOT half-off)
+        int targetX = (snappedEdge == RIGHT_EDGE)
+            ? (screenWidth - widgetWidth)
+            : 0;
+
+        final int startX = params.x;
+        final int delta = targetX - startX;
+
+        if (delta == 0) {
+            logoButtonView.setAlpha(1.0f);
+            if (onComplete != null) onComplete.run();
+            return;
         }
+
+        android.animation.ValueAnimator animator = android.animation.ValueAnimator.ofInt(0, 1000);
+        animator.setDuration(300);
+        animator.setInterpolator(new android.view.animation.DecelerateInterpolator());
+        animator.addUpdateListener(animation -> {
+            float fraction = animation.getAnimatedFraction();
+            params.x = startX + (int) (delta * fraction);
+            try {
+                windowManager.updateViewLayout(floatingContainer, params);
+            } catch (Exception e) {
+                Log.e(TAG, "Restore animation failed", e);
+            }
+        });
+
+        if (onComplete != null) {
+            animator.addListener(new android.animation.AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(android.animation.Animator animation) {
+                    onComplete.run();
+                }
+            });
+        }
+
+        animator.start();
+
+        logoButtonView.animate()
+            .alpha(1.0f)
+            .setDuration(300)
+            .start();
     }
 
     @Override
@@ -237,7 +334,8 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         WindowManager.LayoutParams.WRAP_CONTENT,
                         layoutFlag,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                            | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                         PixelFormat.TRANSLUCENT
                 );
                 params.gravity = Gravity.LEFT | Gravity.CENTER_VERTICAL;
@@ -260,6 +358,8 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                 autoHideRunnable = null;
             }
             logoHidden = false;
+            snappedEdge = 0;
+            logoWasHiddenAtTouchDown = false;
             if (floatingContainer != null && windowManager != null) {
                 windowManager.removeView(floatingContainer);
                 floatingContainer = null;
@@ -393,6 +493,8 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
+                        // Record hidden state before any restore
+                        logoWasHiddenAtTouchDown = logoHidden;
                         resetAutoHideTimer();
                         downX = event.getRawX();
                         downY = event.getRawY();
@@ -417,12 +519,18 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                                 longPressRunnable = null;
                             }
                         }
-                        if (isDragging && windowManager != null && floatingContainer != null) {
+                        if (isDragging && windowManager != null && floatingContainer != null && logoButtonView != null) {
                             float dx = event.getRawX() - lastX;
                             float dy = event.getRawY() - lastY;
                             WindowManager.LayoutParams params = (WindowManager.LayoutParams) floatingContainer.getLayoutParams();
                             params.x += (int) dx;
                             params.y += (int) dy;
+
+                            // Boundary clamp: never allow off-screen during drag
+                            int screenWidth = getScreenWidth();
+                            int widgetWidth = logoButtonView.getWidth();
+                            params.x = Math.max(0, Math.min(params.x, screenWidth - widgetWidth));
+
                             try {
                                 windowManager.updateViewLayout(floatingContainer, params);
                             } catch (Exception e) {
@@ -434,14 +542,24 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                         return true;
 
                     case MotionEvent.ACTION_UP:
-                        resetAutoHideTimer();
                         if (longPressRunnable != null) {
                             mainHandler.removeCallbacks(longPressRunnable);
                             longPressRunnable = null;
                         }
-                        if (!longPressTriggered && !isDragging) {
-                            togglePanel();
+
+                        if (!longPressTriggered && isDragging) {
+                            // 拖拽松手：按钮停在用户扔到的绝对位置，不做任何吸附
+                            // 只重置 10 秒自动隐藏计时
+                            resetAutoHideTimer();
+                        } else if (!longPressTriggered && !isDragging) {
+                            // 点击：如果之前是隐藏状态，先恢复再展开；否则直接切换
+                            if (logoWasHiddenAtTouchDown) {
+                                showLogoButton(() -> togglePanel());
+                            } else {
+                                togglePanel();
+                            }
                         }
+
                         isDragging = false;
                         return true;
 
@@ -657,13 +775,65 @@ public class MusicRecognitionModule extends ReactContextBaseJavaModule implement
                 && rawY >= loc[1] && rawY <= loc[1] + logoButtonView.getHeight();
     }
 
+    /**
+     * Toggle the expanded panel.
+     * Rule: Always 45° bottom-right offset (leftMargin=120, topMargin=80).
+     * If widget is on the right side of screen, shift the entire container
+     * leftward by PANEL_WIDTH so the panel doesn't overflow the viewport.
+     */
+    /**
+     * 切换展开面板。
+     * 原子级渲染法则：先计算最终坐标 → 同步 commit 容器位置 → 再淡入面板。
+     * 绝不让面板在坐标未就绪时暴露给用户。
+     */
     private void togglePanel() {
         if (expandedPanel == null) return;
         isExpanded = !isExpanded;
-        expandedPanel.setVisibility(isExpanded ? View.VISIBLE : View.GONE);
-        if (isExpanded) {
-            log("面板已展开");
+
+        if (isExpanded && floatingContainer != null && logoButtonView != null) {
+            WindowManager.LayoutParams params = (WindowManager.LayoutParams) floatingContainer.getLayoutParams();
+            int screenWidth = getScreenWidth();
+            int widgetWidth = logoButtonView.getWidth();
+
+            // 固定 45° 偏移：按钮左上角，面板斜右下角
+            FrameLayout.LayoutParams panelLayoutParams = (FrameLayout.LayoutParams) expandedPanel.getLayoutParams();
+            panelLayoutParams.leftMargin = 120;
+            panelLayoutParams.topMargin = 80;
+            expandedPanel.setLayoutParams(panelLayoutParams);
+
+            // 判断按钮在屏幕哪半边
+            int widgetRight = params.x + widgetWidth;
+            boolean isOnRightSide = (widgetRight > screenWidth / 2);
+
+            // 第一步：直接计算最终安全坐标（不做动画，一步到位）
+            int targetX;
+            if (isOnRightSide) {
+                // 右侧：容器左移，确保面板不飞出屏幕
+                // 面板右边界 = container_x + 120 + 760 = container_x + 880
+                // 要求 container_x + 880 <= screenWidth → container_x <= screenWidth - 880
+                targetX = Math.max(0, screenWidth - 880);
+            } else {
+                // 左侧：容器归零
+                targetX = 0;
+            }
+
+            // 第二步：原子级同步——先 commit 坐标，面板此时还是 GONE
+            params.x = targetX;
+            windowManager.updateViewLayout(floatingContainer, params);
+
+            // 第三步：面板先设为 VISIBLE 但 alpha=0，然后淡入
+            expandedPanel.setAlpha(0.0f);
+            expandedPanel.setVisibility(View.VISIBLE);
+            expandedPanel.animate()
+                .alpha(1.0f)
+                .setDuration(150)
+                .start();
+
+            log("面板已展开，容器原子级定位完成");
+        } else if (!isExpanded) {
+            expandedPanel.setVisibility(View.GONE);
         }
+
         resetAutoHideTimer();
     }
 

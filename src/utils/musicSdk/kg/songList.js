@@ -248,7 +248,7 @@ export default {
     try {
       result = await httpFetch(url, options).promise
     } catch (err) {
-      console.log(err)
+      if (global.lx.isEnableLog) console.log(err)
       return this.createHttp(url, options, ++retryNum)
     }
     // console.log(result.statusCode, result.body)
@@ -516,7 +516,7 @@ export default {
         limit +
         '&srcappid=2919&clientver=20000&clienttime=' + now + '&mid=' + now + '&uuid=' + now + '&dfid=-'
       const songUrl = `https://mobiles.kugou.com/api/v5/special/song_v2?${params}&signature=${signatureParams(params, 'web')}`
-      console.log('[KuGou] [SDK] 获取歌曲列表 URL:', songUrl)
+      if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 获取歌曲列表 URL:', songUrl)
       tasks.push(
         this.createHttp(
           songUrl,
@@ -544,7 +544,7 @@ export default {
       id +
       '&format=jsonp&srcappid=2919&clientver=20000&clienttime=' + now + '&mid=' + now + '&uuid=' + now + '&dfid=-'
     const infoUrl = `https://mobiles.kugou.com/api/v5/special/info_v2?${params}&signature=${signatureParams(params, 'web')}`
-    console.log('[KuGou] [SDK] 获取歌单信息 URL:', infoUrl)
+    if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 获取歌单信息 URL:', infoUrl)
     let info = await this.createHttp(
       infoUrl,
       {
@@ -558,8 +558,8 @@ export default {
         },
       }
     )
-    console.log('[KuGou] [SDK] 歌单信息响应:', JSON.stringify(info).substring(0, 300))
-    console.log('[KuGou] [SDK] 歌曲数量:', info.songcount)
+    if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 歌单信息响应:', JSON.stringify(info).substring(0, 300))
+    if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 歌曲数量:', info.songcount)
 
     let songInfo
     const totalSongs = info.songcount || 0
@@ -567,7 +567,7 @@ export default {
       const allSongs = []
       let beginIdx = 0
       const pageSize = 300
-      console.log('[KuGou] [SDK] 使用网关端点获取歌曲, 总数:', totalSongs)
+      if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 使用网关端点获取歌曲, 总数:', totalSongs)
       while (beginIdx < totalSongs || allSongs.length < totalSongs) {
         const clienttime = Math.floor(Date.now() / 1000)
         const gwParams = `area_code=1&appid=1005&begin_idx=${beginIdx}&clienttime=${clienttime}&clientver=20489&extend_fields=abtags,hot_cmt,popularization&global_collection_id=${id}&mode=1&pagesize=${pageSize}&personal_switch=1&plat=1&type=1&uuid=-`
@@ -581,23 +581,23 @@ export default {
           },
         })
         const batch = gwResult?.songs || gwResult?.data?.songs || []
-        console.log('[KuGou] [SDK] 网关批次返回:', batch.length, '首, beginIdx:', beginIdx)
+        if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 网关批次返回:', batch.length, '首, beginIdx:', beginIdx)
         if (batch.length === 0) break
         allSongs.push(...batch)
         beginIdx += batch.length
         if (batch.length < pageSize) break
       }
       songInfo = allSongs
-      console.log('[KuGou] [SDK] 网关总计:', songInfo.length, '首')
+      if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 网关总计:', songInfo.length, '首')
     } catch (e) {
-      console.log('[KuGou] [SDK] 网关失败，回退 mobiles:', e.message)
+      if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 网关失败，回退 mobiles:', e.message)
       songInfo = await this.createGetListDetail2Task(id, totalSongs)
     }
 
-    console.log('[KuGou] [SDK] 歌曲列表详情:', songInfo.map((s, i) => `${i + 1}. ${s.songname || s.filename || s.name} | hash=${s.hash}`).join('\n'))
+    if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 歌曲列表详情:', songInfo.map((s, i) => `${i + 1}. ${s.songname || s.filename || s.name} | hash=${s.hash}`).join('\n'))
     let list = await this.getMusicInfos(songInfo)
-    console.log('[KuGou] [SDK] 最终歌曲数:', list.length)
-    console.log('[KuGou] [SDK] 最终歌曲列表:', list.map((s, i) => `${i + 1}. ${s.name} | songmid=${s.songmid}`).join('\n'))
+    if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 最终歌曲数:', list.length)
+    if (global.lx.isEnableLog) console.log('[KuGou] [SDK] 最终歌曲列表:', list.map((s, i) => `${i + 1}. ${s.name} | songmid=${s.songmid}`).join('\n'))
     return {
       list,
       page: 1,

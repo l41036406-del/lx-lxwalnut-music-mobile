@@ -29,7 +29,7 @@ const handleExitApp = async (reason: string) => {
 const registerPlaybackService = async () => {
   if (isInitialized) return
 
-  console.log('reg services...')
+  if (global.lx.isEnableLog) console.log('reg services...')
   TrackPlayer.addEventListener(TPEvent.RemotePlay, () => {
     // console.log('remote-play')
     play()
@@ -321,7 +321,7 @@ const registerPlaybackService = async () => {
 
 export default () => {
   if (global.lx.playerStatus.isRegisteredService) return
-  console.log('handle registerPlaybackService...')
+  if (global.lx.isEnableLog) console.log('handle registerPlaybackService...')
   TrackPlayer.registerPlaybackService(() => registerPlaybackService)
   global.lx.playerStatus.isRegisteredService = true
 }

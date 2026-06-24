@@ -300,14 +300,14 @@ export const handleKgLikeMusic = async (musicInfo: LX.Music.MusicInfoOnline) => 
       
       const meta = musicInfo.meta as any
       const songHash = (meta.hash || '').toString().toLowerCase()
-      console.log('[KgLike] 查找歌曲:', { songHash, totalSongs: songsResult.data.list.length })
+      if (global.lx.isEnableLog) console.log('[KgLike] 查找歌曲:', { songHash, totalSongs: songsResult.data.list.length })
       
       const targetSong = songsResult.data.list.find((s: any) => {
         const sHash = (s.hash || '').toString().toLowerCase()
         return sHash === songHash || sHash.includes(songHash) || songHash.includes(sHash)
       })
       
-      console.log('[KgLike] 找到歌曲:', { found: !!targetSong, fileId: targetSong?.fileId, listid: favoritesPlaylist.listid })
+      if (global.lx.isEnableLog) console.log('[KgLike] 找到歌曲:', { found: !!targetSong, fileId: targetSong?.fileId, listid: favoritesPlaylist.listid })
       
       if (targetSong && targetSong.fileId && targetSong.fileId !== 0) {
         const removeResult = await removeSongsFromPlaylist(cookie, favoritesPlaylist.listid, [Number(targetSong.fileId)])

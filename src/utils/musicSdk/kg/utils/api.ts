@@ -129,7 +129,7 @@ export async function sendCaptcha(
   onLog?: LogCallback
 ): Promise<{ success: boolean; message: string; ssaCode?: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`);
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`);
     onLog?.(msg);
   };
 
@@ -215,7 +215,7 @@ export async function loginByPhone(
   onLog?: LogCallback
 ): Promise<{ success: boolean; data?: any; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`);
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`);
     onLog?.(msg);
   };
 
@@ -329,7 +329,7 @@ export async function refreshToken(
   onLog?: LogCallback
 ): Promise<{ success: boolean; data?: any; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`);
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`);
     onLog?.(msg);
   };
 
@@ -415,7 +415,7 @@ export async function getVerifyInfo(
   onLog?: LogCallback
 ): Promise<{ success: boolean; data?: any; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`);
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`);
     onLog?.(msg);
   };
 
@@ -483,7 +483,7 @@ export async function verifyUserInfo(
   onLog?: LogCallback
 ): Promise<{ success: boolean; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`);
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`);
     onLog?.(msg);
   };
 
@@ -631,7 +631,7 @@ export async function getUserPlaylists(
   onLog?: LogCallback
 ): Promise<{ success: boolean; data?: any; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`);
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`);
     onLog?.(msg);
   };
 
@@ -749,7 +749,7 @@ export async function getUserPlaylists(
  */
 function signParamsKey(data: string): string {
   const result = stringMd5(`${KG_CONFIG.appid}${ANDROID_SIGN_SALT}${KG_CONFIG.clientver}${data}`)
-  console.log(`[KuGou] signParamsKey: md5('${KG_CONFIG.appid}${ANDROID_SIGN_SALT}${KG_CONFIG.clientver}${data}') = ${result}`)
+  if (global.lx.isEnableLog) console.log(`[KuGou] signParamsKey: md5('${KG_CONFIG.appid}${ANDROID_SIGN_SALT}${KG_CONFIG.clientver}${data}') = ${result}`)
   return result
 }
 
@@ -769,7 +769,7 @@ export async function subscribePlaylist(
   onLog?: LogCallback
 ): Promise<{ success: boolean; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`)
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`)
     onLog?.(msg)
   }
 
@@ -858,7 +858,7 @@ export async function unsubscribePlaylist(
   onLog?: LogCallback
 ): Promise<{ success: boolean; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`)
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`)
     onLog?.(msg)
   }
 
@@ -976,7 +976,7 @@ export async function removeSongsFromPlaylist(
   onLog?: LogCallback
 ): Promise<{ success: boolean; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`)
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`)
     onLog?.(msg)
   }
 
@@ -1059,7 +1059,7 @@ export async function addSongToPlaylist(
   onLog?: LogCallback
 ): Promise<{ success: boolean; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`);
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`);
     onLog?.(msg);
   };
 
@@ -1167,7 +1167,7 @@ export async function getPlaylistSongs(
   onLog?: LogCallback
 ): Promise<{ success: boolean; data?: any; message: string }> {
   const log = (msg: string) => {
-    console.log(`[KuGou] ${msg}`);
+    if (global.lx.isEnableLog) console.log(`[KuGou] ${msg}`);
     onLog?.(msg);
   };
 

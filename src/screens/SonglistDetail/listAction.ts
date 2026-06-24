@@ -52,12 +52,9 @@ export const handlePlay = async (
 }
 
 export const handleCollect = async (id: string, source: Source, name: string) => {
-  console.log('[handleCollect] 开始', { id, source, name })
   const listId = getListId(id, source)
-  console.log('[handleCollect] listId:', listId)
 
   const targetList = listState.userList.find((l) => l.sourceListId == listId)
-  console.log('[handleCollect] 已存在歌单:', !!targetList, targetList?.name)
   if (targetList) {
     const confirm = await confirmDialog({
       message: global.i18n.t('duplicate_list_tip', { name: targetList.name }),
@@ -70,7 +67,6 @@ export const handleCollect = async (id: string, source: Source, name: string) =>
   }
 
   const list = await getListDetailAll(source, id)
-  console.log('[handleCollect] 获取歌曲列表:', list.length, '首')
   await createList({
     name,
     id: `${source}_${toMD5(listId)}`,
@@ -78,6 +74,5 @@ export const handleCollect = async (id: string, source: Source, name: string) =>
     source,
     sourceListId: id,
   })
-  console.log('[handleCollect] 创建歌单成功:', name)
   toast(global.i18n.t('collect_success'))
 }

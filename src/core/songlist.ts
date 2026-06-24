@@ -123,9 +123,7 @@ const getListDetailLimit = async (
 
   return (
     musicSdk[source]?.songList.getListDetail(id, sourcePage + 1).then((result: ListDetailInfo) => {
-      log.info(`[SonglistCore] getListDetailLimit 获取到歌曲`, { source, id, songCount: result.list.length, total: result.total, limit: result.limit })
       if (listCache !== cache.get(listKey)) {
-        log.warn(`[SonglistCore] getListDetailLimit 缓存已失效，重新创建`)
         cache.set(listKey, (listCache = new Map()))
       }
       result.list = deduplicationList(
@@ -262,6 +260,11 @@ export const clearListDetailCache = (source: LX.OnlineSource, id: string) => {
   const listKey = `sdetail__${source}__${id}`
   if (cache.has(listKey)) {
     cache.delete(listKey)
-    console.log(`[Cache Cleared] Songlist cache for ${listKey} has been cleared.`)
+  }
+  if (source === 'kg') {
+    try {
+      const kgSongList = require('@/utils/musicSdk/kg/songList').default
+      kgSongList.evictDetailCache?.(id)
+    } catch {}
   }
 }

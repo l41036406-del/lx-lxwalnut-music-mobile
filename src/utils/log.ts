@@ -37,6 +37,9 @@ const logTools = {
       let isExists = await existsFile(logPath)
       // console.log(isExists)
       if (!isExists) await writeFile(logPath, '')
+      // 启动时强制清理：无论日志开关状态，都截断超限文件
+      // 防止老版本积累的几百兆日志残留
+      await trimLogFile()
       if (this.tempLog?.length)
         this.writeLog(
           this.tempLog.map((m) => `${m.time} ${m.type} ${m.text}`).join('\n----lx log----\n')
@@ -69,7 +72,7 @@ export const clearLogs = async () => {
 
 export const log = {
   info(...msgs: any[]) {
-    // console.info(...msgs)
+    if (!global.lx.isEnableLog) return
     const msg = msgs
       .map((m) =>
         typeof m == 'string' ? m : m instanceof Error ? (m.stack ?? m.message) : JSON.stringify(m)
@@ -82,7 +85,7 @@ export const log = {
     } else logTools.writeLog(`${time} LOG ${msg}`)
   },
   warn(...msgs: any[]) {
-    // console.warn(...msgs)
+    if (!global.lx.isEnableLog) return
     const msg = msgs
       .map((m) =>
         typeof m == 'string' ? m : m instanceof Error ? (m.stack ?? m.message) : JSON.stringify(m)
@@ -94,6 +97,7 @@ export const log = {
     } else logTools.writeLog(`${time} WARN ${msg}`)
   },
   error(...msgs: any[]) {
+    if (!global.lx.isEnableLog) return
     const msg = msgs
       .map((m) =>
         typeof m == 'string' ? m : m instanceof Error ? (m.stack ?? m.message) : JSON.stringify(m)

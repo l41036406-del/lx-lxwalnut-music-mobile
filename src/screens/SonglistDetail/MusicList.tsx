@@ -101,7 +101,7 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
     ref,
     () => ({
       async loadList(source, id, isRefresh = false) {
-        console.log(`[SonglistDetail] loadList 被调用`, { source, id, isRefresh })
+        if (global.lx.isEnableLog) console.log(`[SonglistDetail] loadList`, { source, id, isRefresh })
         clearListDetail()
         const listDetailInfo = songlistState.listDetailInfo
         const createDetailInfo = (detail: typeof listDetailInfo.info): DetailInfo => ({
@@ -118,7 +118,7 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
           listDetailInfo.source === source &&
           listDetailInfo.list.length
         ) {
-          log.info(`[SonglistDetail] MusicList.loadList 使用缓存`, { listCount: listDetailInfo.list.length })
+          if (global.lx.isEnableLog) log.info(`[SonglistDetail] loadList cache hit`, { listCount: listDetailInfo.list.length })
           requestAnimationFrame(() => {
             listRef.current?.setList(listDetailInfo.list)
           })
@@ -128,15 +128,13 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
         listRef.current?.setStatus('loading')
         const page = 1
         setListDetailInfo(info.source, info.id)
-        log.info(`[SonglistDetail] MusicList.loadList 开始`, { source, id, page, isRefresh })
+        if (global.lx.isEnableLog) log.info(`[SonglistDetail] loadList start`, { source, id, page, isRefresh })
         return getListDetail(id, source, page, isRefresh)
           .then((listDetail) => {
-            log.info(`[SonglistDetail] MusicList.loadList 获取到数据`, { songCount: listDetail.list.length, total: listDetail.total })
+            if (global.lx.isEnableLog) log.info(`[SonglistDetail] loadList got data`, { songCount: listDetail.list.length, total: listDetail.total })
             const result = setListDetail(listDetail, id, page)
-            log.info(`[SonglistDetail] MusicList.loadList setListDetail 后`, { resultSongCount: result.list.length })
             if (isUnmountedRef.current) return createDetailInfo(result.info)
             requestAnimationFrame(() => {
-              log.info(`[SonglistDetail] MusicList.loadList setList`, { listCount: result.list.length })
               listRef.current?.setList(result.list)
               listRef.current?.setStatus(
                 songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle',
@@ -145,7 +143,7 @@ export default forwardRef<MusicListType, MusicListProps>(({componentId, isCreato
             return createDetailInfo(result.info)
           })
           .catch((err) => {
-            log.info(`[SonglistDetail] MusicList.loadList 错误`, { error: err?.message, stack: err?.stack?.substring(0, 200) })
+            if (global.lx.isEnableLog) log.info(`[SonglistDetail] loadList error`, { error: err?.message })
             if (songlistState.listDetailInfo.list.length && page === 1) clearListDetail()
             listRef.current?.setStatus('error')
             throw err
